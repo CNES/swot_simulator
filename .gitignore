@@ -107,4 +107,4 @@ venv.bak/
 .mypy_cache/
 
 # The file describing the version must not be committed in GIT.
-src/pytide/version.py
+swot_simulator/version.py
