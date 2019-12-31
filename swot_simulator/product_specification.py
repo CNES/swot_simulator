@@ -132,7 +132,7 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
     if "_FillValue" in keywords:
         keywords["fill_value"] = keywords.pop("_FillValue")
     dtype = keywords.pop("dtype", variable.dtype)
-    for key, value in dict(zlib=False,
+    for key, value in dict(zlib=True,
                            complevel=4,
                            shuffle=True,
                            fletcher32=False,
