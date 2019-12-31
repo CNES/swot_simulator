@@ -18,7 +18,6 @@ import xarray as xr
 import xml.etree.ElementTree as xt
 from . import orbit_propagator
 from . import math
-from os import name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,8 +42,7 @@ def _parse_type(dtype, width, signed):
     elif dtype == "string":
         return np.str
     elif dtype == "char":
-        assert int(width) == 1
-        return np.int8
+        return np.dtype(f"S{width}")
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
@@ -106,17 +104,19 @@ def _parser(tree: xt.ElementTree):
         dtype = _parse_type(
             item.tag, item.attrib["width"],
             bool(item.attrib["signed"]) if "signed" in item.attrib else None)
+        if not isinstance(dtype, np.dtype):
+            dtype = dtype.__name__
         annotation = item.find("annotation")
         if annotation is None:
             continue
         varname = item.attrib["name"]
         if varname.startswith("/@"):
             attributes[varname[2:]] = dict(attrs=annotation.attrib,
-                                           dtype=dtype.__name__)
+                                           dtype=dtype)
         else:
             del annotation.attrib["app"]
             variables[varname[1:]] = dict(attrs=annotation.attrib,
-                                          dtype=dtype.__name__,
+                                          dtype=dtype,
                                           shape=shapes[item.attrib["shape"]])
 
     return variables, attributes
@@ -174,7 +174,7 @@ def _create_variable(dataset: netCDF4.Dataset,
     ncvar.setncatts(variable.attrs)
     values = variable.values
     if kwargs['fill_value'] is not None:
-        values = np.ma.masked_equal(values, kwargs['fill_value'])
+        values = np.ma.array(values, mask=values == kwargs['fill_value'])
     dataset[name][:] = values
 
 
@@ -218,6 +218,13 @@ class ProductSpecification:
                      _FillValue=-2**63))
             properties["dtype"] = "int64"
 
+    @staticmethod
+    def fill_value(properties):
+        dtype = properties["dtype"]
+        if isinstance(dtype, str):
+            return getattr(np, dtype)(properties["attrs"]["_FillValue"])
+        return np.array(properties["attrs"]["_FillValue"], dtype)
+
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         properties = self.variables["basic/time"]
         attrs = properties["attrs"]
@@ -237,7 +244,7 @@ class ProductSpecification:
         attrs = copy.deepcopy(properties["attrs"])
 
         # The fill value is casted to the target value of the variable
-        fill_value = getattr(np, properties["dtype"])(attrs["_FillValue"])
+        fill_value = self.fill_value(properties)
         del attrs["_FillValue"]
 
         # Reading the storage properties of the variable ()
@@ -304,11 +311,7 @@ class ProductSpecification:
             if item in variables:
                 continue
             properties = self.variables[item]
-            # TODO(fbriol) Handle missing dimension num_side
-            if "num_sides" in properties["shape"]:
-                continue
-            fill_value = getattr(np, properties["dtype"])(
-                properties["attrs"]["_FillValue"])
+            fill_value = self.fill_value(properties)
             data = np.full(tuple(shape[dim] for dim in properties["shape"]),
                            fill_value, properties["dtype"])
             yield self._data_array(item, data)
@@ -337,8 +340,8 @@ class Nadir:
     def ssh(self, array: np.ndarray) -> None:
         self._data_array("ssh_nadir", array)
 
-    def to_netcdf(self, cycle_number: int, pass_number: int,
-                  path: str, complete_product: bool) -> None:
+    def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
+                  complete_product: bool) -> None:
         LOGGER.info("write %s", path)
         vars = dict((item.name, item) for item in self.data_vars)
 
@@ -348,6 +351,7 @@ class Nadir:
         if complete_product:
             item = vars["basic/longitude"]
             shape = dict(zip(item.dims, item.shape))
+            shape["num_sides"] = 2
             for encoding, array in self.product_spec.fill_variables(
                     vars.keys(), shape):
                 self.encoding[array.name] = encoding
