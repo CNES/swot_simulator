@@ -22,6 +22,11 @@ ephemeris = os.path.join("..", "..", "data", "ephem_science_sept2015_ell.txt")
 # Default: 1, 2, 0
 ephemeris_cols = [1, 2, 0]
 
+# If true, the generated netCDF file will be the complete product compliant
+# with SWOT's Product Description Document (PDD), otherwise only the calculated
+# variables will be written to the netCDF file.
+complete_product = True
+
 # Distance, in km, between the nadir and the beginning of the swath
 half_gap = 10.0
 
@@ -33,12 +38,12 @@ half_swath = 60.0
 # delivered with this software contain this type of declaration
 
 # Duration of a cycle.
-#cycle_duration=
+# #cycle_duration=
 
 # Satellite altitude (m)
-#height=
+# #height=
 
-# True to generate Nadir products
+# True to generate Nadir products
 nadir = False
 
 # True to generate swath products
@@ -48,11 +53,11 @@ swath = True
 ssh_plugin = swot_simulator.plugins.ssh.AVISO("PATH to AVISO files")
 
 # Orbit shift in longitude (degrees)
-#shift_lon=
+# #shift_lon=
 
 # Orbit shift in time (seconds)
-#shift_time=
+# #shift_time=
 
 # The working directory. By default, files are generated in the user's root
 # directory.
-#working_directory=
+# #working_directory=

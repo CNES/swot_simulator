@@ -116,6 +116,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
     # Compute the spatial/temporal position of the satellite
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
+    if track is None:
+        return
     track.time = date
 
     if parameters.swath:
@@ -137,7 +139,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                         track.lon.flatten(), track.lat.flatten(),
                         swath_time.flatten()).reshape(track.lon.shape))
 
-            product.to_netcdf(cycle_number, pass_number, path)
+            product.to_netcdf(cycle_number, pass_number, path,
+                              parameters.complete_product)
 
     # Create the nadir dataset
     if parameters.nadir:
@@ -159,7 +162,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                                                       track.lat_nadir,
                                                       track.time))
 
-            product.to_netcdf(cycle_number, pass_number, path)
+            product.to_netcdf(cycle_number, pass_number, path,
+                              parameters.complete_product)
 
 
 def launch(client: dask.distributed.Client,
@@ -173,6 +177,7 @@ def launch(client: dask.distributed.Client,
     # The attribute "ephemerid" is set dynamically
 
     # Calculation of the properties of the orbit to be processed.
+    assert parameters.ephemeris is not None
     with open(parameters.ephemeris) as stream:
         orbit = orbit_propagator.calculate_orbit(parameters, stream)
     #: pylint: enable=no-member

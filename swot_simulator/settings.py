@@ -6,7 +6,7 @@
 Settings handling
 -----------------
 """
-from typing import Any, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, Tuple
 import contextlib
 import os
 import logging
@@ -43,7 +43,7 @@ def cd(target_dir: str) -> Iterator[None]:
         os.chdir(cwd)
 
 
-def eval_config_file(filename: str):
+def eval_config_file(filename: str) -> Dict:
     """Evaluate a config file."""
     path = os.path.abspath(filename)
     dirname = os.path.dirname(path)
@@ -77,13 +77,14 @@ class Parameters:
         path (str, optional): Path to the configuration file used to override
         the default settings
     """
-    CONFIG_VALUES = dict(
+    CONFIG_VALUES: Dict[str, Tuple[Any, Any]] = dict(
         area=(None, [float, float, float, float]),
         cycle_duration=(20.86455, float),
         delta_al=(2.0, float),
         delta_ac=(2.0, float),
         ephemeris=(None, str),
         ephemeris_cols=(None, [int, int, int]),
+        complete_product=(True, bool),
         half_gap=(10.0, float),
         half_swath=(60.0, float),
         height=(891000, float),
@@ -94,12 +95,12 @@ class Parameters:
         shift_time=(None, float),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str))
 
-    def __init__(self, overrides):
+    def __init__(self, overrides: Dict[str, Any]):
         if "ephemeris" not in overrides:
             raise TypeError("missing required argument: 'ephemeris'")
         self._init_user_parameters(overrides)
 
-    def _convert_overrides(self, name, value):
+    def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
         try:
             if isinstance(expected_type, list):
@@ -120,7 +121,7 @@ class Parameters:
                              (value, name))
         return value
 
-    def _init_user_parameters(self, overrides):
+    def _init_user_parameters(self, overrides: Dict[str, Any]):
         settings = dict(
             (key, value[0]) for key, value in self.CONFIG_VALUES.items())
         for name, value in overrides.items():

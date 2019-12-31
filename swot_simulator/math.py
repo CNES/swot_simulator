@@ -10,7 +10,6 @@ from typing import Optional, Tuple
 import collections
 import numpy as np
 import numba as nb
-from . import VOLUMETRIC_MEAN_RADIUS
 
 
 @nb.njit(cache=True)
@@ -50,7 +49,7 @@ def cart2spher(x: np.ndarray, y: np.ndarray,
 
 
 @nb.njit('float64[:, ::1](float64, float64[::1])', cache=True)
-def rotation_3d_matrix(theta: float, axis: float) -> np.ndarray:
+def rotation_3d_matrix(theta: float, axis: np.ndarray) -> np.ndarray:
     """Creates a rotation matrix: Slow method.
 
     Inputs are rotation angle theta and rotation axis axis.

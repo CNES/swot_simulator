@@ -6,16 +6,19 @@
 Parse/Load the product specification
 ====================================
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import datetime
 import copy
 import logging
 import os
-import xml.etree.ElementTree as xt
+import pathlib
+import netCDF4
 import numpy as np
 import xarray as xr
+import xml.etree.ElementTree as xt
 from . import orbit_propagator
 from . import math
+from os import name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +50,7 @@ def _parse_type(dtype, width, signed):
 
 def global_attributes(attributes: Dict[str, Dict[str, str]], cycle_number: int,
                       pass_number: int, date: np.ndarray) -> Dict[str, Any]:
-    def _encode(attr_value: str, properties: Dict[str, str]):
+    def _encode(attr_value: int, properties: Dict[str, str]):
         return getattr(np, properties["dtype"])(attr_value)
 
     def _iso_date(date: np.datetime64) -> str:
@@ -119,6 +122,88 @@ def _parser(tree: xt.ElementTree):
     return variables, attributes
 
 
+def _create_variable_args(encoding: Dict[str, Dict], name: str,
+                          variable: xr.Variable) -> Tuple[str, Dict[str, Any]]:
+    """Initiation of netCDF4.Dataset.createVariable method parameters from
+    user-defined encoding information.
+    """
+    kwargs = dict()
+    keywords = encoding[name] if name in encoding else dict()
+    if "_FillValue" in keywords:
+        keywords["fill_value"] = keywords.pop("_FillValue")
+    dtype = keywords.pop("dtype", variable.dtype)
+    for key, value in dict(zlib=False,
+                           complevel=4,
+                           shuffle=True,
+                           fletcher32=False,
+                           contiguous=False,
+                           chunksizes=None,
+                           endian='native',
+                           least_significant_digit=None,
+                           fill_value=None).items():
+        kwargs[key] = keywords.pop(key, value)
+    return dtype, kwargs
+
+
+def _create_variable(dataset: netCDF4.Dataset,
+                     encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
+                     variable: xr.Variable) -> None:
+    """Creation and writing of the NetCDF variable"""
+    variable.attrs.pop("_FillValue", None)
+    dtype, kwargs = _create_variable_args(encoding, name, variable)
+    if np.issubdtype(dtype, np.datetime64):
+        dtype = np.int64
+        variable.values = variable.values.astype("datetime64[us]").astype(
+            "int64")
+        assert (variable.attrs["units"] ==
+                "microseconds since 2000-01-01 00:00:00.0")
+        # 946684800000000 number of microseconds between 2000-01-01 and
+        # 1970-01-01
+        variable.values -= 946684800000000
+
+    parts = name.split("/")
+    name = parts.pop()
+    group = parts.pop() if parts else None
+
+    if group is not None:
+        if group not in dataset.groups:
+            dataset = dataset.createGroup(group)
+        else:
+            dataset = dataset.groups[group]
+    ncvar = dataset.createVariable(name, dtype, variable.dims, **kwargs)
+    ncvar.setncatts(variable.attrs)
+    values = variable.values
+    if kwargs['fill_value'] is not None:
+        values = np.ma.masked_equal(values, kwargs['fill_value'])
+    dataset[name][:] = values
+
+
+def to_netcdf(dataset: xr.Dataset,
+              path: Union[str, pathlib.Path],
+              encoding: Optional[Dict[str, Dict]] = None,
+              unlimited_dims: Optional[List[str]] = None,
+              **kwargs):
+    """Write dataset contents to a netCDF file"""
+    encoding = encoding or dict()
+    unlimited_dims = unlimited_dims or list()
+
+    if isinstance(path, str):
+        path = pathlib.Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with netCDF4.Dataset(path, **kwargs) as stream:
+        for name, size in dataset.dims.items():
+            stream.createDimension(name,
+                                   None if name in unlimited_dims else size)
+            stream.setncatts(dataset.attrs)
+
+        for name, variable in dataset.coords.items():
+            _create_variable(stream, encoding, name, variable)
+
+        for name, variable in dataset.data_vars.items():
+            _create_variable(stream, encoding, name, variable)
+
+
 class ProductSpecification:
     """Parse and load into memory the product specification"""
     SPECIFICATION = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -126,31 +211,38 @@ class ProductSpecification:
 
     def __init__(self):
         self.variables, self.attributes = _parser(xt.parse(self.SPECIFICATION))
+        for item in ["basic/time", "basic/time_tai"]:
+            properties = self.variables[item]
+            properties["attrs"].update(
+                dict(units="microseconds since 2000-01-01 00:00:00.0",
+                     _FillValue=-2**63))
+            properties["dtype"] = "int64"
 
-    def time(self, time: np.ndarray) -> xr.DataArray:
-        return xr.DataArray(data=time,
-                            dims=self.variables["basic/time"]["shape"],
-                            name="time",
-                            attrs=dict(long_name="time in UTC",
-                                       standard_name="time",
-                                       axis="T"))
+    def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
+        properties = self.variables["basic/time"]
+        attrs = properties["attrs"]
+        attrs.pop("_FillValue")
+        return {
+            "basic/time": {}
+        }, [
+            xr.DataArray(data=time,
+                         dims=properties["shape"],
+                         name="basic/time",
+                         attrs=attrs)
+        ]
 
-    def _data_array(self,
-                    name: str,
-                    data: np.ndarray,
-                    axis: Optional[bool] = False) -> Tuple[Dict, xr.DataArray]:
+    def _data_array(self, name: str,
+                    data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         properties = self.variables[name]
         attrs = copy.deepcopy(properties["attrs"])
 
         # The fill value is casted to the target value of the variable
-        if axis is not None:
-            fill_value = getattr(np, properties["dtype"])(attrs["_FillValue"])
-        else:
-            fill_value = None
+        fill_value = getattr(np, properties["dtype"])(attrs["_FillValue"])
         del attrs["_FillValue"]
 
         # Reading the storage properties of the variable ()
-        encoding = dict(_FillValue=fill_value, dtype=properties["dtype"])
+        encoding: Dict[str, Any] = dict(_FillValue=fill_value,
+                                        dtype=properties["dtype"])
         for item in ["add_offset", "scale_factor"]:
             if item in attrs:
                 encoding[item] = float(attrs[item])
@@ -162,7 +254,7 @@ class ProductSpecification:
                 attrs[item] = float(attrs[item])
         return encoding, xr.DataArray(data=data,
                                       dims=properties["shape"],
-                                      name=name.split("/")[-1],
+                                      name=name,
                                       attrs=attrs)
 
     def x_ac(self, x_ac: np.ndarray) -> Tuple[Dict, xr.DataArray]:
@@ -195,7 +287,7 @@ class ProductSpecification:
             'scale_factor': 0.0001
         }, xr.DataArray(data=ssh,
                         dims=self.variables["basic/time"]["shape"],
-                        name="ssh_nadir",
+                        name="bsic/ssh_nadir",
                         attrs={
                             'long_name': 'sea surface height',
                             'standard_name':
@@ -206,6 +298,21 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
+    def fill_variables(self, variables,
+                       shape) -> Iterator[Tuple[Dict, xr.DataArray]]:
+        for item in self.variables:
+            if item in variables:
+                continue
+            properties = self.variables[item]
+            # TODO(fbriol) Handle missing dimension num_side
+            if "num_sides" in properties["shape"]:
+                continue
+            fill_value = getattr(np, properties["dtype"])(
+                properties["attrs"]["_FillValue"])
+            data = np.full(tuple(shape[dim] for dim in properties["shape"]),
+                           fill_value, properties["dtype"])
+            yield self._data_array(item, data)
+
 
 class Nadir:
     def __init__(self,
@@ -214,14 +321,7 @@ class Nadir:
         self.standalone = standalone
         self.product_spec = ProductSpecification()
         self.num_lines = track.time.size
-        self.data_vars = [
-            self.product_spec.time(track.time),
-        ]
-        self.encoding = dict(
-            (item.name, {
-                "_FillValue": None,
-                "units": "microseconds since 2000-01-01 00:00:00+00:00"
-            }) for item in self.data_vars)
+        self.encoding, self.data_vars = self.product_spec.time(track.time)
         self._data_array("lon_nadir",
                          track.lon_nadir)._data_array("lat_nadir",
                                                       track.lat_nadir)
@@ -238,14 +338,27 @@ class Nadir:
         self._data_array("ssh_nadir", array)
 
     def to_netcdf(self, cycle_number: int, pass_number: int,
-                  path: str) -> None:
+                  path: str, complete_product: bool) -> None:
+        LOGGER.info("write %s", path)
+        vars = dict((item.name, item) for item in self.data_vars)
+
+        # Variables that are not calculated are filled in in order to have a
+        # product compatible with the PDD SWOT. Longitude is used as a
+        # template.
+        if complete_product:
+            item = vars["basic/longitude"]
+            shape = dict(zip(item.dims, item.shape))
+            for encoding, array in self.product_spec.fill_variables(
+                    vars.keys(), shape):
+                self.encoding[array.name] = encoding
+                self.data_vars.append(array)
+
         dataset = xr.Dataset(data_vars=dict(
             (item.name, item) for item in self.data_vars),
                              attrs=global_attributes(
                                  self.product_spec.attributes, cycle_number,
                                  pass_number, self.data_vars[0].values))
-        LOGGER.info("write %s", path)
-        dataset.to_netcdf(path, encoding=self.encoding)
+        to_netcdf(dataset, path, self.encoding, mode="w")
 
 
 class Swath(Nadir):

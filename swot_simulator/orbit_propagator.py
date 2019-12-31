@@ -18,8 +18,9 @@ from . import VOLUMETRIC_MEAN_RADIUS
 LOGGER = logging.getLogger(__name__)
 
 
-def load_ephemeris(stream: IO, cols: Optional[Iterable[int]] = None
-                   ) -> Tuple[Dict[str, float], Tuple[np.array]]:
+def load_ephemeris(
+        stream: IO, cols: Optional[Iterable[int]] = None
+) -> Tuple[Dict[str, float], Tuple]:
     """Loads a tabular file describing a satellite orbit."""
     if cols is None:
         cols = (1, 2, 0)
@@ -33,7 +34,7 @@ def load_ephemeris(stream: IO, cols: Optional[Iterable[int]] = None
             else data.append(list(float(value) for value in item.split()))
     data = np.asarray(data, dtype=np.float64)
 
-    def to_dict(comments):
+    def to_dict(comments) -> Dict[str, float]:
         """Returns a dictionary describing the parameters of the orbit."""
         result = dict()
         for item in comments:
@@ -225,7 +226,7 @@ def calculate_orbit(parameters: settings.Parameters, ephemeris: IO) -> Orbit:
 
 
 def calculate_pass(pass_number: int, orbit: Orbit,
-                   parameters: settings.Parameters) -> Pass:
+                   parameters: settings.Parameters) -> Optional[Pass]:
     index = pass_number - 1
     # Selected indexes corresponding to the current pass
     if index == len(orbit.pass_time) - 1:
@@ -257,4 +258,3 @@ def calculate_pass(pass_number: int, orbit: Orbit,
                                     location, satellite_direction)
 
     return Pass(lat_nadir, lat, lon_nadir, lon, time, x_ac, x_al)
-
