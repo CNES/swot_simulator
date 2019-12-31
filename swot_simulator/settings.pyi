@@ -2,7 +2,6 @@
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
-from docs.source.settings import complete_product
 from typing import Any, Dict, Optional, Tuple
 from . import math
 from .plugins import ssh
