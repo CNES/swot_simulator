@@ -78,7 +78,6 @@ class AVISO(detail.CartesianGridHandler):
         interpolator = self.load_dataset(time.min(), time.max())
         ssh = interpolator.trivariate(dict(longitude=lon,
                                            latitude=lat,
-                                           time=time.astype(
-                                               interpolator.time_unit())),
+                                           time=time),
                                       interpolator='bilinear')
         return ssh

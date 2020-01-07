@@ -9,6 +9,7 @@ Parse/Load the product specification
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import datetime
 import copy
+import collections
 import logging
 import os
 import pathlib
@@ -46,14 +47,15 @@ def _parse_type(dtype, width, signed):
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
-def global_attributes(attributes: Dict[str, Dict[str, str]], cycle_number: int,
+def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray) -> Dict[str, Any]:
     def _encode(attr_value: int, properties: Dict[str, str]):
         return getattr(np, properties["dtype"])(attr_value)
 
     def _iso_date(date: np.datetime64) -> str:
         return datetime.datetime.utcfromtimestamp(
-            date.astype("datetime64[us]").astype("int64") * 1e-6).isoformat()
+            date.astype("datetime64[us]").astype("int64") *
+            1e-6).isoformat() + "Z"
 
     def _iso_duration(timedelta: np.timedelta64) -> str:
         seconds = timedelta.astype("timedelta64[s]").astype("int64")
@@ -72,22 +74,36 @@ def global_attributes(attributes: Dict[str, Dict[str, str]], cycle_number: int,
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
 
-    return {
-        # "contact": "TODO",
-        "Conventions": "CF-1.6",
+    ellipsoid_semi_major_axis = _encode(
+        1, attributes["ellipsoid_semi_major_axis"])
+    ellipsoid_flattening = _encode(0, attributes["ellipsoid_semi_major_axis"])
+
+    result = collections.OrderedDict({
+        "Conventions": "CF-1.7",
+        "contact": "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
         "cycle_number": _encode(cycle_number, attributes["cycle_number"]),
-        "pass_number": _encode(pass_number, attributes["pass_number"]),
+        "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
+        "ellipsoid_flattening": ellipsoid_flattening,
+        "history": now,
         "institution": "CNES/JPL",
         "mission_name": "SWOT",
+        "orbit_solution": "POE",
+        "pass_number": _encode(pass_number, attributes["pass_number"]),
+        "reference_document": "D-56407_SWOT_Product_Description_L2_LR_SSH",
         "references": REFERENCE,
-        "standard_name_vocabulary": "CF Standard Name Table vNN",
         "source": "Simulate product",
-        "time_coverage_start": _iso_date(date[0]),
-        "time_coverage_end": _iso_date(date[-1]),
+        "standard_name_vocabulary": "CF Standard Name Table vNN",
         "time_coverage_duration": _iso_duration(date[-1] - date[0]),
+        "time_coverage_end": _iso_date(date[-1]),
         "time_coverage_resolution": "P1S",
-        "history": now
-    }
+        "time_coverage_start": _iso_date(date[0]),
+        "title": attributes["title"]["attrs"]["description"],
+        "wavelength": _encode(0.008385803020979, attributes["wavelength"]),
+    })
+    for item in attributes:
+        if item.startswith("xref_input"):
+            result[item] = "N/A"
+    return result
 
 
 def _parser(tree: xt.ElementTree):
