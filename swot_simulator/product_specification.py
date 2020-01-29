@@ -49,7 +49,7 @@ def _parse_type(dtype, width, signed):
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray) -> Dict[str, Any]:
-    def _encode(attr_value: int, properties: Dict[str, str]):
+    def _encode(attr_value: Union[int, float], properties: Dict[str, str]):
         return getattr(np, properties["dtype"])(attr_value)
 
     def _iso_date(date: np.datetime64) -> str:
@@ -190,6 +190,8 @@ def _create_variable(dataset: netCDF4.Dataset,
     ncvar.setncatts(variable.attrs)
     values = variable.values
     if kwargs['fill_value'] is not None:
+        if values.dtype.kind == "f" and np.any(np.isnan(values)):
+            values[np.isnan(values)] = kwargs['fill_value']
         values = np.ma.array(values, mask=values == kwargs['fill_value'])
     dataset[name][:] = values
 
@@ -266,15 +268,15 @@ class ProductSpecification:
         # Reading the storage properties of the variable ()
         encoding: Dict[str, Any] = dict(_FillValue=fill_value,
                                         dtype=properties["dtype"])
-        for item in ["add_offset", "scale_factor"]:
-            if item in attrs:
-                encoding[item] = float(attrs[item])
-                del attrs[item]
 
         # Some values read from the XML files must be decoded
-        for item in ["valid_min", "valid_max"]:
+        for item in ["add_offset", "scale_factor", "valid_min", "valid_max"]:
             if item in attrs:
                 attrs[item] = float(attrs[item])
+        if "scale_factor" in attrs and "add_offset" not in attrs:
+            attrs["add_offset"] = 1.0
+        if "add_offset" in attrs and "scale_factor" not in attrs:
+            attrs["add_offset"] = 0.0
         return encoding, xr.DataArray(data=data,
                                       dims=properties["shape"],
                                       name=name,

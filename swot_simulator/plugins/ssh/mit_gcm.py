@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Interpolate SSH from MIT/GCM model
+==================================
+"""
 import logging
 import dask.distributed
 import dask.array as da
@@ -75,12 +83,13 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     mesh.packing(
         np.vstack((np.concatenate(x), np.concatenate(y))).T, np.concatenate(z))
     del x, y, z
-    z, _ = mesh.inverse_distance_weighting(np.vstack((x_sat, y_sat)).T,
+    z, _ = mesh.inverse_distance_weighting(np.vstack(
+        (x_sat, y_sat)).T.astype("float32"),
                                            within=True,
                                            k=11,
                                            radius=55000,
                                            num_threads=1)
-    return z
+    return z.astype("float32")
 
 
 class MITGCM(detail.Interface):
