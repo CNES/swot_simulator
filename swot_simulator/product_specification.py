@@ -274,9 +274,9 @@ class ProductSpecification:
             if item in attrs:
                 attrs[item] = float(attrs[item])
         if "scale_factor" in attrs and "add_offset" not in attrs:
-            attrs["add_offset"] = 1.0
-        if "add_offset" in attrs and "scale_factor" not in attrs:
             attrs["add_offset"] = 0.0
+        if "add_offset" in attrs and "scale_factor" not in attrs:
+            attrs["scale_factor"] = 1.0
         return encoding, xr.DataArray(data=data,
                                       dims=properties["shape"],
                                       name=name,
