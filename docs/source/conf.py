@@ -13,7 +13,7 @@ import os
 # -- Project information -----------------------------------------------------
 
 project = 'SWOT simulator'
-copyright = '(2019, CNES/JPL)'
+copyright = '(2020, CNES/JPL)'
 author = 'CNES/JPL'
 
 # The short X.Y version

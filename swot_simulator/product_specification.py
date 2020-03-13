@@ -308,19 +308,19 @@ class ProductSpecification:
     def ssh_nadir(self, ssh: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
-            'dtype': 'int32',
-            'scale_factor': 0.0001
+            'dtype': 'int32'
         }, xr.DataArray(data=ssh,
                         dims=self.variables["basic/time"]["shape"],
-                        name="bsic/ssh_nadir",
+                        name="basic/ssh_nadir",
                         attrs={
+                            'coordinates': 'longitude latitude',
                             'long_name': 'sea surface height',
+                            'scale_factor': 0.0001,
                             'standard_name':
                             'sea surface height above reference ellipsoid',
                             'units': 'm',
                             'valid_min': -15000000.0,
-                            'valid_max': 150000000.0,
-                            'coordinates': 'longitude latitude'
+                            'valid_max': 150000000.0
                         })
 
     def fill_variables(self, variables,
@@ -366,7 +366,7 @@ class Nadir:
         # Variables that are not calculated are filled in in order to have a
         # product compatible with the PDD SWOT. Longitude is used as a
         # template.
-        if complete_product:
+        if complete_product and "basic/longitude" in vars:
             item = vars["basic/longitude"]
             shape = dict(zip(item.dims, item.shape))
             shape["num_sides"] = 2
