@@ -6,11 +6,9 @@
 Orbit Propagator
 ----------------
 """
-from typing import Dict, IO, Iterable, Optional, Tuple
-import collections
+from typing import Dict, Iterable, Optional, TextIO, Tuple
 import logging
 import numpy as np
-import scipy.interpolate
 from . import math
 from . import settings
 from . import VOLUMETRIC_MEAN_RADIUS
@@ -19,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def load_ephemeris(
-        stream: IO, cols: Optional[Iterable[int]] = None
+        stream: TextIO, cols: Optional[Iterable[int]] = None
 ) -> Tuple[Dict[str, float], Tuple]:
     """Loads a tabular file describing a satellite orbit."""
     if cols is None:
@@ -157,7 +155,8 @@ class Pass:
         self._time = self.timedelta + date
 
 
-def calculate_orbit(parameters: settings.Parameters, ephemeris: IO) -> Orbit:
+def calculate_orbit(parameters: settings.Parameters,
+                    ephemeris: TextIO) -> Orbit:
     """Computes the orbit nadir on a subdomain.
 
     The path of the satellite is given by the orbit file and the subdomain

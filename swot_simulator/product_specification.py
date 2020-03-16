@@ -27,6 +27,24 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
+GROUP = dict(
+    basic=dict(
+        description="Provides corrected sea surface height (SSH), sea surface "
+        "height anomaly (SSHA), flags to indicate data quality, geophysical "
+        "reference fields, and height-correction information on a 2 km "
+        "geographically fixed grid."),
+    windwave=dict(
+        description="Provides measured significant wave height (SWH), "
+        "normalized radar cross section (NRCS or backscatter cross section or "
+        "sigma0), wind speed derived from sigma0 and SWH, model information "
+        "on wind and waves, and quality flags on a 2 km geographically fixed "
+        "grid."),
+    expert=dict(
+        description="Includes copies of the Basic and the Wind and Wave files "
+        "plus more detailed information on instrument and environmental "
+        "corrections, radiometer data, and geophysical models on a 2 km "
+        "geographically fixed grid."))
+
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
     result = element.find(tag)
@@ -48,7 +66,8 @@ def _parse_type(dtype, width, signed):
 
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
-                      pass_number: int, date: np.ndarray) -> Dict[str, Any]:
+                      pass_number: int, date: np.ndarray, lng: np.ndarray,
+                      lat: np.ndarray) -> Dict[str, Any]:
     def _encode(attr_value: Union[int, float], properties: Dict[str, str]):
         return getattr(np, properties["dtype"])(attr_value)
 
@@ -80,25 +99,41 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
     result = collections.OrderedDict({
         "Conventions": "CF-1.7",
+        "title": attributes["title"]["attrs"]["description"],
+        "institution": "CNES/JPL",
+        "source": "Simulate product",
+        "history": now,
+        "platform": "SWOT",
+        "references": REFERENCE,
+        "reference_document": "D-56407_SWOT_Product_Description_L2_LR_SSH",
         "contact": "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
         "cycle_number": _encode(cycle_number, attributes["cycle_number"]),
+        "pass_number": _encode(pass_number, attributes["pass_number"]),
+        "time_coverage_start": _iso_date(date[0]),
+        "time_coverage_end": _iso_date(date[-1]),
+        "time_coverage_duration": _iso_duration(date[-1] - date[0]),
+        "time_coverage_resolution": "P1S",
+        "geospatial_lon_min": lng.min(),
+        "geospatial_lon_max": lng.max(),
+        "geospatial_lat_min": lat.min(),
+        "geospatial_lat_max": lat.max()})
+    if len(lng.shape) == 2:
+        result.update({
+            "left_first_longitude": lng[0, 0],
+            "left_first_latitude": lat[0, 0],
+            "left_last_longitude": lng[-1, 0],
+            "left_last_latitude": lat[-1, 0],
+            "right_first_longitude": lng[0, -1],
+            "right_first_latitude": lat[0, -1],
+            "right_last_longitude": lng[-1, -1],
+            "right_last_latitude": lat[-1, -1],
+        })
+    result.update({
+        "wavelength": _encode(0.008385803020979, attributes["wavelength"]),
+        "orbit_solution": "POE",
         "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
         "ellipsoid_flattening": ellipsoid_flattening,
-        "history": now,
-        "institution": "CNES/JPL",
-        "mission_name": "SWOT",
-        "orbit_solution": "POE",
-        "pass_number": _encode(pass_number, attributes["pass_number"]),
-        "reference_document": "D-56407_SWOT_Product_Description_L2_LR_SSH",
-        "references": REFERENCE,
-        "source": "Simulate product",
         "standard_name_vocabulary": "CF Standard Name Table vNN",
-        "time_coverage_duration": _iso_duration(date[-1] - date[0]),
-        "time_coverage_end": _iso_date(date[-1]),
-        "time_coverage_resolution": "P1S",
-        "time_coverage_start": _iso_date(date[0]),
-        "title": attributes["title"]["attrs"]["description"],
-        "wavelength": _encode(0.008385803020979, attributes["wavelength"]),
     })
     for item in attributes:
         if item.startswith("xref_input"):
@@ -184,6 +219,8 @@ def _create_variable(dataset: netCDF4.Dataset,
     if group is not None:
         if group not in dataset.groups:
             dataset = dataset.createGroup(group)
+            if group in GROUP:
+                dataset.setncatts(GROUP[group])
         else:
             dataset = dataset.groups[group]
     ncvar = dataset.createVariable(name, dtype, variable.dims, **kwargs)
@@ -374,12 +411,19 @@ class Nadir:
                     vars.keys(), shape):
                 self.encoding[array.name] = encoding
                 self.data_vars.append(array)
+        if "basic/longitude" in vars:
+            lng = vars["basic/longitude"]
+            lat = vars["basic/latitude"]
+        else:
+            lng = vars["expert/longitude_nadir"]
+            lat = vars["expert/latitude_nadir"]
 
         dataset = xr.Dataset(data_vars=dict(
             (item.name, item) for item in self.data_vars),
                              attrs=global_attributes(
                                  self.product_spec.attributes, cycle_number,
-                                 pass_number, self.data_vars[0].values))
+                                 pass_number, self.data_vars[0].values, lng,
+                                 lat))
         to_netcdf(dataset, path, self.encoding, mode="w")
 
 
