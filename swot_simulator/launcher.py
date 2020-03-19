@@ -21,6 +21,7 @@ from . import logbook
 from . import product_specification
 from . import orbit_propagator
 from . import settings
+from .lib.error import error_swot
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ LOGGER = logging.getLogger(__name__)
 
 def datetime_type(value):
     """The option should define a datetime"""
+    # Check if value is a datetime
     try:
         value = dateutil.parser.parse(value)
     except ValueError as error:
@@ -38,11 +40,15 @@ def datetime_type(value):
 
 def writable_directory(value):
     """The option should define a writable directory"""
+    ## TODO: create directory if it does not exist?
+    # Check if value exists
     if not os.path.exists(value):
-        raise argparse.ArgumentTypeError(
-            f"no such file or directory: {value!r}")
+        _err = f"no such file or directory: {value!r}"
+        raise argparse.ArgumentTypeError(_err)
+    # Check if value is a directory
     if not os.path.isdir(value):
         raise argparse.ArgumentTypeError(f"{value!r} is not a directory")
+    # Check if directory value is writable
     if not os.access(value, os.W_OK):
         raise argparse.ArgumentTypeError(
             f"cannot open directory {value!r} for writing")
@@ -75,6 +81,7 @@ def usage() -> argparse.Namespace:
                        metavar='PATH',
                        help="Path to the logbook to use",
                        type=argparse.FileType("w"))
+    ## TODO: set default to 1 to avoid burning small computers
     group.add_argument("--threads-per-worker",
                        help="Number of threads per each worker. "
                        f"Defaults to {os.cpu_count()}",
@@ -95,7 +102,7 @@ def file_path(date: np.datetime64,
               cycle_number: int,
               pass_number: int,
               working_directory: str,
-              nadir: Optional[bool] = False):
+              nadir: Optional[bool] = False) -> str:
     """Get the absolute path of the file to be created."""
     date = datetime.datetime.utcfromtimestamp(
         date.astype("datetime64[s]").astype("int64"))
@@ -103,15 +110,14 @@ def file_path(date: np.datetime64,
     dirname = os.path.join(working_directory, product_type,
                            date.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
-
-    return os.path.join(
-        dirname,
-        f"swot_{product_type}_c{cycle_number:03d}_p{pass_number:03d}.nc")
+    _file_name = f"swot_{product_type}_c{cycle_number:03d}_p{pass_number:03d}.nc"
+    return os.path.join(dirname, _file_name)
 
 
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
-             orbit: orbit_propagator.Orbit,
+             first_date: np.datetime64, orbit: orbit_propagator.Orbit,
              parameters: settings.Parameters) -> None:
+    """ Main program to simulate satellite pass """
     LOGGER.info(f"generate pass {cycle_number}/{pass_number}")
 
     # Compute the spatial/temporal position of the satellite
@@ -128,6 +134,9 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         # ignored
         path = file_path(date, cycle_number, pass_number,
                          parameters.working_directory)
+        ## TODO: remove, option to overwrite path
+        delta_al = parameters.delta_al
+        delta_ac = parameters.delta_ac
         if not os.path.exists(path):
 
             # Interpolation of the SSH if the user wishes.
@@ -139,6 +148,13 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                         track.lon.flatten(), track.lat.flatten(),
                         swath_time.flatten()).reshape(track.lon.shape))
 
+            # Computation of noise
+            edict = error_swot.make_error(track.x_al, track.x_ac,
+                                          track.al_cycle, track.time,
+                                          cycle_number, delta_al, delta_ac,
+                                          first_date,
+                                          parameters.dict_error())
+            product.error(parameters, edict)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
 
@@ -198,14 +214,14 @@ def launch(client: dask.distributed.Client,
 
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
-
     date = first_date or datetime.datetime.now()
     while date <= last_date:
         cycle, track = orbit.decode_absolute_pass_number(absolute_track)
 
         # Generation of the simulated product.
         futures.append(
-            client.submit(simulate, cycle, track, date, _orbit, _parameters))
+            client.submit(simulate, cycle, track, date, first_date, _orbit,
+                          _parameters))
 
         # Shift the date of the duration of the generated pass
         date += orbit.pass_duration(track)
