@@ -80,8 +80,9 @@ class AVISO(detail.CartesianGridHandler):
                     time: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
+        time2 = time.astype("datetime64[ns]")
         ssh = interpolator.trivariate(dict(longitude=lon,
                                            latitude=lat,
-                                           time=time),
+                                           time=time2),
                                       interpolator='bilinear')
         return ssh
