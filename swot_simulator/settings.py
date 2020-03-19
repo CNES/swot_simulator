@@ -12,7 +12,7 @@ import os
 import logging
 import traceback
 import types
-from . import math
+from . import math_func
 from .plugins import ssh
 
 #: Default working directory
@@ -93,7 +93,22 @@ class Parameters:
         ssh_plugin=(None, ssh.Interface),
         shift_lon=(None, float),
         shift_time=(None, float),
-        working_directory=(DEFAULT_WORKING_DIRECTORY, str))
+        len_repeat=(40000*14*50, float),
+        npseudoper=(30, int),
+        save_signal=(True, bool),
+        roll_phase_file=(None, str),
+        lambda_max=(20000, float),
+        ncomp1d=(2000, int),
+        ncomp2d=(2000, int),
+        error_spectrum_file=(None, str),
+        karin_file=(None, str),
+        swh=(2, int),
+        nrand_karin=(1000, int),
+        nbeam=(2, int),
+        sigma=(6, float),
+        beam_position=((-20, 20), list),
+        working_directory=(DEFAULT_WORKING_DIRECTORY, str),
+        )
 
     def __init__(self, overrides: Dict[str, Any]):
         if "ephemeris" not in overrides:
@@ -140,8 +155,20 @@ class Parameters:
         self.__dict__.update((key, value) for key, value in settings.items())
 
     @property
-    def box(self) -> math.Box:
+    def box(self) -> math_func.Box:
         area = self.__dict__["area"]
         if area is None:
-            return math.Box()
-        return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
+            return math_func.Box()
+        return math_func.Box(math_func.Point(*area[:2]),
+                             math_func.Point(*area[-2:]))
+
+    def dict_error(self) -> dict:
+        err = {}
+        list_param_err = ['len_repeat', 'npseudoper', 'save_signal',
+                          'roll_phase_file', 'lambda_max', 'ncomp1d',
+                          'ncomp2d', 'error_spectrum_file', 'karin_file', 'swh',
+                          'nrand_karin', 'nbeam', 'sigma', 'beam_position',
+                          'roll_phase_file']
+        for key in list_param_err:
+            err[key] = self.__dict__[key]
+        return err

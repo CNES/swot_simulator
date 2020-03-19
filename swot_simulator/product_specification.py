@@ -18,7 +18,8 @@ import numpy as np
 import xarray as xr
 import xml.etree.ElementTree as xt
 from . import orbit_propagator
-from . import math
+from . import math_func
+from os import name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ GROUP = dict(
 
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
+    """ Find a tag in the xml format specifcation file"""
     result = element.find(tag)
     if result is None:
         raise RuntimeError("The XML tag '" + tag + "' doesn't exist")
@@ -54,6 +56,7 @@ def _find(element: xt.Element, tag: str) -> xt.Element:
 
 
 def _parse_type(dtype, width, signed):
+    """ Parse type from xml format specification file. """
     if dtype == "real":
         return getattr(np, "float" + width)
     elif dtype == "integer":
@@ -142,6 +145,8 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
 
 def _parser(tree: xt.ElementTree):
+    """ Parse variables, attributes and shapes from xml format specification
+    file"""
     variables = dict()
     attributes = dict()
     shapes = dict()
@@ -325,12 +330,12 @@ class ProductSpecification:
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
         return self._data_array("basic/longitude",
-                                math.normalize_longitude(lon, 0))
+                                math_func.normalize_longitude(lon, 0))
 
     def lon_nadir(self, lon_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
         return self._data_array("expert/longitude_nadir",
-                                math.normalize_longitude(lon_nadir, 0))
+                                math_func.normalize_longitude(lon_nadir, 0))
 
     def lat(self, lat: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return self._data_array("basic/latitude", lat)
@@ -359,6 +364,168 @@ class ProductSpecification:
                             'valid_min': -15000000.0,
                             'valid_max': 150000000.0
                         })
+
+    def baseline_dilation(self, bd: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=bd,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/baseline_dilation",
+                        attrs={
+                            'long_name': 'Error due to baseline mast dilation',
+                            'standard_name': '',
+                            'scale_factor': 0.000001,
+                            '_FillValue': 2147483647,
+                            'units': 'm',
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+
+    def roll(self, roll: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=roll,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/roll",
+                        attrs={
+                            'long_name': 'Error due to roll',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.000001,
+                            '_FillValue': 2147483647,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+
+    def phase(self, phase: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=phase,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/phase",
+                        attrs={
+                            'long_name': 'Error due to phase',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            '_FillValue': 2147483647,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+
+    def roll_phase_est(self, rpe: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=rpe,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/roll_phase_est",
+                        attrs={
+                            'long_name': 'Error after estimaton of roll phase',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+    def karin(self, karin: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=karin,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/karin",
+                        attrs={
+                            'long_name': 'KaRIn error',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+    def timing(self, timing: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=timing,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/timing",
+                        attrs={
+                            'long_name': 'Timing error',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+    def wt(self, wt: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=wt,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/wt",
+                        attrs={
+                            'long_name': 'Error due to wet tropo path delay',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+
+    def wet_tropo1(self, wet_tropo1: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=wet_tropo1,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/wet_tropo1",
+                        attrs={
+                            'long_name': 'Error due to wet tropo path delay corrected with one beam',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+    def wet_tropo2(self, wet_tropo2: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32',
+            'scale_factor': 0.0001
+        }, xr.DataArray(data=wet_tropo2,
+                        dims=self.variables["basic/ssh_karin"]["shape"],
+                        name="basic/wet_tropo2",
+                        attrs={
+                            'long_name': 'Error due to wet tropo path delay corrected with two beams',
+                            'standard_name': '',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'valid_min': -15000000.0,
+                            'valid_max': 150000000.0,
+                            'coordinates': 'longitude latitude'
+                        })
+
 
     def fill_variables(self, variables,
                        shape) -> Iterator[Tuple[Dict, xr.DataArray]]:
@@ -395,8 +562,12 @@ class Nadir:
     def ssh(self, array: np.ndarray) -> None:
         self._data_array("ssh_nadir", array)
 
-    def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
-                  complete_product: bool) -> None:
+    def error(self, parameter, edict: Dict) -> None:
+        for key in edict.keys():
+            self._data_array(key, edict[key])
+
+    def to_netcdf(self, cycle_number: int, pass_number: int,
+                  path: str, complete_product: bool) -> None:
         LOGGER.info("write %s", path)
         vars = dict((item.name, item) for item in self.data_vars)
 
@@ -431,11 +602,9 @@ class Swath(Nadir):
     def __init__(self, track: orbit_propagator.Pass) -> None:
         super().__init__(track, False)
         self.num_pixels = track.x_ac.size
-        self._data_array(
-            "x_ac",
-            np.full((track.time.size, track.x_ac.size),
-                    track.x_ac,
-                    dtype=track.x_ac.dtype))._data_array(
+        _x_ac = np.full((track.time.size, track.x_ac.size), track.x_ac,
+                         dtype=track.x_ac.dtype)
+        self._data_array("x_ac", _x_ac)._data_array(
                         "lon", track.lon)._data_array("lat", track.lat)
 
     def ssh(self, array: np.ndarray) -> None:
