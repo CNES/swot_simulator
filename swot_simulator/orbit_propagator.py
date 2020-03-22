@@ -16,9 +16,8 @@ from . import VOLUMETRIC_MEAN_RADIUS
 LOGGER = logging.getLogger(__name__)
 
 
-def load_ephemeris(
-        stream: TextIO, cols: Optional[Iterable[int]] = None
-) -> Tuple[Dict[str, float], Tuple]:
+def load_ephemeris(stream: TextIO, cols: Optional[Iterable[int]] = None
+                   ) -> Tuple[Dict[str, float], Tuple]:
     """Loads a tabular file describing a satellite orbit."""
     if cols is None:
         cols = (1, 2, 0)
@@ -210,8 +209,8 @@ def calculate_orbit(parameters: settings.Parameters,
     # Rearrange orbit starting from pass 1
     lon, lat, time, pass_time = rearrange_orbit(cycle_duration, lon, lat, time)
 
-    # Get the selected domain
-    lon, lat, time, distance = select_box(parameters.box, lon, lat, time)
+    # Calculates the along track distance
+    distance = math.curvilinear_distance(lon, lat, VOLUMETRIC_MEAN_RADIUS)
 
     # Interpolate the final orbit according the given along track resolution
     x_al = np.arange(distance[0],
@@ -244,6 +243,15 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     time = orbit.time[indexes]
     x_al = orbit.x_al[indexes]
     al_cycle = orbit.al_cycle
+
+    # Selects the orbit in the defined box
+    mask = parameters.box.within(lon_nadir, lat_nadir)
+    if np.all(~mask):
+        return
+    lon_nadir = lon_nadir[mask]
+    lat_nadir = lat_nadir[mask]
+    time = time[mask]
+    x_al = x_al[mask]
 
     # Compute accross track distances from nadir
     # Number of points in half of the swath
