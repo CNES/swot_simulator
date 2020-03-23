@@ -77,7 +77,6 @@ class error_stat():
         _to_km = (1 / (Fka * 2*np.pi / sat_const['C'] * sat_const['B'])
                   * (1 + sat_elev/Rearth)*np.pi/180. * 10**3)
         if not (roll_phase_file is None):
-             print('roll_phase_file', roll_phase_file)
          # - Compute the associated phase error on the swath in m
              results = read_roll_phase(roll_phase_file, first_date)
              roll_phase, time_date, remaining1, remaining2 = results

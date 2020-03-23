@@ -37,27 +37,33 @@ def make_error(x_al:np.array, x_ac:np.array, al_cycle:float, time:np.array,
     ti = error_timing.error_stat(ds)
     wt = error_wt.error_stat(dal, par_err['ncomp2d'])
     if par_err['save_signal'] is True:
-        bd.init_error_savesignal(dal, par_err['lambda_max'], par_err['npseudoper'], par_err['len_repeat'])
-        rp.init_error_savesignal(dal, par_err['lambda_max'], par_err['npseudoper'], par_err['len_repeat'])
-        ti.init_error_savesignal(dal, par_err['lambda_max'], par_err['npseudoper'], par_err['len_repeat'])
+        bd.init_error_savesignal(dal, par_err['lambda_max'],
+                                 par_err['npseudoper'], par_err['len_repeat'])
+        rp.init_error_savesignal(dal, par_err['lambda_max'],
+                                 par_err['npseudoper'], par_err['len_repeat'])
+        ti.init_error_savesignal(dal, par_err['lambda_max'],
+                                 par_err['npseudoper'], par_err['len_repeat'])
     else:
         bd.init_error_gensignal(par_err['ncomp1d'])
         rp.init_error_gensignal(par_err['ncomp1d'])
         ti.init_error_gensignal(par_err['ncomp1d'])
     wt.init_error_gensignal(par_err['ncomp2d'])
     karin.init_error(np.shape(x_ac)[0])
-    bd.make_error(x_al, al_cycle, cycle_number, dal, par_err['npseudoper'], sat_const,
-                  par_err['len_repeat'], lmax=par_err['lambda_max'], savesignal=par_err['save_signal'])
-    rp.make_error(time, x_al, al_cycle, cycle_number, dal, par_err['npseudoper'],
+    bd.make_error(x_al, al_cycle, cycle_number, dal, par_err['npseudoper'],
                   sat_const, par_err['len_repeat'], lmax=par_err['lambda_max'],
+                  savesignal=par_err['save_signal'])
+    rp.make_error(time, x_al, al_cycle, cycle_number, dal,
+                  par_err['npseudoper'], sat_const, par_err['len_repeat'],
+                  lmax=par_err['lambda_max'],
                   savesignal=par_err['save_signal'],
                   roll_phase_file=par_err['roll_phase_file'],
                   first_date=first_date)
-    ti.make_error(x_al, al_cycle, cycle_number, dal, par_err['npseudoper'], sat_const,
-                  par_err['len_repeat'], lmax=par_err['lambda_max'], savesignal=par_err['save_signal'])
+    ti.make_error(x_al, al_cycle, cycle_number, dal, par_err['npseudoper'],
+                  sat_const, par_err['len_repeat'], lmax=par_err['lambda_max'],
+                  savesignal=par_err['save_signal'])
     wt.make_error(x_al, x_ac, al_cycle, cycle_number, dal, dac,
-                  par_err['nbeam'], par_err['sigma'],
-                  par_err['beam_position'], sat_const)
+                  par_err['nbeam'], par_err['sigma'], par_err['beam_position'],
+                  sat_const)
 
     karin.make_error(x_al, x_ac, al_cycle, cycle_number, dal, dac,
                      par_err['swh'])
@@ -71,3 +77,11 @@ def make_error(x_al:np.array, x_ac:np.array, al_cycle:float, time:np.array,
 
     return dic_err
 
+def add_error(dic_err:dict, ssh_true:np.array) -> np.array:
+    ssh = + ssh_true
+    list_key_error = ['timing', 'karin', 'roll_phase_est', 'wet_tropo2',
+                      'baseline_dilation']
+    for key in dic_err.keys():
+        if key in list_key_error:
+            ssh = ssh + dic_err[key]
+    return ssh
