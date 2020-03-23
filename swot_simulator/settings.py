@@ -93,6 +93,7 @@ class Parameters:
         ssh_plugin=(None, ssh.Interface),
         shift_lon=(None, float),
         shift_time=(None, float),
+        noise=(True, bool),
         len_repeat=(40000*14*50, float),
         npseudoper=(30, int),
         save_signal=(True, bool),

@@ -22,6 +22,7 @@ from . import product_specification
 from . import orbit_propagator
 from . import settings
 from .lib.error import error_swot
+from .lib.error import error_nadir
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -143,24 +144,28 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
             if parameters.ssh_plugin is not None:
                 swath_time = np.repeat(track.time, track.lon.shape[1]).reshape(
                     track.lon.shape)
-                product.ssh(
-                    parameters.ssh_plugin.interpolate(
-                        track.lon.flatten(), track.lat.flatten(),
-                        swath_time.flatten()).reshape(track.lon.shape))
+                _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
+                                                         track.lat.flatten(),
+                                                         swath_time.flatten())
+                ssh = _ssh.reshape(track.lon.shape)
+                product.ssh_true(ssh)
 
-            # Computation of noise
-            edict = error_swot.make_error(track.x_al, track.x_ac,
-                                          track.al_cycle, track.time,
-                                          cycle_number, delta_al, delta_ac,
-                                          first_date,
-                                          parameters.dict_error())
-            product.error(parameters, edict)
+            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
+                # Computation of noise
+                edict = error_swot.make_error(track.x_al, track.x_ac,
+                                              track.al_cycle, track.time,
+                                              cycle_number, delta_al, delta_ac,
+                                              first_date,
+                                              parameters.dict_error())
+                if parameters.ssh_plugin is not None:
+                    product.ssh(error_swot.add_error(edict, ssh))
+                product.error(parameters, edict)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
-
+        standalone=False
     # Create the nadir dataset
     if parameters.nadir:
-        product = product_specification.Nadir(track)
+        product = product_specification.Nadir(track, standalone=standalone)
 
         # If the file has already been generated, the other operations are
         # ignored
@@ -173,10 +178,18 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
             # Interpolation of the SSH if the user wishes.
             if parameters.ssh_plugin is not None:
-                product.ssh(
-                    parameters.ssh_plugin.interpolate(track.lon_nadir,
-                                                      track.lat_nadir,
-                                                      track.time))
+                ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
+                                                         track.lat_nadir,
+                                                         track.time)
+                product.ssh_true(ssh)
+            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
+                # Computation of noise
+                edict = error_nadir.make_error(track.x_al, track.al_cycle,
+                                               cycle_number, delta_al,
+                                               parameters.dict_error())
+                if parameters.ssh_plugin is not None:
+                    product.ssh(error_nadir.add_error(edict, ssh))
+                product.error(parameters, edict)
 
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
