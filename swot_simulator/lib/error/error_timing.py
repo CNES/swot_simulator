@@ -18,21 +18,24 @@ class error_stat():
 
 
     def init_error_savesignal(self, delta_al:float, lambda_max: float,
-                               npseudoper: int, len_repeat:int)-> None:
+                              npseudoper: int, len_repeat:int,
+                              nseed: Optional[int]=0)-> None:
         """Compute random coefficients using the power spectrum """
         gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PStim,
                                             2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat)
+                                            npseudoper, len_repeat, nseed)
         self.A_tim_l, self.phi_tim_l = gencoef
         gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PStim,
                                             2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat)
+                                            npseudoper, len_repeat, nseed)
         self.A_tim_r, self.phi_tim_r = gencoef
 
-    def init_error_gensignal(ncomp1d: int)-> None:
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d)
+    def init_error_gensignal(ncomp1d: int, nseed: Optional[int]=0)-> None:
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d,
+                                           nseed)
         self.A_tim_l, self.phi_tim_l, self.fr_tim_l = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d,
+                                           nseed)
         self.A_tim_r, self.phi_tim_r, self.fr_tim_r = gencoef
 
 

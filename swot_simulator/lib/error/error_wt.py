@@ -28,10 +28,12 @@ class error_stat():
         self.freq = f
 
 
-    def init_error_gensignal(self, ncomp2d: int)-> None:
+    def init_error_gensignal(self, ncomp2d: int,
+                             nseed: Optional[int]=0)-> None:
         # - Compute random coefficients in 2D using the previously
         #   defined power spectrum
-        gencoef = utils.gen_coeff_signal2d(self.freq, self.PSwt, ncomp2d)
+        gencoef = utils.gen_coeff_signal2d(self.freq, self.PSwt, ncomp2d,
+                                           nseed + 100)
         self.A_wt, self.phi_wt, self.frx_wt, self.fry_wt = gencoef
         # - Define radiometer error power spectrum for a beam
         #   High frequencies are cut to filter the associated error:
@@ -43,9 +45,11 @@ class error_stat():
         PSradio[np.where(self.freq > 0.0683)] = 0.32
         # - Compute random coefficients (1D) for the radiometer error
         #   power spectrum for right and left beams
-        gencoef = utils.gen_coeff_signal1d(self.freq, PSradio, ncomp2d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, PSradio, ncomp2d,
+                                           nseed + 200)
         self.A_radio_r, self.phi_radio_r, self.fr_radio_r = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, PSradio, ncomp2d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, PSradio, ncomp2d,
+                                           nseed + 300)
         self.A_radio_l, self.phi_radio_l, self.fr_radio_l = gencoef
 
 

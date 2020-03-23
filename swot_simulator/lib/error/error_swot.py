@@ -28,6 +28,7 @@ def make_error(x_al:np.array, x_ac:np.array, al_cycle:float, time:np.array,
                cycle_number:int, dal:int, dac:int, first_date: np.datetime64,
                par_err:dict)->dict:
     dic_err = {}
+    ns = par_err['nseed']
     ds = utils.read_file_instr(par_err['error_spectrum_file'], dal,
                                par_err['lambda_max'])
     bd = error_baselinedilation.error_stat(ds)
@@ -38,17 +39,20 @@ def make_error(x_al:np.array, x_ac:np.array, al_cycle:float, time:np.array,
     wt = error_wt.error_stat(dal, par_err['ncomp2d'])
     if par_err['save_signal'] is True:
         bd.init_error_savesignal(dal, par_err['lambda_max'],
-                                 par_err['npseudoper'], par_err['len_repeat'])
+                                 par_err['npseudoper'], par_err['len_repeat'],
+                                 nseed=(ns + 1))
         rp.init_error_savesignal(dal, par_err['lambda_max'],
-                                 par_err['npseudoper'], par_err['len_repeat'])
+                                 par_err['npseudoper'], par_err['len_repeat'],
+                                 nseed=(ns + 2))
         ti.init_error_savesignal(dal, par_err['lambda_max'],
-                                 par_err['npseudoper'], par_err['len_repeat'])
+                                 par_err['npseudoper'], par_err['len_repeat'],
+                                 nseed=(ns + 3))
     else:
-        bd.init_error_gensignal(par_err['ncomp1d'])
-        rp.init_error_gensignal(par_err['ncomp1d'])
-        ti.init_error_gensignal(par_err['ncomp1d'])
-    wt.init_error_gensignal(par_err['ncomp2d'])
-    karin.init_error(np.shape(x_ac)[0])
+        bd.init_error_gensignal(par_err['ncomp1d'], nseed=(ns + 1))
+        rp.init_error_gensignal(par_err['ncomp1d'], nseed=(ns + 2))
+        ti.init_error_gensignal(par_err['ncomp1d'], nseed=(ns + 3))
+    wt.init_error_gensignal(par_err['ncomp2d'], nseed=(ns + 4))
+    karin.init_error(np.shape(x_ac)[0], ns)
     bd.make_error(x_al, al_cycle, cycle_number, dal, par_err['npseudoper'],
                   sat_const, par_err['len_repeat'], lmax=par_err['lambda_max'],
                   savesignal=par_err['save_signal'])

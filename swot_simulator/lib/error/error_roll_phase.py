@@ -38,29 +38,34 @@ class error_stat():
         self.freq = ds.spatial_frequency.data
 
     def init_error_savesignal(self, delta_al:float, lambda_max:float,
-                              npseudoper: int, len_repeat: int):
+                              npseudoper: int, len_repeat: int,
+                              nseed: Optional[int]=0)-> None:
         """Compute random coefficients using the power spectrum """
         gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSroll,
                                             2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat)
+                                            npseudoper, len_repeat, nseed)
         self.A_roll, self.phi_roll = gencoef
         gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSphase,
                                             2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat)
+                                            npseudoper, len_repeat, nseed)
         self.A_phase_l, self.phi_phase_l = gencoef
         gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSphase,
                                             2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat)
+                                            npseudoper, len_repeat, nseed)
 
         self.A_phase_r, self.phi_phase_r = gencoef
 
-    def init_error_gensignal(self, ncomp1d: int):
+    def init_error_gensignal(self, ncomp1d: int,
+                             nseed: Optional[int]=0)-> None:
         """Compute random signal using the power spectrum """
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSroll, ncomp1d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSroll, ncomp1d,
+                                           nseed)
         self.A_roll, self.phi_roll, self.fr_roll = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d,
+                                           nseed)
         self.A_phase_l, self.phi_phase_l, self.fr_phase_l = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d)
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d,
+                                           nseed)
         self.A_phase_r, self.phi_phase_r, self.fr_phase_r = gencoef
 
 

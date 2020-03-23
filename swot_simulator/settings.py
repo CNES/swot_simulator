@@ -108,6 +108,7 @@ class Parameters:
         nbeam=(2, int),
         sigma=(6, float),
         beam_position=((-20, 20), list),
+        nseed=(0, int),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
         )
 
@@ -169,7 +170,7 @@ class Parameters:
                           'roll_phase_file', 'lambda_max', 'ncomp1d',
                           'ncomp2d', 'error_spectrum_file', 'karin_file', 'swh',
                           'nrand_karin', 'nbeam', 'sigma', 'beam_position',
-                          'roll_phase_file']
+                          'roll_phase_file', 'nseed']
         for key in list_param_err:
             err[key] = self.__dict__[key]
         return err

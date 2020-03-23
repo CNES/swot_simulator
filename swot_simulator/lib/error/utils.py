@@ -93,7 +93,7 @@ def read_file_karin(file_karin: str, swh): # -> xr.core.dataset.Dataset:
 
 def gen_rcoeff_signal1d(f:np.ndarray, PS:np.ndarray,
                         lambda_min:float, lambda_max:float, npseudoper:int,
-                        repeat:int): # ->Tuple[np.ndarray, np.ndarray]:
+                        repeat:int, nseed:int): # ->Tuple[np.ndarray, np.ndarray]:
     '''Generate nc random coefficient from a spectrum PS
     with frequencies f. \n
     Return Amplitude, phase and frequency of nc realisations'''
@@ -109,12 +109,13 @@ def gen_rcoeff_signal1d(f:np.ndarray, PS:np.ndarray,
     A = np.sqrt(2 * PSl * (ffl / npseudoper))
     phi = []
     for k in range(len(ffl)):
+        np.random.seed(nseed + k*1000)
         phi.append(2 * np.pi * np.random.random(int(2 * repeat * ffl[k]
                                                   / npseudoper + 3)))
     return A, phi
 
 
-def gen_coeff_signal1d(f: np.ndarray, PS: np.ndarray, nc: int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def gen_coeff_signal1d(f: np.ndarray, PS: np.ndarray, nc: int, nseed:int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     '''Generate nc random coefficient from a spectrum PS
     with frequencies f. \n
     Return Amplitude, phase and frequency of nc realisations'''
@@ -124,6 +125,7 @@ def gen_coeff_signal1d(f: np.ndarray, PS: np.ndarray, nc: int): # -> Tuple[np.nd
     logf = np.log10(f)
     logf1 = np.log10(f1)
     logf2 = np.log10(f2)
+    np.random.seed(nseed)
     # ''' Compute nc random vectors in [logf1, logf2] '''
     logfr = (logf2 - logf1)*np.random.random(nc) + logf1
     fr = 10**(logfr)
@@ -133,6 +135,7 @@ def gen_coeff_signal1d(f: np.ndarray, PS: np.ndarray, nc: int): # -> Tuple[np.nd
     PSr = 10**(logPSr)
     A = np.sqrt(0.5 * PSr * fr * ((f2/f1)**(1./nc)-1))
     # ''' Compute nc phases in (0,2*pi)'''
+    np.random.seed(nseed + 1000)
     phi = 2 * np.pi * np.random.random(nc)
     return A, phi, fr
 
@@ -159,7 +162,7 @@ def gen_signal1d(xx: np.ndarray, A:np.ndarray, phi:np.ndarray,
     return S
 
 
-def gen_coeff_signal2d(f: np.ndarray, PS: np.ndarray, nc:int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def gen_coeff_signal2d(f: np.ndarray, PS: np.ndarray, nc:int, nseed:int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     '''Generate nc random coefficient from a spectrum PS
     with frequencies f. \n
     Inputs are: frequency [f], spectrum [PS], number of realisation [nc]
@@ -171,6 +174,7 @@ def gen_coeff_signal2d(f: np.ndarray, PS: np.ndarray, nc:int): # -> Tuple[np.nda
     f1 = np.min(f)
     f2 = np.max(f)
     logf = np.log10(f)
+    np.random.seed(nseed)
     fr = (f2 - f1) * np.random.random(nc) + f1
     # logfr = numpy.log10(fr)
     direction = 2. * np.pi * np.random.random(nc)
@@ -184,6 +188,7 @@ def gen_coeff_signal2d(f: np.ndarray, PS: np.ndarray, nc:int): # -> Tuple[np.nda
     A = np.sqrt(0.5 * PSr * 2 * np.pi * (f2 - f1) / (nc))
 
     # ''' Compute nc phases in (0,2*pi)'''
+    np.random.seed(nseed + 1000)
     phi = 2 * np.pi * np.random.random(nc)
     return A, phi, frx, fry
 

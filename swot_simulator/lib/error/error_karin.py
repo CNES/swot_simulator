@@ -18,10 +18,12 @@ class error_stat():
         self.karin_file = karin_file
 
 
-    def init_error(self, nac: int):
+    def init_error(self, nac: int, nseed:int):
+        np.random.seed(nseed)
         # generate random noise for left and right part of the mast
         self.A_karin_l = np.random.normal(0.0, np.float64(1),
                                           (self.nrand, nac))
+        np.random.seed(nseed+ 1)
         self.A_karin_r = np.random.normal(0.0, np.float64(1),
                                           (self.nrand, nac))
 

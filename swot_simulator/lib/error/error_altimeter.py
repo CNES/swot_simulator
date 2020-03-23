@@ -29,7 +29,8 @@ class error_stat():
 
     def init_error_savesignal(self, dal: int, lmax:float, npseudoper:int,
                               len_repeat: int,
-                              savesignal: Optional[bool]=True) -> None:
+                              savesignal: Optional[bool]=True,
+                              nseed: Optional[int]=0) -> None:
         '''Initialization of errors: Random realisation of errors are computed
         using a known power spectrum.
         The outputs are the amplitude, the phase and the frequency of each
@@ -39,12 +40,14 @@ class error_stat():
         spectrum error.'''
         if savesignal is True:
             gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSD, 2 * dal,
-                                                lmax, npseudoper, len_repeat)
+                                                lmax, npseudoper, len_repeat,
+                                                nseed)
             self.A, self.phi = gencoef
         return None
 
-    def init_error_gensignal(self, ncomp1d: int) -> None:
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSD, ncomp1d)
+    def init_error_gensignal(self, ncomp1d: int,
+                             nseed: Optional[int]=0) -> None:
+        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSD, ncomp1d, nseed)
         self.A, self.phi, self.f = gencoef
         return None
 
