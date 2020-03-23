@@ -210,7 +210,7 @@ def calculate_orbit(parameters: settings.Parameters,
     lon, lat, time, pass_time = rearrange_orbit(cycle_duration, lon, lat, time)
 
     # Calculates the along track distance
-    distance = math.curvilinear_distance(lon, lat, VOLUMETRIC_MEAN_RADIUS)
+    distance = math_func.curvilinear_distance(lon, lat, VOLUMETRIC_MEAN_RADIUS)
 
     # Interpolate the final orbit according the given along track resolution
     x_al = np.arange(distance[0],
