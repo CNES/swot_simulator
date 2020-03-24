@@ -238,16 +238,16 @@ def _create_variable(dataset: netCDF4.Dataset,
                      variable: xr.Variable) -> None:
     """Creation and writing of the NetCDF variable"""
     variable.attrs.pop("_FillValue", None)
-    dtype, kwargs = _create_variable_args(encoding, name, variable)
-    if np.issubdtype(dtype, np.datetime64):
-        dtype = np.int64
-        variable.values = variable.values.astype("datetime64[us]").astype(
-            "int64")
-        assert (variable.attrs["units"] ==
-                "microseconds since 2000-01-01 00:00:00.0")
+    # Encode datetime64 to float64
+    if np.issubdtype(variable.dtype, np.datetime64):
         # 946684800000000 number of microseconds between 2000-01-01 and
         # 1970-01-01
-        variable.values -= 946684800000000
+        variable.values = (
+            variable.values.astype("datetime64[us]").astype("int64") -
+            946684800000000) * 1e-6
+        assert (
+            variable.attrs["units"] == "seconds since 2000-01-01 00:00:00.0")
+    dtype, kwargs = _create_variable_args(encoding, name, variable)
 
     parts = name.split("/")
     name = parts.pop()
@@ -287,7 +287,8 @@ def to_netcdf(dataset: xr.Dataset,
         for name, size in dataset.dims.items():
             stream.createDimension(name,
                                    None if name in unlimited_dims else size)
-            stream.setncatts(dataset.attrs)
+
+        stream.setncatts(dataset.attrs)
 
         for name, variable in dataset.coords.items():
             _create_variable(stream, encoding, name, variable)
@@ -303,12 +304,6 @@ class ProductSpecification:
 
     def __init__(self):
         self.variables, self.attributes = _parser(xt.parse(self.SPECIFICATION))
-        for item in ["basic/time", "basic/time_tai"]:
-            properties = self.variables[item]
-            properties["attrs"].update(
-                dict(units="microseconds since 2000-01-01 00:00:00.0",
-                     _FillValue=-2**63))
-            properties["dtype"] = "int64"
 
     @staticmethod
     def fill_value(properties):
@@ -320,7 +315,6 @@ class ProductSpecification:
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         properties = self.variables["basic/time"]
         attrs = properties["attrs"]
-        attrs.pop("_FillValue")
         return {
             "basic/time": {}
         }, [
@@ -349,16 +343,13 @@ class ProductSpecification:
         for item in ["add_offset", "scale_factor"]:
             if item in attrs:
                 attrs[item] = float(attrs[item])
-        static_cast = (float
-                       if "add_offset" in attrs or "scale_factor" in attrs else
-                       lambda x: _cast_to_dtype(float(x), properties))
-        for item in ["valid_min", "valid_max"]:
+        for item in ["valid_range", "valid_min", "valid_max"]:
             if item in attrs:
-                attrs[item] = static_cast(attrs[item])
-        if "scale_factor" in attrs and "add_offset" not in attrs:
-            attrs["add_offset"] = 0.0
-        if "add_offset" in attrs and "scale_factor" not in attrs:
-            attrs["scale_factor"] = 1.0
+                attrs[item] = _cast_to_dtype(attrs[item], properties)
+        # if "scale_factor" in attrs and "add_offset" not in attrs:
+        #     attrs["add_offset"] = 0.0
+        # if "add_offset" in attrs and "scale_factor" not in attrs:
+        #     attrs["scale_factor"] = 1.0
         return encoding, xr.DataArray(data=data,
                                       dims=properties["shape"],
                                       name=name,
@@ -401,8 +392,8 @@ class ProductSpecification:
                             'standard_name':
                             'sea surface height above reference ellipsoid',
                             'units': 'm',
-                            'valid_min': -15000000.0,
-                            'valid_max': 150000000.0
+                            'valid_min': np.int32(-15000000),
+                            'valid_max': np.int32(150000000)
                         })
 
     def fill_variables(self, variables,
