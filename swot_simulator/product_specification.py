@@ -57,7 +57,7 @@ def _parse_type(dtype, width, signed):
     if dtype == "real":
         return getattr(np, "float" + width)
     elif dtype == "integer":
-        return getattr(np, "u" if not signed else "" + "int" + width)
+        return getattr(np, ("u" if not signed else "") + "int" + width)
     elif dtype == "string":
         return np.str
     elif dtype == "char":
@@ -168,6 +168,15 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
     return result
 
 
+def _strtobool(value: str) -> bool:
+    value = value.lower()
+    if value == "true":
+        return True
+    elif value == "false":
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
+
+
 def _parser(tree: xt.ElementTree):
     variables = dict()
     attributes = dict()
@@ -181,7 +190,8 @@ def _parser(tree: xt.ElementTree):
     for item in _find(_find(tree.getroot(), 'science'), 'nodes'):
         dtype = _parse_type(
             item.tag, item.attrib["width"],
-            bool(item.attrib["signed"]) if "signed" in item.attrib else None)
+            _strtobool(item.attrib["signed"])
+            if "signed" in item.attrib else None)
         if not isinstance(dtype, np.dtype):
             dtype = dtype.__name__
         annotation = item.find("annotation")
