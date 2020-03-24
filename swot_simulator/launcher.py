@@ -6,7 +6,7 @@
 Main program
 ------------
 """
-from typing import IO, Optional
+from typing import Optional, Tuple
 import argparse
 import datetime
 import logging
@@ -110,8 +110,10 @@ def file_path(date: np.datetime64,
 
 
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
-             orbit: orbit_propagator.Orbit,
-             parameters: settings.Parameters) -> None:
+             orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
+             logging_server: Tuple[str, int, int]) -> None:
+    # Initialize this worker's logger.
+    logbook.setup_worker_logging(logging_server)
     LOGGER.info(f"generate pass {cycle_number}/{pass_number}")
 
     # Compute the spatial/temporal position of the satellite
@@ -168,6 +170,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
+           logging_server: Tuple[str, int, int],
            first_date: Optional[datetime.datetime] = None,
            last_date: Optional[datetime.datetime] = None):
     # Displaying Dask client information.
@@ -178,8 +181,9 @@ def launch(client: dask.distributed.Client,
 
     # Calculation of the properties of the orbit to be processed.
     assert parameters.ephemeris is not None
-    with open(parameters.ephemeris) as stream:
-        orbit = orbit_propagator.calculate_orbit(parameters, stream)
+    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
+        orbit = orbit_propagator.calculate_orbit(parameters,
+                                                 stream)  # type: ignore
     #: pylint: enable=no-member
 
     if last_date is None:
@@ -205,7 +209,8 @@ def launch(client: dask.distributed.Client,
 
         # Generation of the simulated product.
         futures.append(
-            client.submit(simulate, cycle, track, date, _orbit, _parameters))
+            client.submit(simulate, cycle, track, date, _orbit, _parameters,
+                          logging_server))
 
         # Shift the date of the duration of the generated pass
         date += orbit.pass_duration(track)
@@ -221,20 +226,20 @@ def main():
     args = usage()
 
     # Setup log
-    logger = logbook.setup(args.log, args.debug)
+    logger, logging_server = logbook.setup(args.log, args.debug)
 
     client = dask.distributed.Client(
         dask.distributed.LocalCluster(
             n_workers=1,
-            processes=False,
+            processes=True,
             threads_per_worker=args.threads_per_worker)
     ) if args.scheduler_file is None else dask.distributed.Client(
         scheduler_file=args.scheduler_file.name)
 
     try:
         parameters = settings.eval_config_file(args.settings.name)
-        launch(client, settings.Parameters(parameters), args.first_date,
-               args.last_date)
+        launch(client, settings.Parameters(parameters), logging_server,
+               args.first_date, args.last_date)
 
         client.close()
         logger.info("End of processing.")
