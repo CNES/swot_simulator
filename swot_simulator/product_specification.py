@@ -65,12 +65,13 @@ def _parse_type(dtype, width, signed):
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
+def _cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
+    return getattr(np, properties["dtype"])(attr_value)
+
+
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
                       lat: np.ndarray) -> Dict[str, Any]:
-    def _encode(attr_value: Union[int, float], properties: Dict[str, str]):
-        return getattr(np, properties["dtype"])(attr_value)
-
     def _iso_date(date: np.datetime64) -> str:
         return datetime.datetime.utcfromtimestamp(
             date.astype("datetime64[us]").astype("int64") *
@@ -93,30 +94,51 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
 
-    ellipsoid_semi_major_axis = _encode(
+    ellipsoid_semi_major_axis = _cast_to_dtype(
         1, attributes["ellipsoid_semi_major_axis"])
-    ellipsoid_flattening = _encode(0, attributes["ellipsoid_semi_major_axis"])
+    ellipsoid_flattening = _cast_to_dtype(
+        0, attributes["ellipsoid_semi_major_axis"])
 
     result = collections.OrderedDict({
-        "Conventions": "CF-1.7",
-        "title": attributes["title"]["attrs"]["description"],
-        "institution": "CNES/JPL",
-        "source": "Simulate product",
-        "history": now,
-        "platform": "SWOT",
-        "references": REFERENCE,
-        "reference_document": "D-56407_SWOT_Product_Description_L2_LR_SSH",
-        "contact": "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
-        "cycle_number": _encode(cycle_number, attributes["cycle_number"]),
-        "pass_number": _encode(pass_number, attributes["pass_number"]),
-        "time_coverage_start": _iso_date(date[0]),
-        "time_coverage_end": _iso_date(date[-1]),
-        "time_coverage_duration": _iso_duration(date[-1] - date[0]),
-        "time_coverage_resolution": "P1S",
-        "geospatial_lon_min": lng.min(),
-        "geospatial_lon_max": lng.max(),
-        "geospatial_lat_min": lat.min(),
-        "geospatial_lat_max": lat.max()})
+        "Conventions":
+        "CF-1.7",
+        "title":
+        attributes["title"]["attrs"]["description"],
+        "institution":
+        "CNES/JPL",
+        "source":
+        "Simulate product",
+        "history":
+        now,
+        "platform":
+        "SWOT",
+        "references":
+        REFERENCE,
+        "reference_document":
+        "D-56407_SWOT_Product_Description_L2_LR_SSH",
+        "contact":
+        "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
+        "cycle_number":
+        _cast_to_dtype(cycle_number, attributes["cycle_number"]),
+        "pass_number":
+        _cast_to_dtype(pass_number, attributes["pass_number"]),
+        "time_coverage_start":
+        _iso_date(date[0]),
+        "time_coverage_end":
+        _iso_date(date[-1]),
+        "time_coverage_duration":
+        _iso_duration(date[-1] - date[0]),
+        "time_coverage_resolution":
+        "P1S",
+        "geospatial_lon_min":
+        lng.min(),
+        "geospatial_lon_max":
+        lng.max(),
+        "geospatial_lat_min":
+        lat.min(),
+        "geospatial_lat_max":
+        lat.max()
+    })
     if len(lng.shape) == 2:
         result.update({
             "left_first_longitude": lng[0, 0],
@@ -129,11 +151,16 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
             "right_last_latitude": lat[-1, -1],
         })
     result.update({
-        "wavelength": _encode(0.008385803020979, attributes["wavelength"]),
-        "orbit_solution": "POE",
-        "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
-        "ellipsoid_flattening": ellipsoid_flattening,
-        "standard_name_vocabulary": "CF Standard Name Table vNN",
+        "wavelength":
+        _cast_to_dtype(0.008385803020979, attributes["wavelength"]),
+        "orbit_solution":
+        "POE",
+        "ellipsoid_semi_major_axis":
+        ellipsoid_semi_major_axis,
+        "ellipsoid_flattening":
+        ellipsoid_flattening,
+        "standard_name_vocabulary":
+        "CF Standard Name Table vNN",
     })
     for item in attributes:
         if item.startswith("xref_input"):
@@ -307,9 +334,17 @@ class ProductSpecification:
                                         dtype=properties["dtype"])
 
         # Some values read from the XML files must be decoded
-        for item in ["add_offset", "scale_factor", "valid_min", "valid_max"]:
+        # TODO(fbriol): The type of these attributes should be determined from
+        # their type, but at the moment this is not possible.
+        for item in ["add_offset", "scale_factor"]:
             if item in attrs:
                 attrs[item] = float(attrs[item])
+        static_cast = (float
+                       if "add_offset" in attrs or "scale_factor" in attrs else
+                       lambda x: _cast_to_dtype(float(x), properties))
+        for item in ["valid_min", "valid_max"]:
+            if item in attrs:
+                attrs[item] = static_cast(attrs[item])
         if "scale_factor" in attrs and "add_offset" not in attrs:
             attrs["add_offset"] = 0.0
         if "add_offset" in attrs and "scale_factor" not in attrs:
