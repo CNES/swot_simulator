@@ -27,7 +27,7 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
-GROUP = dict(
+GROUP = collections.OrderedDict(
     basic=dict(
         description="Provides corrected sea surface height (SSH), sea surface "
         "height anomaly (SSHA), flags to indicate data quality, geophysical "
@@ -313,16 +313,8 @@ class ProductSpecification:
         return np.array(properties["attrs"]["_FillValue"], dtype)
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
-        properties = self.variables["basic/time"]
-        attrs = properties["attrs"]
-        return {
-            "basic/time": {}
-        }, [
-            xr.DataArray(data=time,
-                         dims=properties["shape"],
-                         name="basic/time",
-                         attrs=attrs)
-        ]
+        encoding, data_array = self._data_array("basic/time", time)
+        return {"basic/time": encoding}, [data_array]
 
     def _data_array(self, name: str,
                     data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
@@ -346,6 +338,12 @@ class ProductSpecification:
         for item in ["valid_range", "valid_min", "valid_max"]:
             if item in attrs:
                 attrs[item] = _cast_to_dtype(attrs[item], properties)
+        if "flag_values" in attrs:
+            items = attrs["flag_values"].split()
+            attrs["flag_values"] = np.array(
+                [_cast_to_dtype(item, properties) for item in items],
+                properties["dtype"]) if len(items) != 1 else _cast_to_dtype(
+                    float(attrs["flag_values"]), properties)
         # if "scale_factor" in attrs and "add_offset" not in attrs:
         #     attrs["add_offset"] = 0.0
         # if "add_offset" in attrs and "scale_factor" not in attrs:
@@ -454,8 +452,18 @@ class Nadir:
             lng = vars["expert/longitude_nadir"]
             lat = vars["expert/latitude_nadir"]
 
-        dataset = xr.Dataset(data_vars=dict(
-            (item.name, item) for item in self.data_vars),
+        # Variables must be written in the declaration order of the XML file
+        unordered_vars = dict((item.name, item) for item in self.data_vars)
+        data_vars = collections.OrderedDict()
+        for item in self.product_spec.variables.keys():
+            if item in unordered_vars:
+                data_vars[item] = unordered_vars[item]
+
+        # Add variables that are not defined in the XML file
+        for item in set(unordered_vars.keys()) - set(data_vars.keys()):
+            data_vars[item] = unordered_vars[item]
+
+        dataset = xr.Dataset(data_vars=data_vars,
                              attrs=global_attributes(
                                  self.product_spec.attributes, cycle_number,
                                  pass_number, self.data_vars[0].values, lng,
