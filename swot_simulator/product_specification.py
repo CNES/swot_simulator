@@ -29,21 +29,15 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
 
 GROUP = collections.OrderedDict(
     basic=dict(
-        description="Provides corrected sea surface height (SSH), sea surface "
-        "height anomaly (SSHA), flags to indicate data quality, geophysical "
-        "reference fields, and height-correction information on a 2 km "
-        "geographically fixed grid."),
+        description="Basic SSH measurement data and related information for "
+        "the full swath."),
     windwave=dict(
-        description="Provides measured significant wave height (SWH), "
-        "normalized radar cross section (NRCS or backscatter cross section or "
-        "sigma0), wind speed derived from sigma0 and SWH, model information "
-        "on wind and waves, and quality flags on a 2 km geographically fixed "
-        "grid."),
+        description="Wind and wave measurement data and related information "
+        "for the full swath."),
     expert=dict(
-        description="Includes copies of the Basic and the Wind and Wave files "
-        "plus more detailed information on instrument and environmental "
-        "corrections, radiometer data, and geophysical models on a 2 km "
-        "geographically fixed grid."))
+        description="Detailed contextual information, for the full swath, on "
+        "the SWOT measurements; this information is intended to allow expert "
+        "users to perform advanced analyses."))
 
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
@@ -155,16 +149,14 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         _cast_to_dtype(0.008385803020979, attributes["wavelength"]),
         "orbit_solution":
         "POE",
-        "ellipsoid_semi_major_axis":
-        ellipsoid_semi_major_axis,
-        "ellipsoid_flattening":
-        ellipsoid_flattening,
-        "standard_name_vocabulary":
-        "CF Standard Name Table vNN",
     })
     for item in attributes:
         if item.startswith("xref_input"):
             result[item] = "N/A"
+    result.update({
+        "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
+        "ellipsoid_flattening": ellipsoid_flattening
+    })
     return result
 
 
@@ -233,10 +225,13 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
     return dtype, kwargs
 
 
-def _create_variable(dataset: netCDF4.Dataset,
+def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
                      encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
+                     unlimited_dims: Optional[List[str]],
                      variable: xr.Variable) -> None:
     """Creation and writing of the NetCDF variable"""
+    unlimited_dims = unlimited_dims or list()
+
     variable.attrs.pop("_FillValue", None)
     # Encode datetime64 to float64
     if np.issubdtype(variable.dtype, np.datetime64):
@@ -254,20 +249,25 @@ def _create_variable(dataset: netCDF4.Dataset,
     group = parts.pop() if parts else None
 
     if group is not None:
-        if group not in dataset.groups:
-            dataset = dataset.createGroup(group)
+        if group not in nc_dataset.groups:
+            # Creating the group, dimensions and attributes
+            nc_dataset = nc_dataset.createGroup(group)
+            for dim_name, size in xr_dataset.dims.items():
+                nc_dataset.createDimension(
+                    dim_name, None if dim_name in unlimited_dims else size)
+
             if group in GROUP:
-                dataset.setncatts(GROUP[group])
+                nc_dataset.setncatts(GROUP[group])
         else:
-            dataset = dataset.groups[group]
-    ncvar = dataset.createVariable(name, dtype, variable.dims, **kwargs)
+            nc_dataset = nc_dataset.groups[group]
+    ncvar = nc_dataset.createVariable(name, dtype, variable.dims, **kwargs)
     ncvar.setncatts(variable.attrs)
     values = variable.values
     if kwargs['fill_value'] is not None:
         if values.dtype.kind == "f" and np.any(np.isnan(values)):
             values[np.isnan(values)] = kwargs['fill_value']
         values = np.ma.array(values, mask=values == kwargs['fill_value'])
-    dataset[name][:] = values
+    nc_dataset[name][:] = values
 
 
 def to_netcdf(dataset: xr.Dataset,
@@ -277,24 +277,21 @@ def to_netcdf(dataset: xr.Dataset,
               **kwargs):
     """Write dataset contents to a netCDF file"""
     encoding = encoding or dict()
-    unlimited_dims = unlimited_dims or list()
 
     if isinstance(path, str):
         path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with netCDF4.Dataset(path, **kwargs) as stream:
-        for name, size in dataset.dims.items():
-            stream.createDimension(name,
-                                   None if name in unlimited_dims else size)
-
         stream.setncatts(dataset.attrs)
 
         for name, variable in dataset.coords.items():
-            _create_variable(stream, encoding, name, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
         for name, variable in dataset.data_vars.items():
-            _create_variable(stream, encoding, name, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
 
 class ProductSpecification:
