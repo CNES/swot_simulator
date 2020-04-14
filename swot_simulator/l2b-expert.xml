@@ -64,8 +64,8 @@
         <integer name="/basic/internal_tide_sol1" shape="num_lines_num_pixels_shape" width="16" signed="true">
           <annotation app="conformance" _FillValue="32767" long_name="coherent internal tide from model 1" source="Zaron (2019)" units="m" scale_factor="0.000100"  valid_min="-2000" valid_max="2000" coordinates="longitude latitude" comment="Coherent internal tide. To apply this correction the value of internal_tide_sol1 should be subtracted from ssha_karin or ssha_karin_2."/>
         </integer>
-        <integer name="/basic/height_cor_xover" shape="num_lines_num_pixels_shape" width="16" signed="true">
-          <annotation app="conformance" _FillValue="32767" long_name="height correction from KaRIn crossovers" units="m" scale_factor="0.000100"  valid_min="-100000" valid_max="100000" coordinates="longitude latitude" comment="Height correction from KaRIn crossover calibration. To apply this correction the value of height_cor_xover should be added to the value of ssh_karin, ssh_karin_2, ssha_karin, and ssha_karin_2."/>
+        <integer name="/basic/height_cor_xover" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="height correction from KaRIn crossovers" units="m" scale_factor="0.000100"  valid_min="-100000" valid_max="100000" coordinates="longitude latitude" comment="Height correction from KaRIn crossover calibration. To apply this correction the value of height_cor_xover should be added to the value of ssh_karin, ssh_karin_2, ssha_karin, and ssha_karin_2."/>
         </integer>
         <string name="/basic/@description" shape="Scalar" width="0">
         </string>
