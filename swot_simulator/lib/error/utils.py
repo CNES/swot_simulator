@@ -1,7 +1,9 @@
 import numpy as np
+from scipy import interpolate, fftpack
 import sys
 import logging
 import xarray as xr
+from typing import IO, Optional
 # Define logging level for debug purposes
 logger = logging.getLogger(__name__)
 
@@ -91,104 +93,179 @@ def read_file_karin(file_karin: str, swh): # -> xr.core.dataset.Dataset:
     return x_ac, hsdt
 
 
-def gen_rcoeff_signal1d(f:np.ndarray, PS:np.ndarray,
-                        lambda_min:float, lambda_max:float, npseudoper:int,
-                        repeat:int, nseed:int): # ->Tuple[np.ndarray, np.ndarray]:
-    '''Generate nc random coefficient from a spectrum PS
-    with frequencies f. \n
-    Return Amplitude, phase and frequency of nc realisations'''
+def gen_signal1d(fi: np.ndarray, PSi: np.ndarray, x:np.ndarray,
+                 nseed: Optional[int]=0, fmin: Optional[float]=None,
+                 fmax: Optional[float]=None, alpha: Optional[int]=10,
+                 lf_extpl: Optional[bool]=False,
+                 hf_extpl: Optional[bool]=False) -> np.ndarray:
+    ''' Generate 1d random signal using Fouriner coefficient '''
+    # Make sure fi, PSi does not contain the zero frequency:
+    PSi = PSi[fi>0]
+    fi = fi[fi>0]
 
-    logffl = np.arange(np.log10(1. / lambda_max),
-                       np.log10(1. / lambda_min + 1. / lambda_max),
-                       np.log10(1 + 1. / npseudoper))
-    ffl = 10**(logffl)
-    logf = np.log10(f)
-    logPS = np.log10(PS)
-    logPSl = np.interp(logffl, logf, logPS)
-    PSl = 10**(logPSl)
-    A = np.sqrt(2 * PSl * (ffl / npseudoper))
-    phi = []
-    for k in range(len(ffl)):
-        np.random.seed(nseed + k*1000)
-        phi.append(2 * np.pi * np.random.random(int(2 * repeat * ffl[k]
-                                                  / npseudoper + 3)))
-    return A, phi
+    interpolator = interpolate.interp1d
+    # Interpolation function for the non-zero part of the spectrum
+    finterp = interpolator(np.log(fi[PSi>0]), np.log(PSi[PSi>0]),
+                           bounds_error=False, fill_value="extrapolate")
 
+    # Adjust fmin and fmax to fi bounds if not specified:
+    if fmin == None:
+         fmin = fi[0]
+    if fmax == None:
+         fmax = fi[-1]
+    # Go alpha times further in frequency to avoid interpolation aliasing.
+    fmaxr = alpha * fmax
 
-def gen_coeff_signal1d(f: np.ndarray, PS: np.ndarray, nc: int, nseed:int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    '''Generate nc random coefficient from a spectrum PS
-    with frequencies f. \n
-    Return Amplitude, phase and frequency of nc realisations'''
+    f = np.arange(fmin, fmaxr + fmin, fmin)
+    PS = np.exp(finterp(np.log(f)))
 
-    f1 = np.min(f)
-    f2 = np.max(f)
-    logf = np.log10(f)
-    logf1 = np.log10(f1)
-    logf2 = np.log10(f2)
+    # lf_extpl=True prolongates the PSi as a plateau below min(fi).
+    # Otherwise, we consider zeros values. same for hf
+    if lf_extpl is True:
+         PS[f<fi[0]] = PSi[0]
+    else:
+         PS[f<fi[0]] = 0.
+    if hf_extpl is True:
+         PS[f>fi[-1]] = PSi[-1]
+    else:
+         PS[f>fi[-1]] = 0.
+    PS[f>fmax]=0.
+
+    # Detect the sections (if any) where PSi==0 and apply it to PS
+    finterp_mask = interpolator(fi, PSi, bounds_error=False,
+                                              fill_value="extrapolate")
+    PSmask = finterp_mask(f)
+    PS[PSmask==0.] = 0.
+
+    phase = np.empty((2 * len(f) + 1))
     np.random.seed(nseed)
-    # ''' Compute nc random vectors in [logf1, logf2] '''
-    logfr = (logf2 - logf1)*np.random.random(nc) + logf1
-    fr = 10**(logfr)
-    # ''' Compute amplitude for random vectors '''
-    logPS = np.log10(PS)
-    logPSr = np.interp(logfr, logf, logPS)
-    PSr = 10**(logPSr)
-    A = np.sqrt(0.5 * PSr * fr * ((f2/f1)**(1./nc)-1))
-    # ''' Compute nc phases in (0,2*pi)'''
-    np.random.seed(nseed + 1000)
-    phi = 2 * np.pi * np.random.random(nc)
-    return A, phi, fr
+    phase[1:(len(f) + 1)] = np.random.random(len(f)) * 2 * np.pi
+    phase[0] = 0.
+    phase[-len(f):] = -phase[1:(len(f) + 1)][::-1]
+
+    FFT1A = np.concatenate(([0], 0.5 * PS, 0.5 * PS[::-1]), axis=0)
+    FFT1A = np.sqrt(FFT1A) * np.exp(1j * phase) / fmin**0.5
+
+    yg = 2 * fmaxr * np.real(fftpack.ifft(FFT1A))
+    xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
+
+    finterp = interpolator(xg, yg)
+    y = finterp(np.mod(x, xg.max()))
+
+    return y
 
 
-def gen_signal1d(xx: np.ndarray, A:np.ndarray, phi:np.ndarray,
-                 lmin:float, lmax:float, npseudoper:float)-> np.ndarray:
-    '''Generate 1d random noise signal from coefficent computed using
-     gen_rcoeff_signal1d. \n
-    Return The random noise signal'''
-    S = np.full(np.shape(xx), 0.)
-    logffl = np.arange(np.log10(1. / lmax),
-                       np.log10(1. / lmin + 1. / lmax),
-                       np.log10(1 + 1. / npseudoper))
-    ffl = 10**(logffl)
-    for k in range(len(ffl)):
-        ka = 2 * (xx * ffl[k] / npseudoper).astype(int) + 1
-        Cka = np.abs(np.sin(2 * np.pi * xx * ffl[k] / npseudoper / 2.))
-        kb = (2 * ((xx + npseudoper / 2. / ffl[k]) * ffl[k]
-              / npseudoper).astype(int))
-        Ckb = np.abs(np.sin(2 * np.pi * (xx + npseudoper / 2 / ffl[k])
-                     * ffl[k] / npseudoper / 2))
-        S = (S + A[k] * np.cos(2 * np.pi * ffl[k] * xx + phi[k][ka]) * Cka
-             + A[k] * np.cos(2 * np.pi * ffl[k] * xx + phi[k][kb]) * Ckb)
-    return S
+def gen_signal2d_rectangle(fi: np.ndarray, PSi: np.ndarray, x: np.ndarray,
+                           y:np.ndarray, fminx: Optional[float]=None,
+                           fminy: Optional[float]=None,
+                           fmax: Optional[float]=None,
+                           alpha: Optional[int]=10, nseed: Optional[int]=0,
+                           lf_extpl: Optional[bool]=False,
+                           hf_extpl: Optional[bool]=False) -> np.ndarray:
+
+    revert=False
+    if fminy < fminx:
+        revert = True
+        fmin = +fminy
+        fminy = +fminx
+        x,y = y,x
+    else:
+        fmin = + fminx
+    # Go alpha times further in frequency to avoid interpolation aliasing.
+    fmaxr = alpha * fmax
+
+    # Make sure fi, PSi does not contain the zero frequency:
+    PSi = PSi[fi>0]
+    fi = fi[fi>0]
+
+    # Interpolation function for the non-zero part of the spectrum
+    interp1 = interpolate.interp1d
+    finterp = interp1(np.log(fi[PSi>0]), np.log(PSi[PSi>0]),
+                      bounds_error=False, fill_value="extrapolate")
 
 
-def gen_coeff_signal2d(f: np.ndarray, PS: np.ndarray, nc:int, nseed:int): # -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    '''Generate nc random coefficient from a spectrum PS
-    with frequencies f. \n
-    Inputs are: frequency [f], spectrum [PS], number of realisation [nc]
-    Return Amplitude, phase and frequency in 2D (frx, fry) of nc
-    realisations'''
+    f = np.arange(fmin, fmaxr + fmin, fmin)
 
-    # ''' Compute nc random vectors in an annular
-    # (radius is between (min(f), max(f)) '''
-    f1 = np.min(f)
-    f2 = np.max(f)
-    logf = np.log10(f)
+
+    # lf_extpl=True prolongates the PSi as a plateau below min(fi).
+    # Otherwise, we consider zeros values. same for hf
+    if lf_extpl is True:
+         PS[f<fi[0]] = PSi[0]
+    else:
+         PS[f<fi[0]] = 0.
+    if hf_extpl is True:
+         PS[f>fi[-1]] = PSi[-1]
+    else:
+         PS[f>fi[-1]] = 0.
+    PS[f>fmax]=0.
+
+    # Detect the sections (if any) where PSi==0 and apply it to PS
+    finterp_mask = interp1(fi, PSi, bounds_error=False,
+                           fill_value="extrapolate")
+    PSmask = finterp_mask(f)
+    PS[PSmask==0.] = 0.
+    PS1D = PS
+
+    # Build the 2D PSD following the given 1D PSD
+    fx = np.concatenate(([0], f))
+    fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
+    fx2, fy2 = np.meshgrid(fx, fy)
+    f2 = np.sqrt((fx2**2 + fy2**2))
+    dfx = fmin
+    dfy = fminy
+
+    PS2D = np.zeros(np.shape(f2))
+
+    for iff in range(len(f)):
+        fc = f2[:, (-iff-1)]
+        ind1 = np.where((f2 >= (f[-iff-1]-dfx/2)) & (f2<(f[-iff-1]+dfx/2)))
+        S = np.sum(PS2D[:,-iff-1]) * dfx * dfy
+        MISS = PS1D[-iff-1] * dfx - S
+        if MISS<=0:
+            PS2D[ind1] = 0.
+        else:
+            PS2D[ind1] = MISS / len(ind1) / (dfx * dfy)
+
+    PS2D[f2>fmax] = 0
     np.random.seed(nseed)
-    fr = (f2 - f1) * np.random.random(nc) + f1
-    # logfr = numpy.log10(fr)
-    direction = 2. * np.pi * np.random.random(nc)
-    frx = fr * np.cos(direction)
-    fry = fr * np.sin(direction)
+    phase = np.random.random((2*len(fy) - 1, len(fx))) * 2 * np.pi
+    phase[0, 0] = 0.
+    phase[-len(fy)+1:, 0] = -phase[1: len(fy), 0][::-1]
 
-    # ''' Compute coefficients corresponding to random vectors '''
-    logPS = np.log10(PS)
-    logPSr = np.interp(np.log10(fr), logf, logPS)
-    PSr = 10.**logPSr
-    A = np.sqrt(0.5 * PSr * 2 * np.pi * (f2 - f1) / (nc))
+    FFT2A = np.concatenate((0.25 * PS2D, 0.25 * PS2D[1:, :][::-1, :]), axis=0)
+    FFT2A = np.sqrt(FFT2A) * np.exp(1j * phase) / np.sqrt((dfx*dfy))
+    FFT2 = np.zeros((2*len(fy)-1, 2*len(fx)-1), dtype=complex)
+    FFT2[:, :len(fx)] = FFT2A
+    FFT2[1:, -len(fx)+1:] = FFT2A[1:,1:].conj()[::-1, ::-1]
+    FFT2[0, -len(fx)+1:] = FFT2A[0,1:].conj()[::-1]
 
-    # ''' Compute nc phases in (0,2*pi)'''
-    np.random.seed(nseed + 1000)
-    phi = 2 * np.pi * np.random.random(nc)
-    return A, phi, frx, fry
+    sg = (4 * fy[-1] * fx[-1]) * np.real(fftpack.ifft2(FFT2))
+    xg = np.linspace(0, 1./fmin, sg.shape[1])
+    yg = np.linspace(0, 1./fminy, sg.shape[0])
+    xgmax = xg.max()
+    ygmax = yg.max()
+    finterp = interpolate.interp2d(xg, yg, sg)
 
+    yl = y - y[0]
+    yl = yl[yl<yg.max()]
+    xl = x - x[0]
+    xl = xl[xl<xg.max()]
+    rectangle = finterp(xl,yl)
+    x_n, x_r = np.divmod(x.max() - x[0], xgmax)
+    y_n, y_r = np.divmod(y.max() - y[0], ygmax)
+
+    signal = np.zeros((len(y), len(x)))
+
+    for i_x_n in range(int(x_n + 1)):
+        ix0 = np.where(((x - x[0]) >= (i_x_n * xgmax))
+                       & ((x-x[0]) < ((i_x_n+1)*xgmax)))[0]
+        for i_y_n in range(int(y_n + 1)):
+            iy0 = np.where(((y - y[0]) >= (i_y_n * ygmax))
+                           & ((y - y[0]) < ((i_y_n+1)*ygmax)))[0]
+            _rect = rectangle[: len(iy0), : len(ix0)]
+            signal[iy0[0]: iy0[-1] + 1, ix0[0]: ix0[-1] + 1] = _rect
+
+    if revert is True:
+        return signal.transpose()
+    else:
+        return signal

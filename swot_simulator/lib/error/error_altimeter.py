@@ -27,55 +27,17 @@ class error_stat():
         self.freq = f
 
 
-    def init_error_savesignal(self, dal: int, lmax:float, npseudoper:int,
-                              len_repeat: int,
-                              savesignal: Optional[bool]=True,
-                              nseed: Optional[int]=0) -> None:
-        '''Initialization of errors: Random realisation of errors are computed
-        using a known power spectrum.
-        The outputs are the amplitude, the phase and the frequency of each
-        random realisation.
-        By default, there are ncomp2d=2000 random realisations for the
-        wet tropo and ncomp1d=2000 random realisations for the nadir 1d
-        spectrum error.'''
-        if savesignal is True:
-            gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSD, 2 * dal,
-                                                lmax, npseudoper, len_repeat,
-                                                nseed)
-            self.A, self.phi = gencoef
-        return None
 
-    def init_error_gensignal(self, ncomp1d: int,
-                             nseed: Optional[int]=0) -> None:
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSD, ncomp1d, nseed)
-        self.A, self.phi, self.f = gencoef
-        return None
-
-
-    def make_error(self, x_al: np.array, al_cycle: float,
-                   cycle: int, dal: float,
-                   npseudoper:int, len_repeat:float,
-                   lmax: Optional[float]=20000,
-                   savesignal: Optional[bool]=True):
+    def make_error(self, x_al: np.array, dal: float,
+                  len_repeat:float, nseed: Optional[int]=0):
         ''' Build errors corresponding to each selected noise
         among the effect of the wet_tropo, and the instrumental error
         '''
-        nal = np.shape(x_al)[0]
         # - Compute random noise of 10**2 cm**2/(km/cycle)
         # - Compute the correspond error on the nadir in m
-        if savesignal is True:
-            xx = (np.float64(x_al[:]) + float(cycle
-                  * al_cycle)) % len_repeat
-            errnadir = utils.gen_signal1d(xx, self.A, self.phi,
-                                          2 * dal, lmax, npseudoper)
-        else:
-            errnadir = np.zeros((nal))
-            for comp in range(0, self.ncomp1d):
-                phase_x_al = (2. * np.pi * float(self.freq[comp])
-                              * (np.float64(x_al[:])
-                              + float(cycle * al_cycle))) % (2.*np.pi)
-                errnadir[:] = (errnadir[:] + 2 * self.A[comp]
-                               * np.cos(phase_x_al[:] + self.phi[comp]))
+        errnadir = utils.gen_signal1d(self.freq, self.PSD, x_al, nseed=nseed,
+                           fmin=1./len_repeat, fmax=1./(2*dal), alpha=10)
+
         # - Compute the correspond timing error on the swath in m
         self.nadir = errnadir[:]
         return None

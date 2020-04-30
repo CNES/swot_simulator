@@ -17,62 +17,15 @@ class error_stat():
         self.freq = ds.spatial_frequency.data
 
 
-    def init_error_savesignal(self, delta_al:float, lambda_max:float,
-                              npseudoper: int, len_repeat: int,
-                              nseed: Optional[int]=0) -> None:
-        """Compute random coefficients using the power spectrum """
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSbd,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-        self.A_bd, self.phi_bd = gencoef
-
-    def init_error_gensignal(self, ncomp1d: int,
-                             nseed: Optional[int]=0) -> None:
-        """Compute random signal using the power spectrum """
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSbd, ncomp1d,
-                                           nseed)
-        self.A_bd, self.phi_bd, self.fr_bd = gencoef
-
-
-    '''
-    def load_error(self, handler, parameters):
-        self.A_bd = np.array(fid.variables['A_bd'][:]).squeeze()
-        if np.shape(self.A_bd)[0] != parameters.ncomp1d:
-            logger.error('{1} dimensions are different from ncomp1d={2}\n'
-                         'remove {1} or adjust ncomp1d number in parameter'
-                         'file'.format(parameters.file_coeff,
-                                       parameters.ncomp1d))
-            sys.exit(1)
-        self.phi_bd = np.array(fid.variables['phi_bd'][:]).squeeze()
-        self.fr_bd = np.array(fid.variables['fr_bd'][:]).squeeze()
-    '''
-
-    def make_error(self, x_al: np.array, al_cycle: float,
-                   cycle: int, dal: float,
-                   npseudoper: int, sat_const: dict, len_repeat:float,
-                   lmax: Optional[float]=20000,
-                   savesignal: Optional[bool]=True):
+    def make_error(self, x_al: np.ndarray, dal: float, sat_const: dict,
+                   len_repeat:float, nseed: Optional[int]=0):
         Rearth = VOLUMETRIC_MEAN_RADIUS
         sat_elev = sat_const['height']
         Fka = sat_const['Fka']
-        # - Compute baseline dilation using random coefficients or signals
-        # previously initialized with the power spectrum
-        if savesignal is True:
-            xx = (np.float64(x_al[:]) + float(cycle * al_cycle)) % (len_repeat)
-            dil = utils.gen_signal1d(xx, self.A_bd, self.phi_bd,
-                                         2 * dal, lmax, npseudoper)
-
-        else:
-            dil = np.zeros((nal))
-            for comp in range(0, self.ncomp1d):
-                phase_x_al = (2. * np.pi * float(self.fr_bd[comp])
-                              * (np.float64(x_al[:])
-                              + float(cycle * al_cycle))) % (2.*np.pi)
-                dil[:] = (dil[:] + 2 * self.A_bd[comp]
-                      * np.cos(phase_x_al[:] + self.phi_bd[comp]))
-        # - Compute the associated baseline dilation  error
-        #   on the swath in m
-        #TODO Check formulae
+        # Generate 1d baseline dilation using the power spectrum:
+        dil = utils.gen_signal1d(self.freq, self.PSbd, x_al, nseed=nseed,
+                           fmin=1./len_repeat, fmax=1./(2*dal), alpha=10)
+        # - Compute the associated baseline dilation  error on the swath in m
         _to_km = -((1 + sat_elev / Rearth) #* 10**-6 #* 10**6
                   /(sat_elev * sat_const['B'])) * 10**-3
         self.baseline_dilation1d = _to_km * dil[:]

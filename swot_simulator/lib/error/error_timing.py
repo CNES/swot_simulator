@@ -17,60 +17,17 @@ class error_stat():
         self.freq = ds.spatial_frequency.data
 
 
-    def init_error_savesignal(self, delta_al:float, lambda_max: float,
-                              npseudoper: int, len_repeat:int,
-                              nseed: Optional[int]=0)-> None:
-        """Compute random coefficients using the power spectrum """
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PStim,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-        self.A_tim_l, self.phi_tim_l = gencoef
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PStim,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-        self.A_tim_r, self.phi_tim_r = gencoef
-
-    def init_error_gensignal(ncomp1d: int, nseed: Optional[int]=0)-> None:
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d,
-                                           nseed)
-        self.A_tim_l, self.phi_tim_l, self.fr_tim_l = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PStim, ncomp1d,
-                                           nseed)
-        self.A_tim_r, self.phi_tim_r, self.fr_tim_r = gencoef
-
-
-    def make_error(self, x_al: np.array, al_cycle: float,
-                   cycle: int, dal: float,
-                   npseudoper: int, sat_const: dict, len_repeat:float,
-                   lmax: Optional[float]=20000,
-                   savesignal: Optional[bool]=True)-> None:
+    def make_error(self, x_al: np.ndarray, dal: float, sat_const: dict,
+                   len_repeat:float, nseed: Optional[int]=0):
         Rearth = VOLUMETRIC_MEAN_RADIUS
         sat_elev = sat_const['height']
-        # - Compute timing delay using random coefficients or signals
-        # previously initialized with the power spectrum
-        if savesignal is True:
-            xx = (np.float64(x_al[:]) + float(cycle * al_cycle)) % (len_repeat)
-            tim_l = utils.gen_signal1d(xx, self.A_tim_l, self.phi_tim_l,
-                                       2 * dal, lmax, npseudoper)
-            tim_r = utils.gen_signal1d(xx, self.A_tim_r, self.phi_tim_r,
-                                           2 * dal, lmax, npseudoper)
-        else:
-            tim_l = np.zeros((nal))
-            tim_r = np.zeros((nal))
-            # - Compute the associated phase error on the swath in m
-            for comp in range(0, ncomp1d):
-                phase_x_al = (2. * np.pi * float(self.fr_tim_r[comp])
-                              * (np.float64(x_al[:])
-                              + float(cycle * al_cycle))) % (2.*np.pi)
-                tim_r[:] = (tim_r[:] + 2 * self.A_tim_r[comp]
-                            * np.cos(phase_x_al[:]
-                            + self.phi_tim_r[comp]))
-                phase_x_al = (2. * np.pi * float(self.fr_tim_l[comp])
-                              * (np.float64(x_al[:])
-                              + float(cycle * al_cycle))) % (2.*np.pi)
-                tim_l[:] = (tim_l[:] + 2 * self.A_tim_l[comp]
-                            * numpy.cos(phase_x_al[:]
-                            + self.phi_tim_l[comp]))
+        # Generate 1d timing using the power spectrum:
+        tim_l = utils.gen_signal1d(self.freq, self.PStim, x_al, nseed=nseed,
+                                   fmin=1./len_repeat, fmax=1./(2*dal),
+                                   alpha=10)
+        tim_r = utils.gen_signal1d(self.freq, self.PStim, x_al,
+                                   nseed=nseed + 100, fmin=1./len_repeat,
+                                   fmax=1./(2*dal), alpha=10)
         # - Compute the corresponding timing error on the swath in m
         _to_m = sat_const['C']/2 * 10**(-12)
         timing1d = np.concatenate(([_to_m * tim_l[:].T],

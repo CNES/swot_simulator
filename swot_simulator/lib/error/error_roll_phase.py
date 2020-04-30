@@ -37,43 +37,8 @@ class error_stat():
         self.PSphase = ds.phasePSD.data
         self.freq = ds.spatial_frequency.data
 
-    def init_error_savesignal(self, delta_al:float, lambda_max:float,
-                              npseudoper: int, len_repeat: int,
-                              nseed: Optional[int]=0)-> None:
-        """Compute random coefficients using the power spectrum """
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSroll,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-        self.A_roll, self.phi_roll = gencoef
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSphase,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-        self.A_phase_l, self.phi_phase_l = gencoef
-        gencoef = utils.gen_rcoeff_signal1d(self.freq, self.PSphase,
-                                            2 * delta_al, lambda_max,
-                                            npseudoper, len_repeat, nseed)
-
-        self.A_phase_r, self.phi_phase_r = gencoef
-
-    def init_error_gensignal(self, ncomp1d: int,
-                             nseed: Optional[int]=0)-> None:
-        """Compute random signal using the power spectrum """
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSroll, ncomp1d,
-                                           nseed)
-        self.A_roll, self.phi_roll, self.fr_roll = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d,
-                                           nseed)
-        self.A_phase_l, self.phi_phase_l, self.fr_phase_l = gencoef
-        gencoef = utils.gen_coeff_signal1d(self.freq, self.PSphase, ncomp1d,
-                                           nseed)
-        self.A_phase_r, self.phi_phase_r, self.fr_phase_r = gencoef
-
-
-    def make_error(self, time: np.array, x_al: np.array, al_cycle: float,
-                   cycle: int,  dal: float,
-                   npseudoper: int, sat_const: dict, len_repeat:float,
-                   lmax: Optional[float]=20000,
-                   savesignal: Optional[bool]=True,
+    def make_error(self, time: np.ndarray, x_al: np.ndarray, dal: float,
+                   sat_const: dict, len_repeat:float, nseed: Optional[int]=0,
                    roll_phase_file: Optional[str]=None,
                    first_date: Optional[np.datetime64]=None):
         Rearth = VOLUMETRIC_MEAN_RADIUS
@@ -106,45 +71,17 @@ class error_stat():
              self.rollphase_est1d = theta2.T *10**(-3)
              self.roll1d = roll[:] * 10**(-3)
         else:
-            # - Compute roll angle using random coefficients or signals
-            # previously initialized with the power spectrum
-            # - Compute left and right phase angles using random
-            #   coefficients or signals previously initialized
-            if savesignal is True:
-                xx = (np.float64(x_al[:]) + float(cycle * al_cycle)
-                     ) % (len_repeat)
-                # roll
-                theta = utils.gen_signal1d(xx, self.A_roll, self.phi_roll,
-                                           2 * dal, lmax, npseudoper)
-                theta_l = utils.gen_signal1d(xx, self.A_phase_l,
-                                             self.phi_phase_l,
-                                             2 * dal, lmax, npseudoper)
-                theta_r = utils.gen_signal1d(xx, self.A_phase_r,
-                                             self.phi_phase_r, 2 * dal, lmax,
-                                             npseudoper)
-            else:
-                theta_l = np.zeros((nal))
-                theta_r = np.zeros((nal))
-                theta = np.zeros((nal))
-                for comp in range(0, self.ncomp1d):
-                    phase_x_al = (2. * np.pi * float(self.fr_phase_l[comp])
-                                  * (np.float64(x_al[:]) +
-                                  + float(cycle * al_cycle)))%(2.*np.pi)
-                    theta_l[:] = (theta_l[:] + 2 * self.A_phase_l[comp]
-                                  * np.cos(phase_x_al[:]
-                                  + self.phi_phase_l[comp]))
-                    phase_x_al = (2. * np.pi * float(self.fr_phase_r[comp])
-                                  * (np.float64(x_al[:])
-                                  + float(cycle * al_cycle))) % (2.*np.pi)
-                    theta_r[:] = (theta_r[:] + 2 * self.A_phase_r[comp]
-                                  * np.cos(phase_x_al[:]
-                                  + self.phi_phase_r[comp]))
-                    phase_x_al = (2. * np.pi * float(self.fr_roll[comp])
-                                  * (np.float64(sgrid.x_al[:])
-                                  + float(cycle * al_cycle))) % (2.*np.pi)
-                    theta[:] = (theta[:] + 2 * self.A_roll[comp]
-                                * np.cos(phase_x_al[:]
-                                + self.phi_roll[comp]))
+            # - Compute roll angle using the power spectrum
+            # - Compute left and right phase angles the power spectrum
+            theta = utils.gen_signal1d(self.freq, self.PSroll, x_al,
+                                       nseed=nseed, fmin=1./len_repeat,
+                                       fmax=1./(2*dal), alpha=10)
+            theta_l = utils.gen_signal1d(self.freq, self.PSphase, x_al,
+                                         nseed=nseed + 100, fmin=1./len_repeat,
+                                         fmax=1./(2*dal), alpha=10)
+            theta_r = utils.gen_signal1d(self.freq, self.PSphase, x_al,
+                                         nseed=nseed + 200, fmin=1./len_repeat,
+                                         fmax=1./(2*dal), alpha=10)
             # - Compute the associated roll  error on the swath in m
             self.roll1d = ((1 + sat_elev / Rearth) * theta[:]
                            * np.pi/180./3600.) *10**3
