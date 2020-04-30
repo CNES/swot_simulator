@@ -28,23 +28,17 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
-GROUP = dict(
+GROUP = collections.OrderedDict(
     basic=dict(
-        description="Provides corrected sea surface height (SSH), sea surface "
-        "height anomaly (SSHA), flags to indicate data quality, geophysical "
-        "reference fields, and height-correction information on a 2 km "
-        "geographically fixed grid."),
+        description="Basic SSH measurement data and related information for "
+        "the full swath."),
     windwave=dict(
-        description="Provides measured significant wave height (SWH), "
-        "normalized radar cross section (NRCS or backscatter cross section or "
-        "sigma0), wind speed derived from sigma0 and SWH, model information "
-        "on wind and waves, and quality flags on a 2 km geographically fixed "
-        "grid."),
+        description="Wind and wave measurement data and related information "
+        "for the full swath."),
     expert=dict(
-        description="Includes copies of the Basic and the Wind and Wave files "
-        "plus more detailed information on instrument and environmental "
-        "corrections, radiometer data, and geophysical models on a 2 km "
-        "geographically fixed grid."))
+        description="Detailed contextual information, for the full swath, on "
+        "the SWOT measurements; this information is intended to allow expert "
+        "users to perform advanced analyses."))
 
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
@@ -60,7 +54,7 @@ def _parse_type(dtype, width, signed):
     if dtype == "real":
         return getattr(np, "float" + width)
     elif dtype == "integer":
-        return getattr(np, "u" if not signed else "" + "int" + width)
+        return getattr(np, ("u" if not signed else "") + "int" + width)
     elif dtype == "string":
         return np.str
     elif dtype == "char":
@@ -68,12 +62,13 @@ def _parse_type(dtype, width, signed):
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
+def _cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
+    return getattr(np, properties["dtype"])(attr_value)
+
+
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
                       lat: np.ndarray) -> Dict[str, Any]:
-    def _encode(attr_value: Union[int, float], properties: Dict[str, str]):
-        return getattr(np, properties["dtype"])(attr_value)
-
     def _iso_date(date: np.datetime64) -> str:
         return datetime.datetime.utcfromtimestamp(
             date.astype("datetime64[us]").astype("int64") *
@@ -96,30 +91,51 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
 
-    ellipsoid_semi_major_axis = _encode(
+    ellipsoid_semi_major_axis = _cast_to_dtype(
         1, attributes["ellipsoid_semi_major_axis"])
-    ellipsoid_flattening = _encode(0, attributes["ellipsoid_semi_major_axis"])
+    ellipsoid_flattening = _cast_to_dtype(
+        0, attributes["ellipsoid_semi_major_axis"])
 
     result = collections.OrderedDict({
-        "Conventions": "CF-1.7",
-        "title": attributes["title"]["attrs"]["description"],
-        "institution": "CNES/JPL",
-        "source": "Simulate product",
-        "history": now,
-        "platform": "SWOT",
-        "references": REFERENCE,
-        "reference_document": "D-56407_SWOT_Product_Description_L2_LR_SSH",
-        "contact": "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
-        "cycle_number": _encode(cycle_number, attributes["cycle_number"]),
-        "pass_number": _encode(pass_number, attributes["pass_number"]),
-        "time_coverage_start": _iso_date(date[0]),
-        "time_coverage_end": _iso_date(date[-1]),
-        "time_coverage_duration": _iso_duration(date[-1] - date[0]),
-        "time_coverage_resolution": "P1S",
-        "geospatial_lon_min": lng.min(),
-        "geospatial_lon_max": lng.max(),
-        "geospatial_lat_min": lat.min(),
-        "geospatial_lat_max": lat.max()})
+        "Conventions":
+        "CF-1.7",
+        "title":
+        attributes["title"]["attrs"]["description"],
+        "institution":
+        "CNES/JPL",
+        "source":
+        "Simulate product",
+        "history":
+        now,
+        "platform":
+        "SWOT",
+        "references":
+        REFERENCE,
+        "reference_document":
+        "D-56407_SWOT_Product_Description_L2_LR_SSH",
+        "contact":
+        "CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
+        "cycle_number":
+        _cast_to_dtype(cycle_number, attributes["cycle_number"]),
+        "pass_number":
+        _cast_to_dtype(pass_number, attributes["pass_number"]),
+        "time_coverage_start":
+        _iso_date(date[0]),
+        "time_coverage_end":
+        _iso_date(date[-1]),
+        "time_coverage_duration":
+        _iso_duration(date[-1] - date[0]),
+        "time_coverage_resolution":
+        "P1S",
+        "geospatial_lon_min":
+        lng.min(),
+        "geospatial_lon_max":
+        lng.max(),
+        "geospatial_lat_min":
+        lat.min(),
+        "geospatial_lat_max":
+        lat.max()
+    })
     if len(lng.shape) == 2:
         result.update({
             "left_first_longitude": lng[0, 0],
@@ -132,16 +148,28 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
             "right_last_latitude": lat[-1, -1],
         })
     result.update({
-        "wavelength": _encode(0.008385803020979, attributes["wavelength"]),
-        "orbit_solution": "POE",
-        "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
-        "ellipsoid_flattening": ellipsoid_flattening,
-        "standard_name_vocabulary": "CF Standard Name Table vNN",
+        "wavelength":
+        _cast_to_dtype(0.008385803020979, attributes["wavelength"]),
+        "orbit_solution":
+        "POE",
     })
     for item in attributes:
         if item.startswith("xref_input"):
             result[item] = "N/A"
+    result.update({
+        "ellipsoid_semi_major_axis": ellipsoid_semi_major_axis,
+        "ellipsoid_flattening": ellipsoid_flattening
+    })
     return result
+
+
+def _strtobool(value: str) -> bool:
+    value = value.lower()
+    if value == "true":
+        return True
+    elif value == "false":
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
 
 
 def _parser(tree: xt.ElementTree):
@@ -159,7 +187,8 @@ def _parser(tree: xt.ElementTree):
     for item in _find(_find(tree.getroot(), 'science'), 'nodes'):
         dtype = _parse_type(
             item.tag, item.attrib["width"],
-            bool(item.attrib["signed"]) if "signed" in item.attrib else None)
+            _strtobool(item.attrib["signed"])
+            if "signed" in item.attrib else None)
         if not isinstance(dtype, np.dtype):
             dtype = dtype.__name__
         annotation = item.find("annotation")
@@ -201,41 +230,49 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
     return dtype, kwargs
 
 
-def _create_variable(dataset: netCDF4.Dataset,
+def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
                      encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
+                     unlimited_dims: Optional[List[str]],
                      variable: xr.Variable) -> None:
     """Creation and writing of the NetCDF variable"""
+    unlimited_dims = unlimited_dims or list()
+
     variable.attrs.pop("_FillValue", None)
-    dtype, kwargs = _create_variable_args(encoding, name, variable)
-    if np.issubdtype(dtype, np.datetime64):
-        dtype = np.int64
-        variable.values = variable.values.astype("datetime64[us]").astype(
-            "int64")
-        assert (variable.attrs["units"] ==
-                "microseconds since 2000-01-01 00:00:00.0")
+    # Encode datetime64 to float64
+    if np.issubdtype(variable.dtype, np.datetime64):
         # 946684800000000 number of microseconds between 2000-01-01 and
         # 1970-01-01
-        variable.values -= 946684800000000
+        variable.values = (
+            variable.values.astype("datetime64[us]").astype("int64") -
+            946684800000000) * 1e-6
+        assert (
+            variable.attrs["units"] == "seconds since 2000-01-01 00:00:00.0")
+    dtype, kwargs = _create_variable_args(encoding, name, variable)
 
     parts = name.split("/")
     name = parts.pop()
     group = parts.pop() if parts else None
 
     if group is not None:
-        if group not in dataset.groups:
-            dataset = dataset.createGroup(group)
+        if group not in nc_dataset.groups:
+            # Creating the group, dimensions and attributes
+            nc_dataset = nc_dataset.createGroup(group)
+            for dim_name, size in xr_dataset.dims.items():
+                nc_dataset.createDimension(
+                    dim_name, None if dim_name in unlimited_dims else size)
+
             if group in GROUP:
-                dataset.setncatts(GROUP[group])
+                nc_dataset.setncatts(GROUP[group])
         else:
-            dataset = dataset.groups[group]
-    ncvar = dataset.createVariable(name, dtype, variable.dims, **kwargs)
+            nc_dataset = nc_dataset.groups[group]
+    ncvar = nc_dataset.createVariable(name, dtype, variable.dims, **kwargs)
     ncvar.setncatts(variable.attrs)
     values = variable.values
     if kwargs['fill_value'] is not None:
         if values.dtype.kind == "f" and np.any(np.isnan(values)):
             values[np.isnan(values)] = kwargs['fill_value']
         values = np.ma.array(values, mask=values == kwargs['fill_value'])
-    dataset[name][:] = values
+    nc_dataset[name][:] = values
 
 
 def to_netcdf(dataset: xr.Dataset,
@@ -245,23 +282,21 @@ def to_netcdf(dataset: xr.Dataset,
               **kwargs):
     """Write dataset contents to a netCDF file"""
     encoding = encoding or dict()
-    unlimited_dims = unlimited_dims or list()
 
     if isinstance(path, str):
         path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with netCDF4.Dataset(path, **kwargs) as stream:
-        for name, size in dataset.dims.items():
-            stream.createDimension(name,
-                                   None if name in unlimited_dims else size)
-            stream.setncatts(dataset.attrs)
+        stream.setncatts(dataset.attrs)
 
         for name, variable in dataset.coords.items():
-            _create_variable(stream, encoding, name, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
         for name, variable in dataset.data_vars.items():
-            _create_variable(stream, encoding, name, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
 
 class ProductSpecification:
@@ -271,12 +306,6 @@ class ProductSpecification:
 
     def __init__(self):
         self.variables, self.attributes = _parser(xt.parse(self.SPECIFICATION))
-        for item in ["basic/time", "basic/time_tai"]:
-            properties = self.variables[item]
-            properties["attrs"].update(
-                dict(units="microseconds since 2000-01-01 00:00:00.0",
-                     _FillValue=-2**63))
-            properties["dtype"] = "int64"
 
     @staticmethod
     def fill_value(properties):
@@ -286,17 +315,8 @@ class ProductSpecification:
         return np.array(properties["attrs"]["_FillValue"], dtype)
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
-        properties = self.variables["basic/time"]
-        attrs = properties["attrs"]
-        attrs.pop("_FillValue")
-        return {
-            "basic/time": {}
-        }, [
-            xr.DataArray(data=time,
-                         dims=properties["shape"],
-                         name="basic/time",
-                         attrs=attrs)
-        ]
+        encoding, data_array = self._data_array("basic/time", time)
+        return {"basic/time": encoding}, [data_array]
 
     def _data_array(self, name: str,
                     data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
@@ -312,13 +332,24 @@ class ProductSpecification:
                                         dtype=properties["dtype"])
 
         # Some values read from the XML files must be decoded
-        for item in ["add_offset", "scale_factor", "valid_min", "valid_max"]:
+        # TODO(fbriol): The type of these attributes should be determined from
+        # their type, but at the moment this is not possible.
+        for item in ["add_offset", "scale_factor"]:
             if item in attrs:
                 attrs[item] = float(attrs[item])
-        if "scale_factor" in attrs and "add_offset" not in attrs:
-            attrs["add_offset"] = 0.0
-        if "add_offset" in attrs and "scale_factor" not in attrs:
-            attrs["scale_factor"] = 1.0
+        for item in ["valid_range", "valid_min", "valid_max"]:
+            if item in attrs:
+                attrs[item] = _cast_to_dtype(attrs[item], properties)
+        if "flag_values" in attrs:
+            items = attrs["flag_values"].split()
+            attrs["flag_values"] = np.array(
+                [_cast_to_dtype(item, properties) for item in items],
+                properties["dtype"]) if len(items) != 1 else _cast_to_dtype(
+                    float(attrs["flag_values"]), properties)
+        # if "scale_factor" in attrs and "add_offset" not in attrs:
+        #     attrs["add_offset"] = 0.0
+        # if "add_offset" in attrs and "scale_factor" not in attrs:
+        #     attrs["scale_factor"] = 1.0
         return encoding, xr.DataArray(data=data,
                                       dims=properties["shape"],
                                       name=name,
@@ -361,8 +392,8 @@ class ProductSpecification:
                             'standard_name':
                             'sea surface height above reference ellipsoid',
                             'units': 'm',
-                            'valid_min': -15000000.0,
-                            'valid_max': 150000000.0
+                            'valid_min': np.int32(-15000000),
+                            'valid_max': np.int32(150000000)
                         })
     def ssh_true_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
@@ -644,8 +675,18 @@ class Nadir:
             lng = dvars["expert/longitude_nadir"]
             lat = dvars["expert/latitude_nadir"]
 
-        dataset = xr.Dataset(data_vars=dict(
-            (item.name, item) for item in self.data_vars),
+        # Variables must be written in the declaration order of the XML file
+        unordered_vars = dict((item.name, item) for item in self.data_vars)
+        data_vars = collections.OrderedDict()
+        for item in self.product_spec.variables.keys():
+            if item in unordered_vars:
+                data_vars[item] = unordered_vars[item]
+
+        # Add variables that are not defined in the XML file
+        for item in set(unordered_vars.keys()) - set(data_vars.keys()):
+            data_vars[item] = unordered_vars[item]
+
+        dataset = xr.Dataset(data_vars=data_vars,
                              attrs=global_attributes(
                                  self.product_spec.attributes, cycle_number,
                                  pass_number, self.data_vars[0].values, lng,
