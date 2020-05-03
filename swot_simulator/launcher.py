@@ -127,8 +127,11 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
     if track is None:
         return
     track.time = date
-
+    # Set standalon to True to Run nadir alone
+    standalone = True
     if parameters.swath:
+        # set standalone to False as nadir do not run alone
+        standalone=False
         # Create the swath dataset
         product = product_specification.Swath(track)
 
