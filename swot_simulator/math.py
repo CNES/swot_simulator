@@ -124,6 +124,7 @@ def __cartesian2spherical(x: float, y: float, z: float) -> Tuple[float, float]:
 def calculate_swath(delta_ac: float, half_gap: float, half_swath: int,
                     radius: float, location: np.ndarray,
                     direction: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Calculation of swath geometry"""
     lon = np.empty((location.shape[0], 2 * half_swath), dtype=np.float64)
     lat = np.empty((location.shape[0], 2 * half_swath), dtype=np.float64)
 
