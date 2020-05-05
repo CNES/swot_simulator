@@ -119,20 +119,18 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
              first_date: np.datetime64,
              orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
+    """Simulate a track"""
     # Initialize this worker's logger.
     logbook.setup_worker_logging(logging_server)
-    LOGGER.info(f"generate pass {cycle_number}/{pass_number}")
+    LOGGER.info("generate pass %d/%d", cycle_number, pass_number)
 
     # Compute the spatial/temporal position of the satellite
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
     if track is None:
         return
     track.time = date
-    # Set standalon to True to Run nadir alone
-    standalone = True
+
     if parameters.swath:
-        # set standalone to False as nadir do not run alone
-        standalone=False
         # Create the swath dataset
         product = product_specification.Swath(track)
 
@@ -170,7 +168,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         standalone=False
     # Create the nadir dataset
     if parameters.nadir:
-        product = product_specification.Nadir(track, standalone=standalone)
+        product = product_specification.Nadir(track,
+                                              standalone=not parameters.swath)
 
         # If the file has already been generated, the other operations are
         # ignored
@@ -205,6 +204,7 @@ def launch(client: dask.distributed.Client,
            logging_server: Tuple[str, int, int],
            first_date: Optional[datetime.datetime] = None,
            last_date: Optional[datetime.datetime] = None):
+    """Executes the simulation set to the selected period."""
     # Displaying Dask client information.
     LOGGER.info(client)
 
@@ -222,8 +222,6 @@ def launch(client: dask.distributed.Client,
         # By default, only one cycle is processed.
         last_date = first_date + ((orbit.time[-1]).astype(np.int64) *
                                   1000000).astype("timedelta64[us]")
-    else:
-        last_date = last_date
 
     # For the moment, we start the processing on the first pass
     absolute_track = 1
@@ -275,6 +273,9 @@ def main():
         client.close()
         logger.info("End of processing.")
         return 0
+    #: pylint: disable=broad-except
+    # All exceptions are caught in the main function to display it in the log
+    # and return the appropriate error code.
     except Exception as exc:
         # Clients are stopped before writing the error message to the log to
         # ensure that the log will end with the exception captured.
@@ -283,6 +284,7 @@ def main():
             exception.structured_traceback(
                 exc, traceback.extract_tb(sys.exc_info()[2])))
         logger.error("End of processing.")
+    #: pylint: enable=broad-except
     return 1
 
 

@@ -13,10 +13,11 @@ import collections
 import logging
 import os
 import pathlib
+import xml.etree.ElementTree as xt
+#
 import netCDF4
 import numpy as np
 import xarray as xr
-import xml.etree.ElementTree as xt
 from . import orbit_propagator
 from . import math_func
 from os import name
@@ -652,33 +653,35 @@ class Nadir:
     def error(self, parameter, edict: Dict) -> None:
         for key in edict.keys():
             self._data_array(key, edict[key])
-
-    def to_netcdf(self, cycle_number: int, pass_number: int,
-                  path: str, complete_product: bool) -> None:
+    def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
+                  complete_product: bool) -> None:
         LOGGER.info("write %s", path)
-        dvars = dict((item.name, item) for item in self.data_vars)
+        data_vars = dict((item.name, item) for item in self.data_vars)
         # Variables that are not calculated are filled in in order to have a
         # product compatible with the PDD SWOT. Longitude is used as a
         # template.
-        if complete_product and "basic/longitude" in dvars:
-            item = dvars["basic/longitude"]
+        if complete_product and "basic/longitude" in data_vars:
+            item = data_vars["basic/longitude"]
             shape = dict(zip(item.dims, item.shape))
             shape["num_sides"] = 2
             for encoding, array in self.product_spec.fill_variables(
-                    dvars.keys(), shape):
+                    data_vars.keys(), shape):
                 self.encoding[array.name] = encoding
                 self.data_vars.append(array)
-        if "basic/longitude" in dvars:
-            lng = dvars["basic/longitude"]
-            lat = dvars["basic/latitude"]
+        if "basic/longitude" in data_vars:
+            lng = data_vars["basic/longitude"]
+            lat = data_vars["basic/latitude"]
+        elif self.standalone:
+            lng = data_vars["expert/longitude"]
+            lat = data_vars["expert/latitude"]
         else:
-            lng = dvars["expert/longitude_nadir"]
-            lat = dvars["expert/latitude_nadir"]
+            lng = data_vars["expert/longitude_nadir"]
+            lat = data_vars["expert/latitude_nadir"]
 
         # Variables must be written in the declaration order of the XML file
         unordered_vars = dict((item.name, item) for item in self.data_vars)
         data_vars = collections.OrderedDict()
-        for item in self.product_spec.variables.keys():
+        for item in self.product_spec.variables:
             if item in unordered_vars:
                 data_vars[item] = unordered_vars[item]
 
