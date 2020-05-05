@@ -94,13 +94,9 @@ class Parameters:
         shift_lon=(None, float),
         shift_time=(None, float),
         noise=(True, bool),
-        len_repeat=(40000*14*50, float),
-        npseudoper=(30, int),
+        len_repeat=(20000, float),
         save_signal=(True, bool),
         roll_phase_file=(None, str),
-        lambda_max=(20000, float),
-        ncomp1d=(2000, int),
-        ncomp2d=(2000, int),
         error_spectrum_file=(None, str),
         karin_file=(None, str),
         swh=(2, int),
@@ -166,9 +162,8 @@ class Parameters:
 
     def dict_error(self) -> dict:
         err = {}
-        list_param_err = ['len_repeat', 'npseudoper', 'save_signal',
-                          'roll_phase_file', 'lambda_max', 'ncomp1d',
-                          'ncomp2d', 'error_spectrum_file', 'karin_file', 'swh',
+        list_param_err = ['len_repeat', 'roll_phase_file',
+                          'error_spectrum_file', 'karin_file', 'swh',
                           'nrand_karin', 'nbeam', 'sigma', 'beam_position',
                           'roll_phase_file', 'nseed']
         for key in list_param_err:

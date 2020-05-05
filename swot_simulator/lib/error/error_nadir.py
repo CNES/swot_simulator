@@ -6,7 +6,7 @@ import numpy as np
 def make_error(x_al:np.ndarray, al_cycle:float, cycle_number:int, dal:int,
                par_err:dict)->dict:
     dic_err = {}
-    err = error_altimeter.error_stat(par_err['ncomp1d'], dal)
+    err = error_altimeter.error_stat(dal)
     err.make_error(x_al, dal, par_err['len_repeat'], nseed=par_err['nseed'])
     dic_err['err_altimeter'] = err.nadir
     return dic_err

@@ -182,10 +182,8 @@ def gen_signal2d_rectangle(fi: np.ndarray, PSi: np.ndarray, x: np.ndarray,
     interp1 = interpolate.interp1d
     finterp = interp1(np.log(fi[PSi>0]), np.log(PSi[PSi>0]),
                       bounds_error=False, fill_value="extrapolate")
-
-
     f = np.arange(fmin, fmaxr + fmin, fmin)
-
+    PS = np.exp(finterp(np.log(f)))
 
     # lf_extpl=True prolongates the PSi as a plateau below min(fi).
     # Otherwise, we consider zeros values. same for hf

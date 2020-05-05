@@ -15,8 +15,7 @@ class error_stat():
     If the random realisations have already been computed and stored in file
     file_coeff, the random realisations are read directly using load_coeff.
     The correspondg errors on a swath can be computed using make_error. '''
-    def __init__(self, ncomp1d: int, dal: float) -> None:
-        self.ncomp1d = ncomp1d
+    def __init__(self, dal: float) -> None:
         # - Define the sepctrum of the nadir instrument error
         f = np.arange(1./3000., 1./float(2.*dal), 1./3000.)
         PSD = 8 + 1.05 * 10**(-4) * f**(-2.2)

@@ -116,6 +116,7 @@ def file_path(date: np.datetime64,
 
 
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
+             first_date: np.datetime64,
              orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
     # Initialize this worker's logger.
@@ -213,8 +214,8 @@ def launch(client: dask.distributed.Client,
     # Calculation of the properties of the orbit to be processed.
     assert parameters.ephemeris is not None
     with open(parameters.ephemeris, "r") as stream:  # type: TextIO
-        orbit = orbit_propagator.calculate_orbit(parameters,
-                                                 stream)  # type: ignore
+        orbit = orbit_propagator.calculate_orbit(parameters, stream)
+        # type: ignore
     #: pylint: enable=no-member
 
     if last_date is None:
@@ -240,7 +241,7 @@ def launch(client: dask.distributed.Client,
         # Generation of the simulated product.
         futures.append(
             client.submit(simulate, cycle, track, date, first_date, _orbit,
-                          _parameters))
+                          _parameters, logging_server))
 
         # Shift the date of the duration of the generated pass
         date += orbit.pass_duration(track)

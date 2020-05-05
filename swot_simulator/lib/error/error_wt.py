@@ -30,11 +30,6 @@ class error_stat():
 
     def init_radio(self, x_al:np.ndarray, dal: float, len_repeat: float,
                              nseed: Optional[int]=0)-> None:
-        # - Compute random coefficients in 2D using the previously
-        #   defined power spectrum
-        gencoef = utils.gen_coeff_signal2d(self.freq, self.PSwt, ncomp2d,
-                                           nseed + 100)
-        self.A_wt, self.phi_wt, self.frx_wt, self.fry_wt = gencoef
         # - Define radiometer error power spectrum for a beam
         #   High frequencies are cut to filter the associated error:
         #   during the reconstruction of the wet trop signal
@@ -45,14 +40,14 @@ class error_stat():
         PSradio[np.where(self.freq > 0.0683)] = 0.32
         # - Compute random coefficients (1D) for the radiometer error
         #   power spectrum for right and left beams
-        _hrad = gen_signal1d(self.freq, PSradio, x_al, fmin=1./len_repeat,
-                             fmax=1./(2*dal), alpha=10, seed=nseed + 100,
+        _hrad = utils.gen_signal1d(self.freq, PSradio, x_al, fmin=1./len_repeat,
+                             fmax=1./(2*dal), alpha=10, nseed=nseed + 100,
                              hf_extpl=True, lf_extpl=True)
-        self.radio_r = _hrad
-        _hrad = gen_signal1d(self.freq, PSradio, x_al, fmin=1./len_repeat,
-                             fmax=1./(2*dal), alpha=10, seed=nseed + 200,
+        self.radio_r = _hrad * 10**(-2)
+        _hrad = utils.gen_signal1d(self.freq, PSradio, x_al, fmin=1./len_repeat,
+                             fmax=1./(2*dal), alpha=10, nseed=nseed + 200,
                              hf_extpl=True, lf_extpl=True)
-        self.radio_l = _hrad
+        self.radio_l = _hrad * 10**(-2)
 
 
     def make_error(self, x_al: np.array, x_ac: np.array, dal: float,
@@ -68,7 +63,7 @@ class error_stat():
         _to_km = (1 / (Fka * 2 * np.pi / sat_const['C'] * sat_const['B'])
                   * (1 + sat_elev/Rearth)*np.pi/180. * 10**3)
         # - Initialization of radiometer error in right and left beam
-        self.init_radio(self, x_al, dal, len_repeat, nseed=nseed)
+        self.init_radio(x_al, dal, len_repeat, nseed=nseed)
         # - Initialization of swath matrices and large swath matrices
         #   (which include wet tropo data around the nadir and outside
         #   the swath)
@@ -85,14 +80,16 @@ class error_stat():
         fminx = 1./len_repeat
         fminy = 1./lac_max
         wt = utils.gen_signal2d_rectangle(self.freq, self.PSwt, x_al, x_ac,
-                                            fminx=fminx, fminy=fminy,
-                                            fmax=1./20, alpha=10, nseed=nseed,
-                                            lf_extpl=True)
-        wt_large = utils.gen_signal2d_rectangle(self.freq, self.PSwt, x_al,
-                                                x_ac_large, fminx=fminx,
-                                                fminy=fminy, fmax=1./20,
-                                                alpha=10, nseed=nseed,
-                                                lf_extpl=True)
+                                          fminx=fminx, fminy=fminy,
+                                          fmax=1./20, alpha=10, nseed=nseed,
+                                          lf_extpl=True)
+        self.wt = wt.transpose() *10**(-2)
+        wt_large = utils.gen_signal2d_rectangle(self.freq, self.PSwt,
+                                                x_al, x_ac_large,
+                                                fminx=fminx, fminy=fminy,
+                                                fmax=1./20, alpha=10,
+                                                nseed=nseed, lf_extpl=True)
+        wt_large = wt_large.transpose()  *10**(-2)
         # - Compute Residual path delay error after a 1-beam radiometer
         #   correction
         if nbeam == 1 or nbeam == 12:
@@ -153,6 +150,10 @@ class error_stat():
                                                         / (2.*sigma**2))
                 beam_r[i] = (sum(sum(G*wt_large[slice_al, slice_acr]))
                              / sum(sum(G))+self.radio_r[i])
+                x, y = np.meshgrid(x_ac_large[slice_acl],
+                                   x_al[slice_al] - x_al[i])
+                G = 1. / (2.*np.pi*sigma**2) * np.exp(-(x**2. + y**2.)
+                                                        / (2.*sigma**2))
                 beam_l[i] = (sum(sum(G*wt_large[slice_al, slice_acl]))
                              / sum(sum(G)) + self.radio_l[i])
             # - Filtering beam signal to cut frequencies higher than 125 km
@@ -172,7 +173,6 @@ class error_stat():
             self.wet_tropo2 = + diff_h2  # en 2d
             self.wet_tropo2nadir = + diff_h2nadir  # en 1d
         self.wtnadir = + wt_large[:, int(naclarge/2.)]
-        self.wt = wt
         if (not nbeam == 1) and (not nbeam == 2) \
            and (not nbeam == 12):
             logger.error("\n nbeam = {} \n".format(nbeam))

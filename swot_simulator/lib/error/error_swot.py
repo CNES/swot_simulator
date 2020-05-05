@@ -30,39 +30,33 @@ def make_error(x_al:np.array, x_ac:np.array, al_cycle:float, time:np.array,
     dic_err = {}
     ns = par_err['nseed']
     # KaRIN random error
-#    karin = error_karin.error_stat(par_err['karin_file'],
-#                                   par_err['nrand_karin'])
-#    karin.init_error(np.shape(x_ac)[0], ns)
-#    karin.make_error(x_al, x_ac, al_cycle, cycle_number, dal, dac,
-#                     par_err['swh'])
-#    dic_err['karin'] = karin.karin
+    karin = error_karin.error_stat(par_err['karin_file'],
+                                   par_err['nrand_karin'])
+    karin.init_error(np.shape(x_ac)[0], ns)
+    karin.make_error(x_al, x_ac, al_cycle, cycle_number, dal, dac,
+                     par_err['swh'])
+    dic_err['karin'] = karin.karin
     ds = utils.read_file_instr(par_err['error_spectrum_file'], dal,
                                par_err['len_repeat'])
     bd = error_baselinedilation.error_stat(ds)
+    bd.make_error(x_al, dal, sat_const, par_err['len_repeat'], nseed=(ns + 1))
+    dic_err['baseline_dilation'] = bd.reconstruct_2D_error(x_ac)
     rp = error_roll_phase.error_stat(ds)
+    rp.make_error(time, x_al, dal, sat_const, par_err['len_repeat'],
+                  nseed=(ns + 2), roll_phase_file=par_err['roll_phase_file'],
+                  first_date=first_date)
+    result = rp.reconstruct_2D_error(x_ac)
+    dic_err['phase'], dic_err['roll'], dic_err['roll_phase_est'] = result
     ti = error_timing.error_stat(ds)
+    ti.make_error(x_al, dal, sat_const, par_err['len_repeat'], nseed=(ns + 3))
+    dic_err['timing'] = ti.reconstruct_2D_error(x_ac)
     wt = error_wt.error_stat(dal)
-#    bd.make_error(x_al, dal, sat_const, par_err['len_repeat'], nseed=(ns + 1))
-#    rp.make_error(time, x_al, dal, sat_const, par_err['len_repeat'],
-#                  nseed=(ns + 2), roll_phase_file=par_err['roll_phase_file'],
-#                  first_date=first_date)
-#    ti.make_error(x_al, dal, sat_const, par_err['len_repeat'], nseed=(ns + 3))
-#    wt.make_error(x_al, x_ac, dal, dac, par_err['nbeam'], par_err['sigma'],
-#                  par_err['beam_position'], sat_const, par_err['len_repeat'],
-#                  nseed=(ns + 4), lac_max=500)
+    wt.make_error(x_al, x_ac, dal, dac, par_err['nbeam'], par_err['sigma'],
+                  par_err['beam_position'], sat_const, par_err['len_repeat'],
+                  nseed=(ns + 4), lac_max=500)
 
-#    dic_err['baseline_dilation'] = bd.reconstruct_2D_error(x_ac)
-#    result = rp.reconstruct_2D_error(x_ac)
-#    dic_err['phase'], dic_err['roll'], dic_err['roll_phase_est'] = result
-#    dic_err['timing'] = ti.reconstruct_2D_error(x_ac)
-#    result = wt.reconstruct_2D_error()
-#    dic_err['wt'], dic_err['wet_tropo2'], var = result
-    dic_err['wt'] = np.zeros((len(x_al), len(x_ac)))
-    dic_err['baseline_dilation'] = np.zeros((len(x_al), len(x_ac)))
-    dic_err['phase'] = np.zeros((len(x_al), len(x_ac)))
-    dic_err['karin'] = np.zeros((len(x_al), len(x_ac)))
-    dic_err['timing'] = np.zeros((len(x_al), len(x_ac)))
-    dic_err['wet_tropo2'] = np.zeros((len(x_al), len(x_ac)))
+    result = wt.reconstruct_2D_error()
+    dic_err['wt'], dic_err['wet_tropo2'], var = result
     return dic_err
 
 def add_error(dic_err:dict, ssh_true:np.array) -> np.array:
