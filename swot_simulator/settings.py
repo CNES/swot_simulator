@@ -165,7 +165,7 @@ class Parameters:
         list_param_err = ['len_repeat', 'roll_phase_file',
                           'error_spectrum_file', 'karin_file', 'swh',
                           'nrand_karin', 'nbeam', 'sigma', 'beam_position',
-                          'roll_phase_file', 'nseed']
+                          'roll_phase_file', 'nseed', 'noise']
         for key in list_param_err:
             err[key] = self.__dict__[key]
         return err
