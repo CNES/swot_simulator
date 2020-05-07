@@ -47,6 +47,3 @@ class Parameters:
     @property
     def box(self) -> math.Box:
         ...
-
-    def errors(self) -> Dict[str, Any]:
-        ...

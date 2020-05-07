@@ -108,13 +108,6 @@ class Parameters:
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
     )
 
-    #: List of error settings to be simulated.
-    ERRORS = [
-        'len_repeat', 'roll_phase_file', 'error_spectrum_file', 'karin_file',
-        'swh', 'nrand_karin', 'nbeam', 'sigma', 'beam_position',
-        'roll_phase_file', 'nseed'
-    ]
-
     def __init__(self, overrides: Dict[str, Any]):
         if "ephemeris" not in overrides:
             raise TypeError("missing required argument: 'ephemeris'")
@@ -170,7 +163,3 @@ class Parameters:
         if area is None:
             return math.Box()
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
-
-    def errors(self) -> Dict[str, Any]:
-        """Parameters of the errors to be simulated."""
-        return dict((k, self.__dict__[k]) for k in self.ERRORS)
