@@ -158,9 +158,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                 errors = swot_error.make_error(track.x_al, track.x_ac,
                                                orbit.curvilinear_distance,
                                                track.time, cycle_number,
-                                               parameters.delta_al,
-                                               parameters.delta_ac, first_date,
-                                               parameters.errors())
+                                               first_date, parameters)
                 if ssh is not None:
                     product.ssh(swot_error.add_error(errors, ssh))
                 product.error(parameters, errors)
@@ -190,8 +188,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
             if (parameters.noise is True) and (np.shape(track.x_al)[0] > 1):
                 # Computation of noise
-                edict = nadir_error.make_error(track.x_al, parameters.delta_al,
-                                               parameters.errors())
+                edict = nadir_error.make_error(track.x_al, parameters)
                 if ssh is not None:
                     product.ssh(nadir_error.add_error(edict, ssh))
                 product.error(parameters, edict)

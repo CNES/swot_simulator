@@ -2,12 +2,12 @@ from typing import Dict
 import numpy as np
 from . import altimeter
 
+from .. import settings
 
-def make_error(x_al: np.ndarray, dal: float,
-               par_err: dict) -> Dict[str, np.ndarray]:
-    err = altimeter.ErrorStat(dal)
-    err.make_error(x_al, dal, par_err['len_repeat'], nseed=par_err['nseed'])
-    return {'err_altimeter': err.nadir}
+
+def make_error(x_al: np.ndarray, parameters: settings.Parameters) -> Dict[str, np.ndarray]:
+    err = altimeter.ErrorStat(parameters)
+    return {'err_altimeter': err.make_error(x_al)}
 
 
 def add_error(dic_err: Dict[str, np.ndarray],

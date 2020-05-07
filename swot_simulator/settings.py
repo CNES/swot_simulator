@@ -159,6 +159,11 @@ class Parameters:
                 LOGGER.warning("%s", exc)
         self.__dict__.update((key, value) for key, value in settings.items())
 
+        if self.__dict__['nbeam'] not in [1, 2, 12]:
+            raise ValueError(
+                f"nbeam should be either 1 or 2 or 12, not {self.__dict__['nbeam']}"
+            )
+
     @property
     def box(self) -> math.Box:
         area = self.__dict__["area"]
