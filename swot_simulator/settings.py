@@ -12,7 +12,7 @@ import os
 import logging
 import traceback
 import types
-from . import math_func
+from . import math
 from .plugins import ssh
 
 #: Default working directory
@@ -106,7 +106,14 @@ class Parameters:
         beam_position=((-20, 20), list),
         nseed=(0, int),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
-        )
+    )
+
+    #: List of error settings to be simulated.
+    ERRORS = [
+        'len_repeat', 'roll_phase_file', 'error_spectrum_file', 'karin_file',
+        'swh', 'nrand_karin', 'nbeam', 'sigma', 'beam_position',
+        'roll_phase_file', 'nseed'
+    ]
 
     def __init__(self, overrides: Dict[str, Any]):
         if "ephemeris" not in overrides:
@@ -153,19 +160,12 @@ class Parameters:
         self.__dict__.update((key, value) for key, value in settings.items())
 
     @property
-    def box(self) -> math_func.Box:
+    def box(self) -> math.Box:
         area = self.__dict__["area"]
         if area is None:
-            return math_func.Box()
-        return math_func.Box(math_func.Point(*area[:2]),
-                             math_func.Point(*area[-2:]))
+            return math.Box()
+        return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
 
-    def dict_error(self) -> dict:
-        err = {}
-        list_param_err = ['len_repeat', 'roll_phase_file',
-                          'error_spectrum_file', 'karin_file', 'swh',
-                          'nrand_karin', 'nbeam', 'sigma', 'beam_position',
-                          'roll_phase_file', 'nseed']
-        for key in list_param_err:
-            err[key] = self.__dict__[key]
-        return err
+    def errors(self) -> Dict[str, Any]:
+        """Parameters of the errors to be simulated."""
+        return dict((k, self.__dict__[k]) for k in self.ERRORS)

@@ -21,8 +21,8 @@ from . import logbook
 from . import product_specification
 from . import orbit_propagator
 from . import settings
-from .lib.error import error_swot
-from .lib.error import error_nadir
+from .error import swot as swot_error
+from .error import nadir as nadir_error
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -116,8 +116,8 @@ def file_path(date: np.datetime64,
 
 
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
-             first_date: np.datetime64,
-             orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
+             first_date: np.datetime64, orbit: orbit_propagator.Orbit,
+             parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
     """Simulate a track"""
     # Initialize this worker's logger.
@@ -138,34 +138,35 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         # ignored
         path = file_path(date, cycle_number, pass_number,
                          parameters.working_directory)
+
         ## TODO: remove, option to overwrite path
-        delta_al = parameters.delta_al
-        delta_ac = parameters.delta_ac
         if not os.path.exists(path):
+            ssh = None
 
             # Interpolation of the SSH if the user wishes.
             if parameters.ssh_plugin is not None:
                 swath_time = np.repeat(track.time, track.lon.shape[1]).reshape(
                     track.lon.shape)
-                _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
-                                                         track.lat.flatten(),
-                                                         swath_time.flatten())
+                _ssh = parameters.ssh_plugin.interpolate(
+                    track.lon.flatten(), track.lat.flatten(),
+                    swath_time.flatten())
                 ssh = _ssh.reshape(track.lon.shape)
                 product.ssh_true(ssh)
 
-            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
+            if parameters.noise is True and np.shape(track.x_al)[0] > 1:
                 # Computation of noise
-                edict = error_swot.make_error(track.x_al, track.x_ac,
-                                              track.al_cycle, track.time,
-                                              cycle_number, delta_al, delta_ac,
-                                              first_date,
-                                              parameters.dict_error())
-                if parameters.ssh_plugin is not None:
-                    product.ssh(error_swot.add_error(edict, ssh))
-                product.error(parameters, edict)
+                errors = swot_error.make_error(track.x_al, track.x_ac,
+                                               orbit.curvilinear_distance,
+                                               track.time, cycle_number,
+                                               parameters.delta_al,
+                                               parameters.delta_ac, first_date,
+                                               parameters.errors())
+                if ssh is not None:
+                    product.ssh(swot_error.add_error(errors, ssh))
+                product.error(parameters, errors)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
-        standalone=False
+
     # Create the nadir dataset
     if parameters.nadir:
         product = product_specification.Nadir(track,
@@ -179,20 +180,20 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                          parameters.working_directory,
                          nadir=True)
         if not os.path.exists(path):
+            ssh = None
 
             # Interpolation of the SSH if the user wishes.
             if parameters.ssh_plugin is not None:
-                ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
-                                                         track.lat_nadir,
-                                                         track.time)
+                ssh = parameters.ssh_plugin.interpolate(
+                    track.lon_nadir, track.lat_nadir, track.time)
                 product.ssh_true(ssh)
-            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
+
+            if (parameters.noise is True) and (np.shape(track.x_al)[0] > 1):
                 # Computation of noise
-                edict = error_nadir.make_error(track.x_al, track.al_cycle,
-                                               cycle_number, delta_al,
-                                               parameters.dict_error())
-                if parameters.ssh_plugin is not None:
-                    product.ssh(error_nadir.add_error(edict, ssh))
+                edict = nadir_error.make_error(track.x_al, parameters.delta_al,
+                                               parameters.errors())
+                if ssh is not None:
+                    product.ssh(nadir_error.add_error(edict, ssh))
                 product.error(parameters, edict)
 
             product.to_netcdf(cycle_number, pass_number, path,
@@ -214,8 +215,8 @@ def launch(client: dask.distributed.Client,
     # Calculation of the properties of the orbit to be processed.
     assert parameters.ephemeris is not None
     with open(parameters.ephemeris, "r") as stream:  # type: TextIO
-        orbit = orbit_propagator.calculate_orbit(parameters, stream)
-        # type: ignore
+        orbit = orbit_propagator.calculate_orbit(parameters,
+                                                 stream)  # type: ignore
     #: pylint: enable=no-member
 
     if last_date is None:

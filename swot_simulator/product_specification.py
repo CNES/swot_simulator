@@ -19,8 +19,7 @@ import netCDF4
 import numpy as np
 import xarray as xr
 from . import orbit_propagator
-from . import math_func
-from os import name
+from . import math
 
 LOGGER = logging.getLogger(__name__)
 
@@ -362,12 +361,12 @@ class ProductSpecification:
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
         return self._data_array("basic/longitude",
-                                math_func.normalize_longitude(lon, 0))
+                                math.normalize_longitude(lon, 0))
 
     def lon_nadir(self, lon_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
         return self._data_array("expert/longitude_nadir",
-                                math_func.normalize_longitude(lon_nadir, 0))
+                                math.normalize_longitude(lon_nadir, 0))
 
     def lat(self, lat: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return self._data_array("basic/latitude", lat)
@@ -396,6 +395,7 @@ class ProductSpecification:
                             'valid_min': np.int32(-15000000),
                             'valid_max': np.int32(150000000)
                         })
+
     def ssh_true_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
@@ -413,6 +413,7 @@ class ProductSpecification:
                             'valid_min': -15000000.0,
                             'valid_max': 150000000.0
                         })
+
     def ssh_true(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
@@ -432,7 +433,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def baseline_dilation(self, array: np.ndarray)-> Tuple[Dict, xr.DataArray]:
+    def baseline_dilation(self,
+                          array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32',
@@ -506,6 +508,7 @@ class ProductSpecification:
                             'valid_max': 150000000.0,
                             'coordinates': 'longitude latitude'
                         })
+
     def karin(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
@@ -523,6 +526,7 @@ class ProductSpecification:
                             'valid_max': 150000000.0,
                             'coordinates': 'longitude latitude'
                         })
+
     def timing(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
@@ -540,6 +544,7 @@ class ProductSpecification:
                             'valid_max': 150000000.0,
                             'coordinates': 'longitude latitude'
                         })
+
     def wt(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
@@ -563,36 +568,40 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32',
             'scale_factor': 0.0001
-        }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="basic/wet_tropo1",
-                        attrs={
-                            'long_name': 'Error due to wet tropo path delay corrected with one beam',
-                            'standard_name': '',
-                            'units': 'm',
-                            'scale_factor': 0.0001,
-                            'valid_min': -15000000.0,
-                            'valid_max': 150000000.0,
-                            'coordinates': 'longitude latitude'
-                        })
+        }, xr.DataArray(
+            data=array,
+            dims=self.variables["basic/ssh_karin"]["shape"],
+            name="basic/wet_tropo1",
+            attrs={
+                'long_name':
+                'Error due to wet tropo path delay corrected with one beam',
+                'standard_name': '',
+                'units': 'm',
+                'scale_factor': 0.0001,
+                'valid_min': -15000000.0,
+                'valid_max': 150000000.0,
+                'coordinates': 'longitude latitude'
+            })
+
     def wet_tropo2(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32',
             'scale_factor': 0.0001
-        }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="basic/wet_tropo2",
-                        attrs={
-                            'long_name': 'Error due to wet tropo path delay corrected with two beams',
-                            'standard_name': '',
-                            'units': 'm',
-                            'scale_factor': 0.0001,
-                            'valid_min': -15000000.0,
-                            'valid_max': 150000000.0,
-                            'coordinates': 'longitude latitude'
-                        })
-
+        }, xr.DataArray(
+            data=array,
+            dims=self.variables["basic/ssh_karin"]["shape"],
+            name="basic/wet_tropo2",
+            attrs={
+                'long_name':
+                'Error due to wet tropo path delay corrected with two beams',
+                'standard_name': '',
+                'units': 'm',
+                'scale_factor': 0.0001,
+                'valid_min': -15000000.0,
+                'valid_max': 150000000.0,
+                'coordinates': 'longitude latitude'
+            })
 
     def err_altimeter(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {
@@ -653,6 +662,7 @@ class Nadir:
     def error(self, parameter, edict: Dict) -> None:
         for key in edict.keys():
             self._data_array(key, edict[key])
+
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:
         LOGGER.info("write %s", path)
@@ -701,10 +711,12 @@ class Swath(Nadir):
     def __init__(self, track: orbit_propagator.Pass) -> None:
         super().__init__(track, False)
         self.num_pixels = track.x_ac.size
-        _x_ac = np.full((track.time.size, track.x_ac.size), track.x_ac,
-                         dtype=track.x_ac.dtype)
-        self._data_array("x_ac", _x_ac)._data_array(
-                        "lon", track.lon)._data_array("lat", track.lat)
+        _x_ac = np.full((track.time.size, track.x_ac.size),
+                        track.x_ac,
+                        dtype=track.x_ac.dtype)
+        self._data_array("x_ac", _x_ac)._data_array("lon",
+                                                    track.lon)._data_array(
+                                                        "lat", track.lat)
 
     def ssh(self, array: np.ndarray) -> None:
         self._data_array("ssh_karin", array)

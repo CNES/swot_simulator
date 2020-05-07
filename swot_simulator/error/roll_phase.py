@@ -1,0 +1,120 @@
+from typing import Optional, Tuple
+import numpy as np
+import xarray as xr
+
+from . import utils
+from .. import VOLUMETRIC_MEAN_RADIUS
+
+
+def read_roll_phase(roll_phase_file: str, first_date: np.datetime64) -> Tuple:
+    ''' Retrieve estimated roll phase from roll phase file provided by CLS'''
+    ds = xr.load_dataset(roll_phase_file)
+    time_date = first_date + (ds.time[:].astype(np.float32) * 86400 *
+                              1000000).astype("timedelta64[us]")
+    time_date = time_date.astype('datetime64[us]').astype('float64') / 1000
+    remaining1 = ds.slope1_err[:] - ds.slope1_est[:]
+    remaining2 = ds.slope2_err[:] - ds.slope2_est[:]
+    return ds, time_date, remaining1, remaining2
+
+
+class ErrorStat:
+    def __init__(self, ds) -> None:
+        # Get baseline dilation power spectrum
+        self.psroll = ds.rollPSD.data
+        self.psphase = ds.phasePSD.data
+        self.freq = ds.spatial_frequency.data
+        self.phase1d: Optional[np.ndarray] = None
+        self.rollphase_est1d: Optional[np.ndarray] = None
+        self.roll1d: Optional[np.ndarray] = None
+
+    def make_error(self,
+                   time: np.ndarray,
+                   x_al: np.ndarray,
+                   dal: float,
+                   sat_const: dict,
+                   len_repeat: float,
+                   nseed: int = 0,
+                   roll_phase_file: Optional[str] = None,
+                   first_date: Optional[np.datetime64] = None):
+        # Rearth = VOLUMETRIC_MEAN_RADIUS
+        sat_elev = sat_const['height']
+        fka = sat_const['Fka']
+        _to_km = (1 / (fka * 2 * np.pi / sat_const['C'] * sat_const['B']) *
+                  (1 + sat_elev / VOLUMETRIC_MEAN_RADIUS) * np.pi / 180 *
+                  10**3)
+        if roll_phase_file is not None:
+            # - Compute the associated phase error on the swath in m
+            results = read_roll_phase(roll_phase_file, first_date)
+            roll_phase, time_date, _, _ = results
+            time = time.astype('datetime64[us]').astype('float64')
+
+            theta = np.interp(time, time_date, roll_phase.proll_err)
+            phase_l = np.interp(time, time_date, roll_phase.p1phase_err)
+            phase_r = np.interp(time, time_date, roll_phase.p2phase_err)
+            phase1d = np.concatenate(([phase_l.T], [phase_r.T]), axis=0)
+            roll = np.interp(time, time_date, roll_phase.proll_err)
+            self.phase1d = phase1d.T * 10**(-3)
+
+            est_l = np.interp(time, time_date, roll_phase.slope1_est)
+            err_l = np.interp(time, time_date, roll_phase.slope1_err)
+            rem_l = est_l - err_l
+            est_r = np.interp(time, time_date, roll_phase.slope2_est)
+            err_r = np.interp(time, time_date, roll_phase.slope2_err)
+            rem_r = est_r - err_r
+            theta2 = np.concatenate(([rem_l.T], [rem_r.T]), axis=0)
+            self.rollphase_est1d = theta2.T * 10**(-3)
+            self.roll1d = roll[:] * 10**(-3)
+        else:
+            # - Compute roll angle using the power spectrum
+            # - Compute left and right phase angles the power spectrum
+            theta = utils.gen_signal1d(self.freq,
+                                       self.psroll,
+                                       x_al,
+                                       nseed=nseed,
+                                       fmin=1. / len_repeat,
+                                       fmax=1. / (2 * dal),
+                                       alpha=10)
+            theta_l = utils.gen_signal1d(self.freq,
+                                         self.psphase,
+                                         x_al,
+                                         nseed=nseed + 100,
+                                         fmin=1. / len_repeat,
+                                         fmax=1. / (2 * dal),
+                                         alpha=10)
+            theta_r = utils.gen_signal1d(self.freq,
+                                         self.psphase,
+                                         x_al,
+                                         nseed=nseed + 200,
+                                         fmin=1. / len_repeat,
+                                         fmax=1. / (2 * dal),
+                                         alpha=10)
+            # - Compute the associated roll  error on the swath in m
+            self.roll1d = ((1 + sat_elev / VOLUMETRIC_MEAN_RADIUS) * theta[:] *
+                           np.pi / 180. / 3600.) * 10**3
+            # - Compute the associated phase error on the swath in m
+            phase1d = np.concatenate(
+                ([_to_km * theta_l[:].T], [_to_km * theta_r[:].T]), axis=0)
+            self.phase1d = phase1d.T
+            self.rollphase_est1d = np.zeros((np.shape(phase1d.T)))
+
+    def reconstruct_2d_error(self, x_ac: np.ndarray):
+        ''' Reconstruct 2D errors from 1D instrumental error simulation '''
+        nac = np.shape(x_ac)[0]
+        mid_swath = int(nac / 2)
+        ac_l = np.mat(x_ac[:mid_swath])
+        ac_r = np.mat(x_ac[mid_swath:])
+
+        phase1d = self.phase1d.copy()
+        phase = np.full((np.shape(phase1d)[0], nac), np.nan)
+        phase[:, :mid_swath] = np.mat(phase1d[:, 0]).T * ac_l
+        phase[:, mid_swath:] = np.mat(phase1d[:, 1]).T * ac_r
+
+        phaseroll1d = self.rollphase_est1d.copy()
+        rollphase_est = np.full((np.shape(phaseroll1d)[0], nac), np.nan)
+        rollphase_est[:, :mid_swath] = np.mat(phaseroll1d[:, 0]).T * ac_l
+        rollphase_est[:, mid_swath:] = np.mat(phaseroll1d[:, 1]).T * ac_r
+
+        ac = np.mat(x_ac)
+        roll1d = self.roll1d.copy()
+        roll = np.mat(roll1d).T * ac
+        return phase, roll, rollphase_est
