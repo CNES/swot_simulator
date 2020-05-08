@@ -1,9 +1,16 @@
 from typing import Optional
 import logging
+import numba as nb
 import numpy as np
 import scipy.interpolate
-import scipy.fftpack
 import xarray as xr
+try:
+    import mkl_fft
+    IFFT = mkl_fft.ifft
+    IFFT2 = mkl_fft.ifft2
+except ImportError:
+    IFFT = np.ifft
+    IFFT2 = np.ifft2
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,19 +97,12 @@ def gen_signal1d(fi: np.ndarray,
                  fmin: Optional[float] = None,
                  fmax: Optional[float] = None,
                  alpha: int = 10,
-                 lf_extpl: Optional[bool] = False,
-                 hf_extpl: Optional[bool] = False) -> np.ndarray:
+                 lf_extpl: bool = False,
+                 hf_extpl: bool = False) -> np.ndarray:
     """Generate 1d random signal using Fouriner coefficient"""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
     fi = fi[fi > 0]
-
-    interpolator = scipy.interpolate.interp1d
-    # Interpolation function for the non-zero part of the spectrum
-    finterp = interpolator(np.log(fi[psi > 0]),
-                           np.log(psi[psi > 0]),
-                           bounds_error=False,
-                           fill_value="extrapolate")
 
     # Adjust fmin and fmax to fi bounds if not specified:
     fmin = fmin or fi[0]
@@ -111,8 +111,10 @@ def gen_signal1d(fi: np.ndarray,
     # Go alpha times further in frequency to avoid interpolation aliasing.
     fmaxr = alpha * fmax
 
+    # Interpolation of the non-zero part of the spectrum
     f = np.arange(fmin, fmaxr + fmin, fmin)
-    ps = np.exp(finterp(np.log(f)))
+    ps = np.exp(np.interp(np.log(f), np.log(fi[psi > 0]),
+                          np.log(psi[psi > 0])))
 
     # lf_extpl=True prolongates the PSi as a plateau below min(fi).
     # Otherwise, we consider zeros values. same for hf
@@ -121,11 +123,7 @@ def gen_signal1d(fi: np.ndarray,
     ps[f > fmax] = 0
 
     # Detect the sections (if any) where PSi==0 and apply it to PS
-    finterp_mask = interpolator(fi,
-                                psi,
-                                bounds_error=False,
-                                fill_value="extrapolate")
-    psmask = finterp_mask(f)
+    psmask = np.interp(f, fi, psi)
     ps[psmask == 0.] = 0.
 
     phase = np.empty((2 * len(f) + 1))
@@ -134,16 +132,45 @@ def gen_signal1d(fi: np.ndarray,
     phase[0] = 0.
     phase[-len(f):] = -phase[1:(len(f) + 1)][::-1]
 
-    fft1a = np.concatenate(([0], 0.5 * ps, 0.5 * ps[::-1]), axis=0)
+    fft1a = np.concatenate((np.array([0]), 0.5 * ps, 0.5 * ps[::-1]), axis=0)
     fft1a = np.sqrt(fft1a) * np.exp(1j * phase) / fmin**0.5
 
-    yg = 2 * fmaxr * np.real(scipy.fftpack.ifft(fft1a))
+    yg = 2 * fmaxr * np.real(IFFT(fft1a))
     xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
 
-    finterp = interpolator(xg, yg)
-    y = finterp(np.mod(x, xg.max()))
+    return np.interp(np.mod(x, xg.max()), xg, yg)
 
-    return y
+
+@nb.njit(cache=True)
+def _calculate_ps2d(f, f2, ps1d, dfx, dfy):
+    result = np.zeros(f2.shape)
+    view = result.ravel()
+    dfx_2 = dfx * 0.5
+    #mask = np.zeros(f2.shape, dtype=np.bool_)
+    for idx in range(-1, -f.size - 1, -1):
+        item = f[idx]
+        mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
+        amount = np.sum(result[:, idx]) * dfx * dfy
+        miss = ps1d[idx] * dfx - amount
+        view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / (dfx * dfy)
+    return result
+
+
+@nb.njit(cache=True)
+def _calculate_signal(rectangle, x, y, xgmax, ygmax):
+    x_n = (x.max() - x[0]) // xgmax
+    y_n = (y.max() - y[0]) // ygmax
+    result = np.zeros((len(y), len(x)))
+
+    for i_x_n in range(int(x_n + 1)):
+        ix0 = np.where(((x - x[0]) >= (i_x_n * xgmax))
+                       & ((x - x[0]) < ((i_x_n + 1) * xgmax)))[0]
+        for i_y_n in range(int(y_n + 1)):
+            iy0 = np.where(((y - y[0]) >= (i_y_n * ygmax))
+                           & ((y - y[0]) < ((i_y_n + 1) * ygmax)))[0]
+            _rect = rectangle[:len(iy0), :len(ix0)]
+            result[iy0[0]:iy0[-1] + 1, ix0[0]:ix0[-1] + 1] = _rect
+    return result
 
 
 def gen_signal2d_rectangle(fi: np.ndarray,
@@ -175,13 +202,9 @@ def gen_signal2d_rectangle(fi: np.ndarray,
     fi = fi[fi > 0]
 
     # Interpolation function for the non-zero part of the spectrum
-    interp1 = scipy.interpolate.interp1d
-    finterp = interp1(np.log(fi[psi > 0]),
-                      np.log(psi[psi > 0]),
-                      bounds_error=False,
-                      fill_value="extrapolate")
     f = np.arange(fmin, fmaxr + fmin, fmin)
-    ps = np.exp(finterp(np.log(f)))
+    ps = np.exp(np.interp(np.log(f), np.log(fi[psi > 0]),
+                          np.log(psi[psi > 0])))
 
     # lf_extpl=True prolongates the PSi as a plateau below min(fi).
     # Otherwise, we consider zeros values. same for hf
@@ -190,11 +213,7 @@ def gen_signal2d_rectangle(fi: np.ndarray,
     ps[f > fmax] = 0
 
     # Detect the sections (if any) where PSi==0 and apply it to PS
-    finterp_mask = interp1(fi,
-                           psi,
-                           bounds_error=False,
-                           fill_value="extrapolate")
-    psmask = finterp_mask(f)
+    psmask = np.interp(f, fi, psi)
     ps[psmask == 0] = 0
     ps1d = ps
 
@@ -205,20 +224,9 @@ def gen_signal2d_rectangle(fi: np.ndarray,
     f2 = np.sqrt((fx2**2 + fy2**2))
     dfx = fmin
     dfy = fminy
-
-    ps2d = np.zeros(np.shape(f2))
-
-    for iff in range(len(f)):
-        ind1 = np.where((f2 >= (f[-iff - 1] - dfx / 2))
-                        & (f2 < (f[-iff - 1] + dfx / 2)))
-        s = np.sum(ps2d[:, -iff - 1]) * dfx * dfy
-        miss = ps1d[-iff - 1] * dfx - s
-        if miss <= 0:
-            ps2d[ind1] = 0.
-        else:
-            ps2d[ind1] = miss / len(ind1) / (dfx * dfy)
-
+    ps2d = _calculate_ps2d(f, f2, ps1d, dfx, dfy)
     ps2d[f2 > fmax] = 0
+
     np.random.seed(nseed)
     phase = np.random.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
     phase[0, 0] = 0.
@@ -231,30 +239,17 @@ def gen_signal2d_rectangle(fi: np.ndarray,
     fft2[1:, -len(fx) + 1:] = fft2a[1:, 1:].conj()[::-1, ::-1]
     fft2[0, -len(fx) + 1:] = fft2a[0, 1:].conj()[::-1]
 
-    sg = (4 * fy[-1] * fx[-1]) * np.real(scipy.fftpack.ifft2(fft2))
-    xg = np.linspace(0, 1. / fmin, sg.shape[1])
-    yg = np.linspace(0, 1. / fminy, sg.shape[0])
+    sg = (4 * fy[-1] * fx[-1]) * np.real(IFFT2(fft2))
+    xg = np.linspace(0, 1 / fmin, sg.shape[1])
+    yg = np.linspace(0, 1 / fminy, sg.shape[0])
     xgmax = xg.max()
     ygmax = yg.max()
-    finterp = scipy.interpolate.interp2d(xg, yg, sg)
 
     yl = y - y[0]
     yl = yl[yl < yg.max()]
     xl = x - x[0]
     xl = xl[xl < xg.max()]
-    rectangle = finterp(xl, yl)
-    x_n, _ = np.divmod(x.max() - x[0], xgmax)
-    y_n, _ = np.divmod(y.max() - y[0], ygmax)
-
-    signal = np.zeros((len(y), len(x)))
-
-    for i_x_n in range(int(x_n + 1)):
-        ix0 = np.where(((x - x[0]) >= (i_x_n * xgmax))
-                       & ((x - x[0]) < ((i_x_n + 1) * xgmax)))[0]
-        for i_y_n in range(int(y_n + 1)):
-            iy0 = np.where(((y - y[0]) >= (i_y_n * ygmax))
-                           & ((y - y[0]) < ((i_y_n + 1) * ygmax)))[0]
-            _rect = rectangle[:len(iy0), :len(ix0)]
-            signal[iy0[0]:iy0[-1] + 1, ix0[0]:ix0[-1] + 1] = _rect
+    rectangle = scipy.interpolate.interp2d(xg, yg, sg)(xl, yl)
+    signal = _calculate_signal(rectangle, x, y, xgmax, ygmax)
 
     return signal.transpose() if revert else signal
