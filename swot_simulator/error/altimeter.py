@@ -25,7 +25,7 @@ class ErrorStat(Base):
         """
         # Compute random noise of 10**2 cm**2/(km/cycle)
         # Compute the correspond error on the nadir in m
-        return utils.gen_signal1d(self.freq,
+        return utils.gen_signal_1d(self.freq,
                                   self.psd,
                                   x_al,
                                   nseed=self.nseed,

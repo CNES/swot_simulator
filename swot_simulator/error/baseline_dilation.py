@@ -18,7 +18,7 @@ class ErrorStat(Base):
 
     def make_error(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d baseline dilation using the power spectrum:
-        dil = utils.gen_signal1d(self.freq,
+        dil = utils.gen_signal_1d(self.freq,
                                  self.psbd,
                                  x_al,
                                  nseed=self.nseed,

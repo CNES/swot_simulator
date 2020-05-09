@@ -52,7 +52,7 @@ class ErrorStat(Base):
         psradio[np.where(self.freq > 0.0683)] = 0.32
         # - Compute random coefficients (1D) for the radiometer error
         #   power spectrum for right and left beams
-        _hrad = utils.gen_signal1d(self.freq,
+        _hrad = utils.gen_signal_1d(self.freq,
                                    psradio,
                                    x_al,
                                    fmin=1 / self.len_repeat,
@@ -62,7 +62,7 @@ class ErrorStat(Base):
                                    hf_extpl=True,
                                    lf_extpl=True)
         radio_r = _hrad * 10**(-2)
-        _hrad = utils.gen_signal1d(self.freq,
+        _hrad = utils.gen_signal_1d(self.freq,
                                    psradio,
                                    x_al,
                                    fmin=1 / self.len_repeat,

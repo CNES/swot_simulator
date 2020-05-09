@@ -90,21 +90,21 @@ def read_file_karin(file_karin: str, swh):  # -> xr.core.dataset.Dataset:
     return x_ac, hsdt
 
 
-def gen_signal1d(fi: np.ndarray,
-                 psi: np.ndarray,
-                 x: np.ndarray,
-                 nseed: int = 0,
-                 fmin: Optional[float] = None,
-                 fmax: Optional[float] = None,
-                 alpha: int = 10,
-                 lf_extpl: bool = False,
-                 hf_extpl: bool = False) -> np.ndarray:
+def gen_signal_1d(fi: np.ndarray,
+                  psi: np.ndarray,
+                  x: np.ndarray,
+                  nseed: int = 0,
+                  fmin: Optional[float] = None,
+                  fmax: Optional[float] = None,
+                  alpha: int = 10,
+                  lf_extpl: bool = False,
+                  hf_extpl: bool = False) -> np.ndarray:
     """Generate 1d random signal using Fouriner coefficient"""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
     fi = fi[fi > 0]
 
-    # Adjust fmin and fmax to fi bounds if not specified:
+    # Adjust fmin and fmax to fi bounds if not specified
     fmin = fmin or fi[0]
     fmax = fmax or fi[-1]
 
@@ -113,8 +113,8 @@ def gen_signal1d(fi: np.ndarray,
 
     # Interpolation of the non-zero part of the spectrum
     f = np.arange(fmin, fmaxr + fmin, fmin)
-    ps = np.exp(np.interp(np.log(f), np.log(fi[psi > 0]),
-                          np.log(psi[psi > 0])))
+    mask = psi > 0
+    ps = np.exp(np.interp(np.log(f), np.log(fi[mask]), np.log(psi[mask])))
 
     # lf_extpl=True prolongates the PSi as a plateau below min(fi).
     # Otherwise, we consider zeros values. same for hf
@@ -123,14 +123,15 @@ def gen_signal1d(fi: np.ndarray,
     ps[f > fmax] = 0
 
     # Detect the sections (if any) where PSi==0 and apply it to PS
-    psmask = np.interp(f, fi, psi)
-    ps[psmask == 0.] = 0.
+    mask = np.interp(f, fi, psi)
+    ps[mask == 0] = 0
 
-    phase = np.empty((2 * len(f) + 1))
+    f_size = f.size
+    phase = np.empty((2 * f_size + 1))
     np.random.seed(nseed)
-    phase[1:(len(f) + 1)] = np.random.random(len(f)) * 2 * np.pi
-    phase[0] = 0.
-    phase[-len(f):] = -phase[1:(len(f) + 1)][::-1]
+    phase[1:(f_size + 1)] = np.random.random(f_size) * 2 * np.pi
+    phase[0] = 0
+    phase[-f_size:] = -phase[1:(f_size + 1)][::-1]
 
     fft1a = np.concatenate((np.array([0]), 0.5 * ps, 0.5 * ps[::-1]), axis=0)
     fft1a = np.sqrt(fft1a) * np.exp(1j * phase) / fmin**0.5
@@ -141,12 +142,14 @@ def gen_signal1d(fi: np.ndarray,
     return np.interp(np.mod(x, xg.max()), xg, yg)
 
 
-@nb.njit(cache=True)
-def _calculate_ps2d(f, f2, ps1d, dfx, dfy):
+@nb.njit("(float64[:, ::1])"
+         "(float64[::1], float64[:, ::1], float64[::1], float64, float64)",
+         cache=True)
+def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
+                    dfx: np.ndarray, dfy: np.ndarray) -> np.ndarray:
     result = np.zeros(f2.shape)
     view = result.ravel()
     dfx_2 = dfx * 0.5
-    #mask = np.zeros(f2.shape, dtype=np.bool_)
     for idx in range(-1, -f.size - 1, -1):
         item = f[idx]
         mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
@@ -156,7 +159,9 @@ def _calculate_ps2d(f, f2, ps1d, dfx, dfy):
     return result
 
 
-@nb.njit(cache=True)
+@nb.njit("(float64[:, ::1])"
+         "(float64[::1, :], float64[::1], float64[::1], float64, float64)",
+         cache=True)
 def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     x_n = (x.max() - x[0]) // xgmax
     y_n = (y.max() - y[0]) // ygmax
@@ -173,17 +178,17 @@ def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     return result
 
 
-def gen_signal2d_rectangle(fi: np.ndarray,
-                           psi: np.ndarray,
-                           x: np.ndarray,
-                           y: np.ndarray,
-                           fminx: Optional[float] = None,
-                           fminy: Optional[float] = None,
-                           fmax: Optional[float] = None,
-                           alpha: int = 10,
-                           nseed: int = 0,
-                           lf_extpl: bool = False,
-                           hf_extpl: bool = False) -> np.ndarray:
+def gen_signal_2d_rectangle(fi: np.ndarray,
+                            psi: np.ndarray,
+                            x: np.ndarray,
+                            y: np.ndarray,
+                            fminx: Optional[float] = None,
+                            fminy: Optional[float] = None,
+                            fmax: Optional[float] = None,
+                            alpha: int = 10,
+                            nseed: int = 0,
+                            lf_extpl: bool = False,
+                            hf_extpl: bool = False) -> np.ndarray:
 
     revert = False
     if fminy < fminx:

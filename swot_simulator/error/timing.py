@@ -8,6 +8,8 @@ from .. import settings
 
 
 class ErrorStat(Base):
+    TO_M = CELERITY / 2 * 1e-12
+
     def __init__(self, ds: xr.Dataset,
                  parameters: settings.Parameters) -> None:
         super().__init__(parameters)
@@ -18,14 +20,14 @@ class ErrorStat(Base):
 
     def make_error(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d timing using the power spectrum:
-        tim_l = utils.gen_signal1d(self.freq,
+        tim_l = utils.gen_signal_1d(self.freq,
                                    self.pstim,
                                    x_al,
                                    nseed=self.nseed,
                                    fmin=1 / self.len_repeat,
                                    fmax=1 / (2 * self.delta_al),
                                    alpha=10)
-        tim_r = utils.gen_signal1d(self.freq,
+        tim_r = utils.gen_signal_1d(self.freq,
                                    self.pstim,
                                    x_al,
                                    nseed=self.nseed + 100,
@@ -33,9 +35,8 @@ class ErrorStat(Base):
                                    fmax=1 / (2 * self.delta_al),
                                    alpha=10)
         # - Compute the corresponding timing error on the swath in m
-        _to_m = CELERITY / 2 * 10**(-12)
         timing_1d = np.concatenate(
-            ([_to_m * tim_l[:].T], [_to_m * tim_r[:].T]), axis=0)
+            ([self.TO_M * tim_l[:].T], [self.TO_M * tim_r[:].T]), axis=0)
         return timing_1d.T
 
     def reconstruct_2d_error(self, x_ac: np.ndarray,

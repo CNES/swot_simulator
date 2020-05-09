@@ -69,21 +69,21 @@ class ErrorStat(Base):
         else:
             # - Compute roll angle using the power spectrum
             # - Compute left and right phase angles the power spectrum
-            theta = utils.gen_signal1d(self.freq,
+            theta = utils.gen_signal_1d(self.freq,
                                        self.psroll,
                                        x_al,
                                        nseed=self.nseed,
                                        fmin=1 / self.len_repeat,
                                        fmax=1 / (2 * self.delta_al),
                                        alpha=10)
-            theta_l = utils.gen_signal1d(self.freq,
+            theta_l = utils.gen_signal_1d(self.freq,
                                          self.psphase,
                                          x_al,
                                          nseed=self.nseed + 100,
                                          fmin=1 / self.len_repeat,
                                          fmax=1 / (2 * self.delta_al),
                                          alpha=10)
-            theta_r = utils.gen_signal1d(self.freq,
+            theta_r = utils.gen_signal_1d(self.freq,
                                          self.psphase,
                                          x_al,
                                          nseed=self.nseed + 200,
