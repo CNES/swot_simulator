@@ -1,5 +1,5 @@
-from typing import Optional
-import logging
+from typing import Optional, Tuple
+import warnings
 import numba as nb
 import numpy as np
 import scipy.interpolate
@@ -12,17 +12,15 @@ except ImportError:
     IFFT = np.ifft
     IFFT2 = np.ifft2
 
-LOGGER = logging.getLogger(__name__)
-
 
 def read_file_instr(file_instr: str, delta_al: float,
                     lambda_max: float) -> xr.Dataset:
     """ Retrieve power spectrum from intrumental noise file provided by
     """
-    ds = xr.load_dataset(file_instr)
+    dataset = xr.load_dataset(file_instr)
 
     # Set spatial frequency to spatial coordinate
-    ds.coords['nfreq'] = ds.spatial_frequency
+    dataset = dataset.swap_dims(dict(nfreq="spatial_frequency"))
 
     # Extract spatial frequency relevant to our sampling
     # (Cut frequencies larger than Nyquist frequency and long wavelength)
@@ -30,8 +28,8 @@ def read_file_instr(file_instr: str, delta_al: float,
     cut_max = max(0, 1 / lambda_max)
 
     # TODO remove ugly trick from slice
-    da = ds.sel(nfreq=slice(cut_max + 0.000001, cut_min - 0.000001))
-    return da
+    return dataset.sel(spatial_frequency=slice(cut_max + 0.000001, cut_min -
+                                               0.000001))
 
 
 # def read_swh(swh_file):
@@ -47,47 +45,29 @@ def read_file_instr(file_instr: str, delta_al: float,
 #     return lon, lat, swh
 
 
-def read_file_karin(file_karin: str, swh):  # -> xr.core.dataset.Dataset:
-    """ Retrieve power spectrum from intrumental noise file provided by
+def read_file_karin(path: str,
+                    threshold: float) -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve power spectrum from intrumental noise file provided by
     """
-    ds = xr.open_dataset(file_karin)
+    with xr.open_dataset(path) as dataset:
+        height_sdt = dataset['height_sdt'].data
+        cross_track = dataset['cross_track'].data
+        swh = dataset['SWH'].data
 
-    file_hsdt = ds['height_sdt'].data
-    x_ac = ds['cross_track'].data
-    swh_tmp = ds['SWH'].data
-
-    if isinstance(swh, (list, np.ndarray)):
-        hsdt = np.full((len(swh), len(x_ac)), np.nan)
-        for idx, item in enumerate(swh):
-            # TODO take into account across track variability
-            if not np.isfinite(item):
-                item = 1
-            indices = np.argmin(abs(swh_tmp - item))
-            if swh_tmp[indices] > item:
-                indices += 1
-            if np.max(swh_tmp) <= item:
-                _hsdt = hsdt[-1, :]
-            else:
-                rswh = item - swh_tmp[indices]
-                _hsdt = file_hsdt[indices, :] * (
-                    1 - rswh) + rswh * file_hsdt[indices + 1, :]
-            hsdt[idx, :] = _hsdt
+    indices = np.argmin(np.abs(swh - threshold))
+    if swh[indices] > threshold:
+        indices += 1
+    if swh.max() <= threshold:
+        hsdt = np.full((len(cross_track), ), np.nan)
+        warnings.warn(
+            f'swh={threshold} is greater than the maximum value '
+            f'in {path!r}, therefore swh is set to the file maximum '
+            'value', RuntimeWarning)
     else:
-        indices = np.argmin(abs(swh_tmp - swh))
-        if swh_tmp[indices] > swh:
-            indices += 1
-        if np.max(swh_tmp) <= swh:
-            hsdt = np.full((len(swh), len(x_ac)), np.nan)
-            hsdt = hsdt[-1, :]
-            LOGGER.warning(
-                'WARNING: swh=%r is greater than the maximum value'
-                ' in %s, therefore swh is set to the file maximum'
-                'value ', swh, file_karin)
-        else:
-            rswh = swh - swh_tmp[indices]
-            hsdt = file_hsdt[indices, :] * (
-                1 - rswh) + rswh * file_hsdt[indices + 1, :]
-    return x_ac, hsdt
+        rswh = threshold - swh[indices]
+        hsdt = height_sdt[indices, :] * (
+            1 - rswh) + rswh * height_sdt[indices + 1, :]
+    return cross_track, hsdt
 
 
 def gen_signal_1d(fi: np.ndarray,
@@ -160,7 +140,7 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
 
 
 @nb.njit("(float64[:, ::1])"
-         "(float64[::1, :], float64[::1], float64[::1], float64, float64)",
+         "(float64[:, ::1], float64[::1], float64[::1], float64, float64)",
          cache=True)
 def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     x_n = (x.max() - x[0]) // xgmax
@@ -254,7 +234,8 @@ def gen_signal_2d_rectangle(fi: np.ndarray,
     yl = yl[yl < yg.max()]
     xl = x - x[0]
     xl = xl[xl < xg.max()]
-    rectangle = scipy.interpolate.interp2d(xg, yg, sg)(xl, yl)
+    rectangle = np.ascontiguousarray(
+        scipy.interpolate.interp2d(xg, yg, sg)(xl, yl))
     signal = _calculate_signal(rectangle, x, y, xgmax, ygmax)
 
     return signal.transpose() if revert else signal
