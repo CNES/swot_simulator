@@ -130,12 +130,13 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
     result = np.zeros(f2.shape)
     view = result.ravel()
     dfx_2 = dfx * 0.5
+    dfx_y = dfx * dfy
     for idx in range(-1, -f.size - 1, -1):
         item = f[idx]
         mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
-        amount = np.sum(result[:, idx]) * dfx * dfy
+        amount = np.sum(result[:, idx]) * dfx_y
         miss = ps1d[idx] * dfx - amount
-        view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / (dfx * dfy)
+        view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / dfx_y
     return result
 
 

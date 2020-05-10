@@ -15,7 +15,7 @@ def test_gen_signal_1d():
 
     result = utils.gen_signal_1d(fi, psi, x, nseed, fmin, fmax, alpha,
                                  lf_extpl, hf_extpl)
-    assert (result - expected).mean() < 1e-16
+    assert (result - expected).mean() < 1e-12
 
 
 def test_gen_signal_2d_rectangle():
@@ -26,7 +26,7 @@ def test_gen_signal_2d_rectangle():
 
     result = utils.gen_signal_2d_rectangle(fi, psi, x, y, fminx, fminy, fmax,
                                            alpha, nseed, lf_extpl, hf_extpl)
-    assert (result - expected).mean() < 1e-16
+    assert (result - expected).mean() < 1e-12
 
 
 def test_read_file_karin():
