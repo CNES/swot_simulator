@@ -132,10 +132,15 @@ class Parameters:
 
         noise = getattr(self, "noise")
         if noise is not None:
+            noise = [
+                "".join(word.capitalize() for word in item.split("_"))
+                for item in noise
+            ]
             unknowns = set(noise) - set(error_classes())
             if unknowns:
                 raise ValueError(
                     f"Unknown error generators: {', '.join(unknowns)}")
+            setattr(self, "noise", noise)
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]

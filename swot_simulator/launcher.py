@@ -260,7 +260,7 @@ def main():
     client = dask.distributed.Client(
         dask.distributed.LocalCluster(
             n_workers=1,
-            processes=True,
+            processes=False,
             threads_per_worker=args.threads_per_worker)
     ) if args.scheduler_file is None else dask.distributed.Client(
         scheduler_file=args.scheduler_file.name)

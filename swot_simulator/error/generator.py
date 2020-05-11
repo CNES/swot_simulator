@@ -18,25 +18,25 @@ class Generator:
                                                parameters.len_repeat)
 
         for item in parameters.noise:
-            if item == Altimeter.__class__.__name__:
+            if item == Altimeter.__name__:
                 self.generators.append(Altimeter(parameters))
-            elif item == BaselineDilation.__class__.__name__:
+            elif item == BaselineDilation.__name__:
                 self.generators.append(
                     BaselineDilation(parameters,
                                      error_spectrum['dilationPSD'].data,
                                      error_spectrum['spatial_frequency'].data))
-            elif item == Karin.__class__.__name__:
+            elif item == Karin.__name__:
                 self.generators.append(Karin(parameters))
-            elif item == RollPhase.__class__.__name__:
+            elif item == RollPhase.__name__:
                 self.generators.append(
                     RollPhase(parameters, error_spectrum['rollPSD'].data,
                               error_spectrum['phasePSD'].data,
                               error_spectrum['spatial_frequency'].data))
-            elif item == Timing.__class__.__name__:
+            elif item == Timing.__name__:
                 self.generators.append(
                     Timing(parameters, error_spectrum['timingPSD'].data,
                            error_spectrum['spatial_frequency'].data))
-            elif item == WetTroposphere.__class__.__name__:
+            elif item == WetTroposphere.__name__:
                 self.generators.append(WetTroposphere(parameters))
             else:
                 # A new error generation class has been implemented but it is
@@ -67,6 +67,6 @@ class Generator:
                 elif isinstance(item, WetTroposphere):
                     futures.append(client.submit(item.generate, x_al, x_ac))
 
-            for error in dask.distributed.as_completed(futures):
-                result.update(dict(error))
+            for future in dask.distributed.as_completed(futures):
+                result.update(dict(future.result()))
         return result
