@@ -9,8 +9,8 @@ try:
     IFFT = mkl_fft.ifft
     IFFT2 = mkl_fft.ifft2
 except ImportError:
-    IFFT = np.ifft
-    IFFT2 = np.ifft2
+    IFFT = np.fft.ifft
+    IFFT2 = np.fft.ifft2
 
 
 def read_file_instr(file_instr: str, delta_al: float,
