@@ -41,5 +41,5 @@ def test_read_file_karin():
 
 def test_read_file_instr():
     dataset = utils.read_file_instr(
-        os.path.join(ROOT, "..", "data", "error_spectrum_file.nc"), 2.0, 20000)
+        os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0, 20000)
     assert isinstance(dataset, xr.Dataset)

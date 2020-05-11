@@ -656,13 +656,6 @@ class Nadir:
     def ssh(self, array: np.ndarray) -> None:
         self._data_array("ssh_nadir", array)
 
-    def ssh_true(self, array: np.ndarray) -> None:
-        self._data_array("ssh_true_nadir", array)
-
-    def error(self, parameter, edict: Dict) -> None:
-        for key in edict.keys():
-            self._data_array(key, edict[key])
-
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:
         LOGGER.info("write %s", path)

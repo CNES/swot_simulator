@@ -20,19 +20,17 @@ class Parameters:
     delta_al: float
     ephemeris_cols: Optional[Tuple[int, int, int]]
     ephemeris: Optional[str]
-    error_spectrum_file: Optional[str]
+    error_spectrum: Optional[str]
     half_gap: float
     half_swath: float
     height: float
-    karin_file: Optional[str]
+    karin_noise: Optional[str]
     len_repeat: float
     nadir: bool
     nbeam: int
-    noise: bool
+    noise: List[str]
     nrand_karin: int
     nseed: int
-    roll_phase_file: str
-    save_signal: bool
     shift_lon: Optional[float]
     shift_time: Optional[float]
     sigma: float

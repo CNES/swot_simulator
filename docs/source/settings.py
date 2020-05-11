@@ -61,3 +61,40 @@ ssh_plugin = swot_simulator.plugins.ssh.AVISO("PATH to AVISO files")
 # The working directory. By default, files are generated in the user's root
 # directory.
 # #working_directory=
+
+# Generation of measurement noise.
+noise = [
+    'altimeter',
+    'baseline_dilation',
+    'karin',
+    'roll_phase',
+    'timing',
+    'wet_troposphere',
+]
+
+# repeat length
+len_repeat = 20000
+
+# File containing spectrum of instrument error
+error_spectrum = os.path.join("..", "..", "data", "error_spectrum.nc")
+
+# KaRIN file containing spectrum for several SWH
+karin_noise = os.path.join("..", "..", "data", "karin_noise_v2.nc")
+
+# SWH for the region
+swh = 2.0
+
+#  Number of km of random coefficients for KaRIN noise (recommended nrandkarin=1000)
+nrand_karin = 1000
+
+# Number of beam used to correct wet_tropo signal (1, 2 or 'both')
+nbeam = 2
+
+# Gaussian footprint of sigma km
+sigma = 6.0
+
+# Beam position if there are 2 beams (in km from nadir):
+beam_position = [-20, 20],
+
+# Seed for RandomState. Must be convertible to 32 bit unsigned integers.
+nseed = 0

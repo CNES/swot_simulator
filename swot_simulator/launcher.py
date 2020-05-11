@@ -6,7 +6,7 @@
 Main program
 ------------
 """
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import argparse
 import datetime
 import logging
@@ -16,13 +16,13 @@ import traceback
 import dask.distributed
 import dateutil
 import numpy as np
+import xarray as xr
 from . import exception
 from . import logbook
 from . import product_specification
 from . import orbit_propagator
 from . import settings
-from .error import swot as swot_error
-from .error import nadir as nadir_error
+from .error import generator
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -82,13 +82,12 @@ def usage() -> argparse.Namespace:
                        metavar='PATH',
                        help="Path to the logbook to use",
                        type=argparse.FileType("w"))
-    ## TODO: set default to 1 to avoid burning small computers
     group.add_argument("--threads-per-worker",
                        help="Number of threads per each worker. "
-                       f"Defaults to {os.cpu_count()}",
+                       f"Defaults to 1",
                        type=int,
                        metavar='N',
-                       default=os.cpu_count())
+                       default=1)
     group.add_argument("--scheduler-file",
                        help="Path to a file with scheduler information to "
                        "launch swot simulator on a cluster. By "
@@ -115,9 +114,14 @@ def file_path(date: np.datetime64,
     return os.path.join(dirname, _file_name)
 
 
+def sum_error(errors: List[xr.DataArray], swath: bool = True) -> np.ndarray:
+    dims = 2 if swath else 1
+    return np.add.reduce([item for item in errors if len(item.shape) == dims])
+
+
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
-             first_date: np.datetime64, orbit: orbit_propagator.Orbit,
-             parameters: settings.Parameters,
+             error_generator: generator.Generator,
+             orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
     """Simulate a track"""
     # Initialize this worker's logger.
@@ -130,6 +134,11 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         return
     track.time = date
 
+    # Calculation of instrumental errors
+    noise_errors = error_generator.generate(cycle_number,
+                                            orbit.curvilinear_distance,
+                                            track.x_ac, track.x_al)
+
     if parameters.swath:
         # Create the swath dataset
         product = product_specification.Swath(track)
@@ -139,7 +148,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         path = file_path(date, cycle_number, pass_number,
                          parameters.working_directory)
 
-        ## TODO: remove, option to overwrite path
+        # TODO: remove, option to overwrite path
         if not os.path.exists(path):
             ssh = None
 
@@ -151,17 +160,18 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                     track.lon.flatten(), track.lat.flatten(),
                     swath_time.flatten())
                 ssh = _ssh.reshape(track.lon.shape)
+                ssh += sum_error(noise_errors)
                 product.ssh_true(ssh)
 
-            if parameters.noise is True and np.shape(track.x_al)[0] > 1:
-                # Computation of noise
-                errors = swot_error.make_error(track.x_al, track.x_ac,
-                                               orbit.curvilinear_distance,
-                                               track.time, cycle_number,
-                                               first_date, parameters)
-                if ssh is not None:
-                    product.ssh(swot_error.add_error(errors, ssh))
-                product.error(parameters, errors)
+            # if parameters.noise is True and np.shape(track.x_al)[0] > 1:
+            #     # Computation of noise
+            #     errors = swot_error.make_error(track.x_al, track.x_ac,
+            #                                    orbit.curvilinear_distance,
+            #                                    track.time, cycle_number,
+            #                                    first_date, parameters)
+            #     if ssh is not None:
+            #         product.ssh(swot_error.add_error(errors, ssh))
+            #     product.error(parameters, errors)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
 
@@ -184,14 +194,15 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
             if parameters.ssh_plugin is not None:
                 ssh = parameters.ssh_plugin.interpolate(
                     track.lon_nadir, track.lat_nadir, track.time)
-                product.ssh_true(ssh)
+                ssh += sum_error(noise_errors, swath=False)
+                product.ssh(ssh)
 
-            if (parameters.noise is True) and (np.shape(track.x_al)[0] > 1):
-                # Computation of noise
-                edict = nadir_error.make_error(track.x_al, parameters)
-                if ssh is not None:
-                    product.ssh(nadir_error.add_error(edict, ssh))
-                product.error(parameters, edict)
+            # if (parameters.noise is True) and (np.shape(track.x_al)[0] > 1):
+            #     # Computation of noise
+            #     edict = nadir_error.make_error(track.x_al, parameters)
+            #     if ssh is not None:
+            #         product.ssh(nadir_error.add_error(edict, ssh))
+            #     product.error(parameters, edict)
 
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
@@ -224,10 +235,14 @@ def launch(client: dask.distributed.Client,
     # For the moment, we start the processing on the first pass
     absolute_track = 1
 
+    # Initialization of measurement error generators
+    error_generator = generator.Generator(parameters)
+
     # For the entire period to be generated, the generation of orbits is
     # assigned to dask.
     futures = []
 
+    _error_generator = client.scatter(error_generator)
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
     date = first_date or datetime.datetime.now()
@@ -236,8 +251,8 @@ def launch(client: dask.distributed.Client,
 
         # Generation of the simulated product.
         futures.append(
-            client.submit(simulate, cycle, track, date, first_date, _orbit,
-                          _parameters, logging_server))
+            client.submit(simulate, cycle, track, date, _error_generator,
+                          _orbit, _parameters, logging_server))
 
         # Shift the date of the duration of the generated pass
         date += orbit.pass_duration(track)

@@ -8,6 +8,7 @@ Settings handling
 """
 from typing import Any, Dict, Iterator, Tuple
 import contextlib
+import importlib
 import os
 import logging
 import traceback
@@ -69,6 +70,20 @@ def eval_config_file(filename: str) -> Dict:
     return namespace
 
 
+def error_classes() -> Iterator[str]:
+    """Get the list of classes implementing random error generation."""
+    module = importlib.import_module(".error", package="swot_simulator")
+    for item in dir(module):
+        if isinstance(getattr(module, item), type):
+            yield item
+
+
+class NumberOfBeams(int):
+    def __init__(self, value):
+        if value not in [1, 2]:
+            raise ValueError("nbeam must be in [1, 2]")
+
+
 class Parameters:
     """
     Simulator parameter management.
@@ -78,47 +93,60 @@ class Parameters:
         the default settings
     """
     CONFIG_VALUES: Dict[str, Tuple[Any, Any]] = dict(
-        area=(None, [float, float, float, float]),
-        cycle_duration=(20.86455, float),
-        delta_al=(2.0, float),
-        delta_ac=(2.0, float),
-        ephemeris=(None, str),
-        ephemeris_cols=(None, [int, int, int]),
+        area=(None, [float, 4]),
+        beam_position=((-20, 20), [float, 2]),
         complete_product=(True, bool),
+        cycle_duration=(20.86455, float),
+        delta_ac=(2.0, float),
+        delta_al=(2.0, float),
+        ephemeris_cols=(None, [int, 3]),
+        ephemeris=(None, str),
+        error_spectrum=(None, str),
         half_gap=(10.0, float),
         half_swath=(60.0, float),
         height=(891000, float),
+        karin_noise=(None, str),
+        len_repeat=(20000, float),
         nadir=(False, bool),
-        swath=(True, bool),
-        ssh_plugin=(None, ssh.Interface),
+        nbeam=(2, NumberOfBeams),
+        noise=(None, [str, -1]),
+        nrand_karin=(1000, int),
+        nseed=(0, int),
         shift_lon=(None, float),
         shift_time=(None, float),
-        noise=(True, bool),
-        len_repeat=(20000, float),
-        save_signal=(True, bool),
-        roll_phase_file=(None, str),
-        error_spectrum_file=(None, str),
-        karin_file=(None, str),
-        swh=(2, int),
-        nrand_karin=(1000, int),
-        nbeam=(2, int),
         sigma=(6, float),
-        beam_position=((-20, 20), list),
-        nseed=(0, int),
+        ssh_plugin=(None, ssh.Interface),
+        swath=(True, bool),
+        swh=(2, int),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
     )
 
+    #: Arguments that must be defined by the user.
+    REQUIRED = ["ephemeris", "error_spectrum", "karin_noise"]
+
     def __init__(self, overrides: Dict[str, Any]):
-        if "ephemeris" not in overrides:
-            raise TypeError("missing required argument: 'ephemeris'")
+        for required in self.REQUIRED:
+            if required not in overrides:
+                raise TypeError(f"missing required argument: {required!r}")
         self._init_user_parameters(overrides)
+
+        noise = getattr(self, "noise")
+        if noise is not None:
+            unknowns = set(noise) - set(error_classes())
+            if unknowns:
+                raise ValueError(
+                    f"Unknown error generators: {', '.join(unknowns)}")
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
         try:
             if isinstance(expected_type, list):
-                if not isinstance(value,
-                                  list) or len(value) != len(expected_type):
+                if not isinstance(value, list):
+                    raise ValueError
+                length = expected_type[1]
+                if length == -1:
+                    length = len(value)
+                if len(value) != length:
                     raise ValueError
                 expected_type = expected_type[0]
                 for idx, item in enumerate(value):
@@ -151,11 +179,6 @@ class Parameters:
             except ValueError as exc:
                 LOGGER.warning("%s", exc)
         self.__dict__.update((key, value) for key, value in settings.items())
-
-        if self.__dict__['nbeam'] not in [1, 2, 12]:
-            raise ValueError(
-                f"nbeam should be either 1 or 2 or 12, not {self.__dict__['nbeam']}"
-            )
 
     @property
     def box(self) -> math.Box:
