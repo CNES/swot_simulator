@@ -131,7 +131,7 @@ class MITGCM(detail.Interface):
         # Mask for selecting data covering the time period provided.
         mask = (self.ts >= first_date) & (self.ts <= last_date)
 
-        LOGGER.debug(f"fetch data for {first_date}, {last_date}")
+        LOGGER.debug("fetch data for %s, %s", first_date, last_date)
 
         # 4D cube representing the data necessary for interpolation.
         frame = self.ssh[mask]
