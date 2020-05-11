@@ -38,8 +38,7 @@ def test_error_karin():
      expected) = load_data('karin')
     error = swot_simulator.error.karin.Karin(parameters)
 
-    generated = dict(
-        error.generate(x_al, x_ac, curvilinear_distance, cycle_number))
+    generated = error.generate(x_al, x_ac, curvilinear_distance, cycle_number)
     assert abs(expected - generated['karin']).mean() < 1e-12
 
 
@@ -52,7 +51,7 @@ def test_baseline_dilation():
     error = swot_simulator.error.baseline_dilation.BaselineDilation(
         parameters, error_spectrum['dilationPSD'].data,
         error_spectrum['spatial_frequency'].data)
-    generated = dict(error.generate(x_al, x_ac))
+    generated = error.generate(x_al, x_ac)
     assert abs(expected - generated['baseline_dilation']).mean() < 1e-12
 
 
@@ -66,7 +65,7 @@ def test_roll_phase():
         parameters, error_spectrum['rollPSD'].data,
         error_spectrum['phasePSD'].data,
         error_spectrum['spatial_frequency'].data)
-    generated = dict(error.generate(x_al, x_ac))
+    generated = error.generate(x_al, x_ac)
     assert abs(expected['phase'] - generated['phase']).mean() < 1e-12
     assert abs(expected['roll'] - generated['roll']).mean() < 1e-12
 
@@ -80,7 +79,7 @@ def test_timing():
     error = swot_simulator.error.timing.Timing(
         parameters, error_spectrum['timingPSD'].data,
         error_spectrum['spatial_frequency'].data)
-    generated = dict(error.generate(x_al, x_ac))
+    generated = error.generate(x_al, x_ac)
     assert abs(expected - generated['timing']).mean() < 1e-12
 
 
@@ -90,7 +89,7 @@ def test_wet_troposphere():
 
     parameters.nbeam = 1
     error = swot_simulator.error.wet_troposphere.WetTroposphere(parameters)
-    generated = dict(error.generate(x_al, x_ac))
+    generated = error.generate(x_al, x_ac)
 
     # assert abs(wt.data - expected['wt']['one']['wt']).mean() < 1e-12
     assert abs(generated['wet_troposphere'] -
@@ -103,7 +102,7 @@ def test_wet_troposphere():
 
     parameters.nbeam = 2
     error = swot_simulator.error.wet_troposphere.WetTroposphere(parameters)
-    generated = dict(error.generate(x_al, x_ac))
+    generated = error.generate(x_al, x_ac)
 
     # assert abs(wt.data - expected['wt']['two']['wt']).mean() < 1e-12
     assert abs(generated['wet_troposphere'] -
@@ -120,5 +119,5 @@ def test_altimeter():
     (x_al, _, _, _, expected) = load_data('altimeter')
 
     error = swot_simulator.error.altimeter.Altimeter(parameters)
-    generated = dict(error.generate(x_al))
+    generated = error.generate(x_al)
     assert abs(generated['altimeter'] - expected).mean() < 1e-12

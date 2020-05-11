@@ -68,5 +68,5 @@ class Generator:
                     futures.append(client.submit(item.generate, x_al, x_ac))
 
             for future in dask.distributed.as_completed(futures):
-                result.update(dict(future.result()))
+                result.update(future.result())
         return result

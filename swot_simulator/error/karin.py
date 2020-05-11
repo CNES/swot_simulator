@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Dict
 import numpy as np
 
 from . import utils
@@ -21,7 +21,7 @@ class Karin:
 
     def generate(self, x_al: np.array, x_ac: np.array,
                  curvilinear_distance: float,
-                 cycle: int) -> Iterator[Tuple[str, np.ndarray]]:
+                 cycle: int) -> Dict[str, np.ndarray]:
         num_pixels = x_ac.shape[0]
 
         # Generate random noise for left and right part of the mast
@@ -36,4 +36,4 @@ class Karin:
         # Compute random karin error
         ai = (((x_al + cycle * curvilinear_distance) / self.delta_al) %
               self.nrand_karin).astype(np.uint64)
-        yield ("karin", sigma_karin * a_karin[ai, :])
+        return {"karin": sigma_karin * a_karin[ai, :]}

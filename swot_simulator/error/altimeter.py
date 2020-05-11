@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Dict
 import numpy as np
 
 from . import utils
@@ -21,7 +21,7 @@ class Altimeter:
         self.psd = psd * 1e-4
         self.freq = freq
 
-    def generate(self, x_al: np.array) -> Iterator[Tuple[str, np.ndarray]]:
+    def generate(self, x_al: np.array) -> Dict[str, np.ndarray]:
         """Build errors corresponding to each selected noise
         among the effect of the wet_tropo, and the instrumental error
         """
@@ -34,4 +34,4 @@ class Altimeter:
                                     fmin=1 / self.len_repeat,
                                     fmax=1 / self.delta_al,
                                     alpha=10)
-        yield ("altimeter", error)
+        return {"altimeter": error}

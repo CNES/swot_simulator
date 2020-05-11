@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Dict
 import numpy as np
 
 from . import utils
@@ -38,8 +38,9 @@ class BaselineDilation:
         return self.conversion_factor * dil
 
     def generate(self, x_al: np.ndarray,
-                 x_ac: np.ndarray) -> Iterator[Tuple[str, np.ndarray]]:
+                 x_ac: np.ndarray) -> Dict[str, np.ndarray]:
         """TODO"""
         baseline_dilation_1d = self._generate_1d(x_al)
-        yield ("baseline_dilation",
-               x_ac**2 * baseline_dilation_1d[:, np.newaxis])
+        return {
+            "baseline_dilation": x_ac**2 * baseline_dilation_1d[:, np.newaxis]
+        }

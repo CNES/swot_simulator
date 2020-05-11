@@ -259,6 +259,7 @@ def main():
 
     client = dask.distributed.Client(
         dask.distributed.LocalCluster(
+            protocol="tcp",
             n_workers=1,
             processes=False,
             threads_per_worker=args.threads_per_worker)

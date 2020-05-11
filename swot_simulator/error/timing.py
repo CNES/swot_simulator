@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Dict
 import numpy as np
 from . import utils
 
@@ -43,7 +43,7 @@ class Timing:
         ]).T
 
     def generate(self, x_al: np.ndarray,
-                 x_ac: np.ndarray) -> Iterator[Tuple[str, np.ndarray]]:
+                 x_ac: np.ndarray) -> Dict[str, np.ndarray]:
         '''Reconstruct 2D errors from 1D instrumental error simulation'''
         timing_1d = self._generate_1d(x_al)
         num_pixels = x_ac.shape[0]
@@ -54,4 +54,4 @@ class Timing:
         timing[:, :swath_center] = ones_ac * timing_1d[:, 0, np.newaxis]
         timing[:, swath_center:] = ones_ac * timing_1d[:, 1, np.newaxis]
 
-        yield ("timing", timing)
+        return {"timing": timing}

@@ -1,4 +1,4 @@
-from typing import Iterator, List, Tuple
+from typing import Dict, List, Tuple
 import numba as nb
 import numpy as np
 import scipy.ndimage.filters
@@ -141,9 +141,8 @@ class WetTroposphere:
 
         return radio_r, radio_l
 
-    def generate(
-            self, x_al: np.array, x_ac: np.array, lac_max: float = 500
-    ) -> Iterator[Tuple[str, np.ndarray]]:
+    def generate(self, x_al: np.array, x_ac: np.array,
+                 lac_max: float = 500) -> Dict[str, np.ndarray]:
         num_lines = x_al.shape[0]
         num_pixels = x_ac.shape[0]
 
@@ -224,5 +223,7 @@ class WetTroposphere:
 
         # wt_nadir = wt_large[:, naclarge // 2]
 
-        yield ("wet_troposphere", wet_tropo)
-        yield ("wet_troposphere_nadir", wet_tropo_nadir)
+        return {
+            "wet_troposphere": wet_tropo,
+            "wet_troposphere_nadir": wet_tropo_nadir
+        }
