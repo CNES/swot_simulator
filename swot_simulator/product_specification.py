@@ -32,6 +32,8 @@ GROUP = collections.OrderedDict(
     basic=dict(
         description="Basic SSH measurement data and related information for "
         "the full swath."),
+    error=dict(
+        description="Simulated measurement errors."),
     windwave=dict(
         description="Wind and wave measurement data and related information "
         "for the full swath."),
