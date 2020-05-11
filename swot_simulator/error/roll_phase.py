@@ -1,7 +1,5 @@
-from typing import Optional, Tuple
-import collections
+from typing import Iterator, Tuple
 import numpy as np
-import xarray as xr
 
 from . import utils
 from .. import settings
@@ -67,7 +65,7 @@ class RollPhase:
             self,
             x_al: np.ndarray,
             x_ac: np.ndarray,
-    ) -> Tuple[xr.DataArray, xr.DataArray]:
+    ) -> Iterator[Tuple[str, np.ndarray]]:
         """TODO"""
         roll_1d, phase_1d = self._generate_1d(x_al)
         num_pixels = x_ac.shape[0]
@@ -78,16 +76,10 @@ class RollPhase:
         phase = np.full((phase_1d.shape[0], num_pixels), np.nan)
         phase[:, :swath_center] = ac_l * phase_1d[:, 0, np.newaxis]
         phase[:, swath_center:] = ac_r * phase_1d[:, 1, np.newaxis]
+        yield ("phase", phase)
 
         # rollphase_est_1d = np.zeros((np.shape(phase_1d.T)))
         # rollphase_est = np.full((np.shape(rollphase_est_1d)[0], nac), np.nan)
         # rollphase_est[:, :mid_swath] = np.mat(rollphase_est_1d[:, 0]).T * ac_l
         # rollphase_est[:, mid_swath:] = np.mat(rollphase_est_1d[:, 1]).T * ac_r
-
-        roll = x_ac * roll_1d[:, np.newaxis]
-        return (xr.DataArray(phase,
-                             dims=("num_lines", "num_pixels"),
-                             name="phase"),
-                xr.DataArray(roll,
-                             dims=("num_lines", "num_pixels"),
-                             name="roll"))
+        yield ("roll", x_ac * roll_1d[:, np.newaxis])

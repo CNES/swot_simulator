@@ -1,8 +1,7 @@
-from typing import List, Tuple
+from typing import Iterator, List, Tuple
 import numba as nb
 import numpy as np
 import scipy.ndimage.filters
-import xarray as xr
 
 from . import utils
 from .. import settings
@@ -144,7 +143,7 @@ class WetTroposphere:
 
     def generate(
             self, x_al: np.array, x_ac: np.array, lac_max: float = 500
-    ) -> Tuple[xr.DataArray, xr.DataArray, xr.DataArray, xr.DataArray]:
+    ) -> Iterator[Tuple[str, np.ndarray]]:
         num_lines = x_al.shape[0]
         num_pixels = x_ac.shape[0]
 
@@ -223,13 +222,7 @@ class WetTroposphere:
         else:
             raise ValueError("nbeam must be in [1, 2]")
 
-        wt_nadir = wt_large[:, naclarge // 2]
+        # wt_nadir = wt_large[:, naclarge // 2]
 
-        return (xr.DataArray(wt, dims=("num_lines", "num_pixels"), name="wt"),
-                xr.DataArray(wet_tropo,
-                             dims=("num_lines", "num_pixels"),
-                             name="wet_tropo"),
-                xr.DataArray(wt_nadir, dims=("num_lines"), name="wt_nadir"),
-                xr.DataArray(wet_tropo_nadir,
-                             dims=("num_lines"),
-                             name="wet_tropo_nadir"))
+        yield ("wet_troposphere", wet_tropo)
+        yield ("wet_troposphere_nadir", wet_tropo_nadir)

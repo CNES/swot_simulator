@@ -6,7 +6,8 @@
 Main program
 ------------
 """
-from typing import List, Optional, Tuple
+from logging import error
+from typing import Dict, Optional, Tuple
 import argparse
 import datetime
 import logging
@@ -16,7 +17,6 @@ import traceback
 import dask.distributed
 import dateutil
 import numpy as np
-import xarray as xr
 from . import exception
 from . import logbook
 from . import product_specification
@@ -114,9 +114,10 @@ def file_path(date: np.datetime64,
     return os.path.join(dirname, _file_name)
 
 
-def sum_error(errors: List[xr.DataArray], swath: bool = True) -> np.ndarray:
+def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
     dims = 2 if swath else 1
-    return np.add.reduce([item for item in errors if len(item.shape) == dims])
+    return np.add.reduce(
+        [item for item in errors.values() if len(item.shape) == dims])
 
 
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
@@ -150,8 +151,6 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
         # TODO: remove, option to overwrite path
         if not os.path.exists(path):
-            ssh = None
-
             # Interpolation of the SSH if the user wishes.
             if parameters.ssh_plugin is not None:
                 swath_time = np.repeat(track.time, track.lon.shape[1]).reshape(
@@ -160,18 +159,11 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                     track.lon.flatten(), track.lat.flatten(),
                     swath_time.flatten())
                 ssh = _ssh.reshape(track.lon.shape)
-                ssh += sum_error(noise_errors)
-                product.ssh_true(ssh)
+                errors = sum_error(noise_errors)
+                product.ssh(ssh + errors)
+                product.ssh_error(errors)
 
-            # if parameters.noise is True and np.shape(track.x_al)[0] > 1:
-            #     # Computation of noise
-            #     errors = swot_error.make_error(track.x_al, track.x_ac,
-            #                                    orbit.curvilinear_distance,
-            #                                    track.time, cycle_number,
-            #                                    first_date, parameters)
-            #     if ssh is not None:
-            #         product.ssh(swot_error.add_error(errors, ssh))
-            #     product.error(parameters, errors)
+            product.update_noise_errors(noise_errors)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
 
@@ -194,16 +186,11 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
             if parameters.ssh_plugin is not None:
                 ssh = parameters.ssh_plugin.interpolate(
                     track.lon_nadir, track.lat_nadir, track.time)
-                ssh += sum_error(noise_errors, swath=False)
-                product.ssh(ssh)
+                errors = sum_error(noise_errors, swath=False)
+                product.ssh(ssh + errors)
+                product.ssh_error(errors)
 
-            # if (parameters.noise is True) and (np.shape(track.x_al)[0] > 1):
-            #     # Computation of noise
-            #     edict = nadir_error.make_error(track.x_al, parameters)
-            #     if ssh is not None:
-            #         product.ssh(nadir_error.add_error(edict, ssh))
-            #     product.error(parameters, edict)
-
+            product.update_noise_errors(noise_errors)
             product.to_netcdf(cycle_number, pass_number, path,
                               parameters.complete_product)
 

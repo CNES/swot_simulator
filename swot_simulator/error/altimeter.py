@@ -1,5 +1,5 @@
+from typing import Iterator, Tuple
 import numpy as np
-import xarray as xr
 
 from . import utils
 from .. import settings
@@ -21,7 +21,7 @@ class Altimeter:
         self.psd = psd * 1e-4
         self.freq = freq
 
-    def generate(self, x_al: np.array) -> np.ndarray:
+    def generate(self, x_al: np.array) -> Iterator[Tuple[str, np.ndarray]]:
         """Build errors corresponding to each selected noise
         among the effect of the wet_tropo, and the instrumental error
         """
@@ -34,4 +34,4 @@ class Altimeter:
                                     fmin=1 / self.len_repeat,
                                     fmax=1 / self.delta_al,
                                     alpha=10)
-        return xr.DataArray(error, dims=("num_lines", ), name="err_altimeter")
+        yield ("altimeter", error)

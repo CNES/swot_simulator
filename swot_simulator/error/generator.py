@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 import dask.distributed
 import numpy as np
 from .. import settings
@@ -44,8 +44,8 @@ class Generator:
                 raise ValueError(f"unknown error generation class: {item}")
 
     def generate(self, cycle_number: int, curvilinear_distance: float,
-                 x_ac: np.ndarray, x_al: np.ndarray):
-        result = []
+                 x_ac: np.ndarray, x_al: np.ndarray) -> Dict[str, np.ndarray]:
+        result = {}
         if not self.generators or x_al.shape[0] == 0:
             return result
 
@@ -68,5 +68,5 @@ class Generator:
                     futures.append(client.submit(item.generate, x_al, x_ac))
 
             for error in dask.distributed.as_completed(futures):
-                result += list(error) if isinstance(error, tuple) else [error]
+                result.update(dict(error))
         return result

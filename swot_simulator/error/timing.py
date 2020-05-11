@@ -1,5 +1,5 @@
+from typing import Iterator, Tuple
 import numpy as np
-import xarray as xr
 from . import utils
 
 from .. import CELERITY
@@ -42,7 +42,8 @@ class Timing:
             self.CONVERSION_FACTOR * timing_r
         ]).T
 
-    def generate(self, x_al: np.ndarray, x_ac: np.ndarray) -> xr.DataArray:
+    def generate(self, x_al: np.ndarray,
+                 x_ac: np.ndarray) -> Iterator[Tuple[str, np.ndarray]]:
         '''Reconstruct 2D errors from 1D instrumental error simulation'''
         timing_1d = self._generate_1d(x_al)
         num_pixels = x_ac.shape[0]
@@ -53,6 +54,4 @@ class Timing:
         timing[:, :swath_center] = ones_ac * timing_1d[:, 0, np.newaxis]
         timing[:, swath_center:] = ones_ac * timing_1d[:, 1, np.newaxis]
 
-        return xr.DataArray(timing,
-                            dims=("num_lines", "num_pixels"),
-                            name="timing")
+        yield ("timing", timing)

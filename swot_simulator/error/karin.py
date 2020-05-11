@@ -1,5 +1,5 @@
+from typing import Iterator, Tuple
 import numpy as np
-import xarray as xr
 
 from . import utils
 from .. import settings
@@ -20,7 +20,8 @@ class Karin:
         self.nseed = parameters.nseed
 
     def generate(self, x_al: np.array, x_ac: np.array,
-                 curvilinear_distance: float, cycle: int) -> xr.DataArray:
+                 curvilinear_distance: float,
+                 cycle: int) -> Iterator[Tuple[str, np.ndarray]]:
         num_pixels = x_ac.shape[0]
 
         # Generate random noise for left and right part of the mast
@@ -35,6 +36,4 @@ class Karin:
         # Compute random karin error
         ai = (((x_al + cycle * curvilinear_distance) / self.delta_al) %
               self.nrand_karin).astype(np.uint64)
-        return xr.DataArray(sigma_karin * a_karin[ai, :],
-                            dims=("num_lines", "num_pixels"),
-                            name="karin")
+        yield ("karin", sigma_karin * a_karin[ai, :])
