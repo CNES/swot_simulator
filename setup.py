@@ -151,8 +151,8 @@ def main():
     ''',
         python_requires='>=3.6',
         install_requires=[
-            "python-dateutil", "distributed", "numba", "numpy", "pyinterp",
-            "scipy", "xarray", "netCDF4"
+            "python-dateutil", "distributed", "netCDF4", "numba", "numpy",
+            "pyinterp", "scipy", "xarray"
         ],
     )
 
