@@ -138,7 +138,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
-                                            track.x_ac, track.x_al)
+                                            track.x_al, track.x_ac)
 
     if parameters.swath:
         # Create the swath dataset
