@@ -121,6 +121,15 @@ def gen_signal_1d(fi: np.ndarray,
 
     return np.interp(np.mod(x, xg.max()), xg, yg)
 
+@nb.njit(parallel=True)
+def _mask(f2, low, high):
+    mask = np.empty(f2.shape, dtype=np.bool_)
+    for ix in nb.prange(f2.shape[0]):
+        for jx in range(f2.shape[1]):
+            item = f2[ix, jx]
+            mask[ix, jx] = (item >= low) & (item < high)
+    return mask
+
 
 @nb.njit("(float64[:, ::1])"
          "(float64[::1], float64[:, ::1], float64[::1], float64, float64)",
@@ -133,7 +142,7 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
     dfx_y = dfx * dfy
     for idx in range(-1, -f.size - 1, -1):
         item = f[idx]
-        mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
+        mask = _mask(f2, item - dfx_2, item + dfx_2)
         amount = np.sum(result[:, idx]) * dfx_y
         miss = ps1d[idx] * dfx - amount
         view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / dfx_y
@@ -159,24 +168,18 @@ def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     return result
 
 
-def gen_signal_2d_rectangle(fi: np.ndarray,
-                            psi: np.ndarray,
-                            x: np.ndarray,
-                            y: np.ndarray,
-                            fminx: Optional[float] = None,
-                            fminy: Optional[float] = None,
-                            fmax: Optional[float] = None,
-                            alpha: int = 10,
-                            nseed: int = 0,
-                            lf_extpl: bool = False,
-                            hf_extpl: bool = False) -> np.ndarray:
+def gen_ps2d(fi: np.ndarray,
+             psi: np.ndarray,
+             fminx: Optional[float] = None,
+             fminy: Optional[float] = None,
+             fmax: Optional[float] = None,
+             alpha: int = 10,
+             lf_extpl: bool = False,
+             hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
 
-    revert = False
     if fminy < fminx:
-        revert = True
         fmin = fminy
         fminy = fminx
-        x, y = y, x
     else:
         fmin = fminx
 
@@ -212,6 +215,36 @@ def gen_signal_2d_rectangle(fi: np.ndarray,
     dfy = fminy
     ps2d = _calculate_ps2d(f, f2, ps1d, dfx, dfy)
     ps2d[f2 > fmax] = 0
+    return ps2d, f
+
+
+def gen_signal_2d_rectangle(ps2d: np.ndarray,
+                            f: np.ndarray,
+                            x: np.ndarray,
+                            y: np.ndarray,
+                            fminx: Optional[float] = None,
+                            fminy: Optional[float] = None,
+                            fmax: Optional[float] = None,
+                            alpha: int = 10,
+                            nseed: int = 0) -> np.ndarray:
+
+    revert = False
+    if fminy < fminx:
+        revert = True
+        fmin = fminy
+        fminy = fminx
+        x, y = y, x
+    else:
+        fmin = fminx
+
+    # Go alpha times further in frequency to avoid interpolation aliasing.
+    fmaxr = alpha * fmax
+
+    # Build the 2D PSD following the given 1D PSD
+    fx = np.concatenate(([0], f))
+    fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
+    dfx = fmin
+    dfy = fminy
 
     np.random.seed(nseed)
     phase = np.random.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi

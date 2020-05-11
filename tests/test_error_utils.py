@@ -24,8 +24,10 @@ def test_gen_signal_2d_rectangle():
         (fi, psi, x, y, fminx, fminy, fmax, alpha, nseed, lf_extpl, hf_extpl,
          expected) = pickle.load(stream)
 
-    result = utils.gen_signal_2d_rectangle(fi, psi, x, y, fminx, fminy, fmax,
-                                           alpha, nseed, lf_extpl, hf_extpl)
+    ps2d, f = utils.gen_ps2d(fi, psi, fminx, fminy, fmax, alpha, lf_extpl,
+                             hf_extpl)
+    result = utils.gen_signal_2d_rectangle(ps2d, f, x, y, fminx, fminy, fmax,
+                                           alpha, nseed)
     assert (result - expected).mean() < 1e-12
 
 

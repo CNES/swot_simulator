@@ -81,6 +81,10 @@ def _calculate_path_delay(sigma: float, radio: np.ndarray, x_al: np.ndarray,
 
 
 class WetTroposphere:
+    ALPHA = 10
+    LC_MAX = 500
+    F_MAX = 0.05
+
     def __init__(self, parameters: settings.Parameters) -> None:
         # Store the generation parameters of the random signal.
         self.beam_positions = parameters.beam_position
@@ -105,6 +109,15 @@ class WetTroposphere:
         pswt[mask] = 1.4875 * 1e-4 * freq[mask]**(-2.33)
         self.pswt = pswt
         self.freq = freq
+        self.fminx = 1 / self.len_repeat
+        self.ps2d, self.f = utils.gen_ps2d(freq,
+                                           pswt,
+                                           fminx=self.fminx,
+                                           fminy=1 / self.LC_MAX,
+                                           fmax=self.F_MAX,
+                                           alpha=self.ALPHA,
+                                           lf_extpl=True,
+                                           hf_extpl=True)
 
     def _radiometer_error(self,
                           x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -141,8 +154,7 @@ class WetTroposphere:
 
         return radio_r, radio_l
 
-    def generate(self, x_al: np.array, x_ac: np.array,
-                 lac_max: float = 500) -> Dict[str, np.ndarray]:
+    def generate(self, x_al: np.array, x_ac: np.array) -> Dict[str, np.ndarray]:
         num_lines = x_al.shape[0]
         num_pixels = x_ac.shape[0]
 
@@ -158,29 +170,25 @@ class WetTroposphere:
         naclarge = np.shape(x_ac_large)[0]
         # Compute path delay error due to wet tropo and radiometer error
         # using random coefficient initialized with power spectrums
-        fminx = 1 / self.len_repeat
-        fminy = 1 / lac_max
-        wt = utils.gen_signal_2d_rectangle(self.freq,
-                                           self.pswt,
+        wt = utils.gen_signal_2d_rectangle(self.ps2d,
+                                           self.f,
                                            x_al,
                                            x_ac,
-                                           fminx=fminx,
-                                           fminy=fminy,
-                                           fmax=0.05,
-                                           alpha=10,
-                                           nseed=self.nseed,
-                                           lf_extpl=True)
+                                           fminx=self.fminx,
+                                           fminy=1 / self.LC_MAX,
+                                           fmax=self.F_MAX,
+                                           alpha=self.ALPHA,
+                                           nseed=self.nseed)
         wt = wt.T * 1e-2
-        wt_large = utils.gen_signal_2d_rectangle(self.freq,
-                                                 self.pswt,
+        wt_large = utils.gen_signal_2d_rectangle(self.ps2d,
+                                                 self.f,
                                                  x_al,
                                                  x_ac_large,
-                                                 fminx=fminx,
-                                                 fminy=fminy,
-                                                 fmax=0.05,
-                                                 alpha=10,
-                                                 nseed=self.nseed,
-                                                 lf_extpl=True)
+                                                 fminx=self.fminx,
+                                                 fminy=1 / self.LC_MAX,
+                                                 fmax=self.F_MAX,
+                                                 alpha=self.ALPHA,
+                                                 nseed=self.nseed)
         wt_large = wt_large.T * 1e-2
 
         # Compute Residual path delay error after a 1-beam radiometer
@@ -191,7 +199,7 @@ class WetTroposphere:
             beam = scipy.ndimage.filters.gaussian_filter(
                 beam, 30. / self.delta_al)
             beam2d = np.vstack(num_pixels * (beam, )).T
-            # - Compute residual path delay
+            # Compute residual path delay
             wet_tropo = wt - beam2d
             wet_tropo_nadir = wt_large[:, naclarge // 2] - beam
 
