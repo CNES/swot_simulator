@@ -198,8 +198,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
            logging_server: Tuple[str, int, int],
-           first_date: Optional[datetime.datetime] = None,
-           last_date: Optional[datetime.datetime] = None):
+           first_date: Optional[np.datetime64] = None,
+           last_date: Optional[np.datetime64] = None):
     """Executes the simulation set to the selected period."""
     # Displaying Dask client information.
     LOGGER.info(client)
@@ -232,7 +232,7 @@ def launch(client: dask.distributed.Client,
     _error_generator = client.scatter(error_generator)
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
-    date = first_date or datetime.datetime.now()
+    date = first_date or np.datetime64(datetime.datetime.now())
     while date <= last_date:
         cycle, track = orbit.decode_absolute_pass_number(absolute_track)
 
