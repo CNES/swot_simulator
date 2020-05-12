@@ -121,15 +121,6 @@ def gen_signal_1d(fi: np.ndarray,
 
     return np.interp(np.mod(x, xg.max()), xg, yg)
 
-@nb.njit(parallel=True)
-def _mask(f2, low, high):
-    mask = np.empty(f2.shape, dtype=np.bool_)
-    for ix in nb.prange(f2.shape[0]):
-        for jx in range(f2.shape[1]):
-            item = f2[ix, jx]
-            mask[ix, jx] = (item >= low) & (item < high)
-    return mask
-
 
 @nb.njit("(float64[:, ::1])"
          "(float64[::1], float64[:, ::1], float64[::1], float64, float64)",
@@ -142,7 +133,7 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
     dfx_y = dfx * dfy
     for idx in range(-1, -f.size - 1, -1):
         item = f[idx]
-        mask = _mask(f2, item - dfx_2, item + dfx_2)
+        mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
         amount = np.sum(result[:, idx]) * dfx_y
         miss = ps1d[idx] * dfx - amount
         view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / dfx_y
@@ -153,18 +144,20 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
          "(float64[:, ::1], float64[::1], float64[::1], float64, float64)",
          cache=True)
 def _calculate_signal(rectangle, x, y, xgmax, ygmax):
-    x_n = (x.max() - x[0]) // xgmax
-    y_n = (y.max() - y[0]) // ygmax
     result = np.zeros((len(y), len(x)))
+    xn = (x.max() - x[0]) // xgmax
+    yn = (y.max() - y[0]) // ygmax
+    dx = x - x[0]
+    dy = y - y[0]
 
-    for i_x_n in range(int(x_n + 1)):
-        ix0 = np.where(((x - x[0]) >= (i_x_n * xgmax))
-                       & ((x - x[0]) < ((i_x_n + 1) * xgmax)))[0]
-        for i_y_n in range(int(y_n + 1)):
-            iy0 = np.where(((y - y[0]) >= (i_y_n * ygmax))
-                           & ((y - y[0]) < ((i_y_n + 1) * ygmax)))[0]
-            _rect = rectangle[:len(iy0), :len(ix0)]
-            result[iy0[0]:iy0[-1] + 1, ix0[0]:ix0[-1] + 1] = _rect
+    for ix_n in range(int(xn + 1)):
+        ix0 = np.where((dx >= (ix_n * xgmax))
+                       & (dx < ((ix_n + 1) * xgmax)))[0]
+        for iy_n in range(int(yn + 1)):
+            iy0 = np.where((dy >= (iy_n * ygmax))
+                           & (dy < ((iy_n + 1) * ygmax)))[0]
+            result[iy0[0]:iy0[-1] + 1, ix0[0]:ix0[-1] +
+                   1] = rectangle[:len(iy0), :len(ix0)]
     return result
 
 
@@ -178,8 +171,7 @@ def gen_ps2d(fi: np.ndarray,
              hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
 
     if fminy < fminx:
-        fmin = fminy
-        fminy = fminx
+        fmin, fminy = fminy, fminx
     else:
         fmin = fminx
 
@@ -228,11 +220,9 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
                             alpha: int = 10,
                             nseed: int = 0) -> np.ndarray:
 
-    revert = False
-    if fminy < fminx:
-        revert = True
-        fmin = fminy
-        fminy = fminx
+    revert = fminy < fminx
+    if revert:
+        fmin, fminy = fminy, fminx
         x, y = y, x
     else:
         fmin = fminx
@@ -243,8 +233,7 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
     # Build the 2D PSD following the given 1D PSD
     fx = np.concatenate(([0], f))
     fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
-    dfx = fmin
-    dfy = fminy
+    dfx, dfy = fmin, fminy
 
     np.random.seed(nseed)
     phase = np.random.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
