@@ -7,7 +7,6 @@ Interpolate SSH from MIT/GCM model
 ==================================
 """
 import logging
-import dask.distributed
 import dask.array as da
 import numba as nb
 import numpy as np
@@ -143,22 +142,12 @@ class MITGCM(detail.Interface):
         frame = self.ssh[mask]
 
         # Spatial interpolation of the SSH on the different selected grids.
-        with dask.distributed.worker_client() as client:
-            x_sat = client.scatter(lon)
-            y_sat = client.scatter(lat)
-            x_model = client.scatter(self.lon)
-            y_model = client.scatter(self.lat)
-
-            futures = []
-            for index in range(len(frame)):
-                z_model = client.scatter(frame[index, :])
-                futures.append(
-                    client.submit(_spatial_interp, z_model, x_model, y_model,
-                                  x_sat, y_sat))
-
-            spatial_interp = client.gather(futures)
+        layers = []
+        for index in range(len(frame)):
+            layers.append(
+                _spatial_interp(frame[index, :], self.lon, self.lat, lon, lat))
 
         # Time interpolation of the SSH.
-        return _time_interp(self.ts[mask].astype("int64"),
-                            np.stack(spatial_interp),
+        layers = np.stack(layers)
+        return _time_interp(self.ts[mask].astype("int64"), layers,
                             time.astype("datetime64[us]").astype("int64"))
