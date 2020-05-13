@@ -80,9 +80,15 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
         z += (z_face[defined].flatten(), )
 
     # The tree is built and the interpolation is calculated
-    mesh.packing(
-        np.vstack((np.concatenate(x), np.concatenate(y))).T, np.concatenate(z))
-    del x, y, z
+    x = np.concatenate(x)
+    y = np.concatenate(y)
+    coordinates = np.vstack((x, y)).T
+    del x, y
+
+    z = np.concatenate(z)
+    mesh.packing(coordinates, z)
+    del coordinates, z
+
     z, _ = mesh.inverse_distance_weighting(np.vstack(
         (x_sat, y_sat)).T.astype("float32"),
                                            within=True,
