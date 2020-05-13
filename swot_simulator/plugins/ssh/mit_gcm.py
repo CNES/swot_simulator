@@ -151,7 +151,6 @@ class MITGCM(detail.Interface):
                                   x_sat, y_sat))
 
             spatial_interp = client.gather(futures)
-            client.cancel([x_sat, y_sat, x_model, y_model])
 
         # Time interpolation of the SSH.
         return _time_interp(self.ts[mask].astype("int64"),
