@@ -6,8 +6,7 @@
 Main program
 ------------
 """
-from logging import error
-from typing import Dict, Optional, Tuple
+from typing import Dict, Iterator, Optional, Tuple
 import argparse
 import datetime
 import logging
@@ -102,7 +101,7 @@ def file_path(date: np.datetime64,
               cycle_number: int,
               pass_number: int,
               working_directory: str,
-              nadir: Optional[bool] = False) -> str:
+              nadir: bool = False) -> str:
     """Get the absolute path of the file to be created."""
     date = datetime.datetime.utcfromtimestamp(
         date.astype("datetime64[s]").astype("int64"))
@@ -127,7 +126,29 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
     """Simulate a track"""
     # Initialize this worker's logger.
     logbook.setup_worker_logging(logging_server)
-    LOGGER.info("generate pass %d/%d", cycle_number, pass_number)
+
+    # Paths of products to be generated.
+    swath_path = None
+    nadir_path = None
+
+    # Generation of the names of the files to be created.
+    if parameters.swath:
+        swath_path = file_path(date, cycle_number, pass_number,
+                               parameters.working_directory)
+
+        # If the product has already been produced, the generation of this
+        # half orbit is disabled.
+        if os.path.exists(swath_path):
+            swath_path = None
+
+    if parameters.nadir:
+        nadir_path = file_path(date,
+                               cycle_number,
+                               pass_number,
+                               parameters.working_directory,
+                               nadir=True)
+        if os.path.exists(nadir_path):
+            nadir_path = None
 
     # Compute the spatial/temporal position of the satellite
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
@@ -135,64 +156,50 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         return
     track.time = date
 
+    LOGGER.info("generate pass %d/%d", cycle_number, pass_number)
+
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
                                             track.x_al, track.x_ac)
 
-    if parameters.swath:
+    if swath_path:
         # Create the swath dataset
         product = product_specification.Swath(track)
 
-        # If the file has already been generated, the other operations are
-        # ignored
-        path = file_path(date, cycle_number, pass_number,
-                         parameters.working_directory)
+        # Interpolation of the SSH if the user wishes.
+        if parameters.ssh_plugin is not None:
+            swath_time = np.repeat(track.time,
+                                   track.lon.shape[1]).reshape(track.lon.shape)
+            _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
+                                                     track.lat.flatten(),
+                                                     swath_time.flatten())
+            ssh = _ssh.reshape(track.lon.shape)
+            errors = sum_error(noise_errors)
+            product.ssh(ssh + errors)
+            product.ssh_error(errors)
 
-        # TODO: remove, option to overwrite path
-        if not os.path.exists(path):
-            # Interpolation of the SSH if the user wishes.
-            if parameters.ssh_plugin is not None:
-                swath_time = np.repeat(track.time, track.lon.shape[1]).reshape(
-                    track.lon.shape)
-                _ssh = parameters.ssh_plugin.interpolate(
-                    track.lon.flatten(), track.lat.flatten(),
-                    swath_time.flatten())
-                ssh = _ssh.reshape(track.lon.shape)
-                errors = sum_error(noise_errors)
-                product.ssh(ssh + errors)
-                product.ssh_error(errors)
-
-            product.update_noise_errors(noise_errors)
-            product.to_netcdf(cycle_number, pass_number, path,
-                              parameters.complete_product)
+        product.update_noise_errors(noise_errors)
+        product.to_netcdf(cycle_number, pass_number, swath_path,
+                          parameters.complete_product)
 
     # Create the nadir dataset
-    if parameters.nadir:
+    if nadir_path:
         product = product_specification.Nadir(track,
                                               standalone=not parameters.swath)
 
-        # If the file has already been generated, the other operations are
-        # ignored
-        path = file_path(date,
-                         cycle_number,
-                         pass_number,
-                         parameters.working_directory,
-                         nadir=True)
-        if not os.path.exists(path):
-            ssh = None
+        # Interpolation of the SSH if the user wishes.
+        if parameters.ssh_plugin is not None:
+            ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
+                                                    track.lat_nadir,
+                                                    track.time)
+            errors = sum_error(noise_errors, swath=False)
+            product.ssh(ssh + errors)
+            product.ssh_error(errors)
 
-            # Interpolation of the SSH if the user wishes.
-            if parameters.ssh_plugin is not None:
-                ssh = parameters.ssh_plugin.interpolate(
-                    track.lon_nadir, track.lat_nadir, track.time)
-                errors = sum_error(noise_errors, swath=False)
-                product.ssh(ssh + errors)
-                product.ssh_error(errors)
-
-            product.update_noise_errors(noise_errors)
-            product.to_netcdf(cycle_number, pass_number, path,
-                              parameters.complete_product)
+        product.update_noise_errors(noise_errors)
+        product.to_netcdf(cycle_number, pass_number, nadir_path,
+                          parameters.complete_product)
 
 
 def launch(client: dask.distributed.Client,
@@ -219,9 +226,6 @@ def launch(client: dask.distributed.Client,
         last_date = first_date + ((orbit.time[-1]).astype(np.int64) *
                                   1000000).astype("timedelta64[us]")
 
-    # For the moment, we start the processing on the first pass
-    absolute_track = 1
-
     # Initialization of measurement error generators
     error_generator = generator.Generator(parameters)
 
@@ -232,22 +236,43 @@ def launch(client: dask.distributed.Client,
     _error_generator = client.scatter(error_generator)
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
-    date = first_date or np.datetime64(datetime.datetime.now())
-    while date <= last_date:
-        cycle, track = orbit.decode_absolute_pass_number(absolute_track)
 
-        # Generation of the simulated product.
-        futures.append(
-            client.submit(simulate, cycle, track, date, _error_generator,
-                          _orbit, _parameters, logging_server))
+    workers = len(client.scheduler_info()['workers'])
 
-        # Shift the date of the duration of the generated pass
-        date += orbit.pass_duration(track)
+    def submit() -> Iterator[dask.distributed.Future]:
+        # For the moment, we start the processing on the first pass
+        absolute_track = 1
 
-        # Update of the number of the next pass to be generated
-        absolute_track += 1
+        date = first_date or np.datetime64(datetime.datetime.now())
+        while date <= last_date:
+            cycle, track = orbit.decode_absolute_pass_number(absolute_track)
 
-    client.gather(futures)
+            yield client.submit(simulate, cycle, track, date, _error_generator,
+                                _orbit, _parameters, logging_server)
+
+            # Shift the date of the duration of the generated pass
+            date += orbit.pass_duration(track)
+
+            # Update of the number of the next pass to be generated
+            absolute_track += 1
+
+    iterator = submit()
+
+    # Tasks are submitted by pool.
+    completed = dask.distributed.as_completed()
+    while True:
+        while completed.count() < workers and iterator is not None:
+            try:
+                completed.add(next(iterator))
+            except StopIteration:
+                iterator = None
+        try:
+            client.gather(completed.next_batch())
+        except:
+            client.cancel(completed.futures)
+            raise
+        if completed.count() == 0 and iterator is None:
+            break
 
 
 def main():
