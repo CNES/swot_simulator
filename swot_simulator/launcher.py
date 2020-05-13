@@ -233,10 +233,6 @@ def launch(client: dask.distributed.Client,
     # Initialization of measurement error generators
     error_generator = generator.Generator(parameters)
 
-    # For the entire period to be generated, the generation of orbits is
-    # assigned to dask.
-    futures = []
-
     _error_generator = client.scatter(error_generator)
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
@@ -251,8 +247,15 @@ def launch(client: dask.distributed.Client,
         while date <= last_date:
             cycle, track = orbit.decode_absolute_pass_number(absolute_track)
 
-            yield client.submit(simulate, cycle, track, date, _error_generator,
-                                _orbit, _parameters, logging_server)
+            yield client.submit(simulate,
+                                cycle,
+                                track,
+                                date,
+                                _error_generator,
+                                _orbit,
+                                _parameters,
+                                logging_server,
+                                retries=3)
 
             # Shift the date of the duration of the generated pass
             date += orbit.pass_duration(track)
@@ -270,11 +273,7 @@ def launch(client: dask.distributed.Client,
                 completed.add(next(iterator))
             except StopIteration:
                 iterator = None
-        try:
-            client.gather(completed.next_batch())
-        except:
-            client.cancel(completed.futures)
-            raise
+        client.gather(completed.next_batch())
         if completed.count() == 0 and iterator is None:
             break
 
