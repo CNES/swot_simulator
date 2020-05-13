@@ -150,6 +150,10 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         if os.path.exists(nadir_path):
             nadir_path = None
 
+    # To continue, there must be at least one task left for this pass.
+    if swath_path is None and nadir_path is None:
+        return
+
     # Compute the spatial/temporal position of the satellite
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
     if track is None:
