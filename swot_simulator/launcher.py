@@ -114,6 +114,7 @@ def file_path(date: np.datetime64,
 
 
 def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
+    """Calculate the sum of errors"""
     dims = 2 if swath else 1
     return np.add.reduce(
         [item for item in errors.values() if len(item.shape) == dims])
@@ -182,9 +183,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                                                      track.lat.flatten(),
                                                      swath_time.flatten())
             ssh = _ssh.reshape(track.lon.shape)
-            errors = sum_error(noise_errors)
-            product.ssh(ssh + errors)
-            product.ssh_error(errors)
+            product.ssh(ssh + sum_error(noise_errors))
+            product.ssh_error(ssh)
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
@@ -200,9 +200,8 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
             ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
                                                     track.lat_nadir,
                                                     track.time)
-            errors = sum_error(noise_errors, swath=False)
-            product.ssh(ssh + errors)
-            product.ssh_error(errors)
+            product.ssh(ssh + sum_error(noise_errors, swath=False))
+            product.ssh_error(ssh)
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, nadir_path,
