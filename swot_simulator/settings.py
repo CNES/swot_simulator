@@ -95,7 +95,7 @@ class Parameters:
     CONFIG_VALUES: Dict[str, Tuple[Any, Any]] = dict(
         area=(None, [float, 4]),
         beam_position=((-20, 20), [float, 2]),
-        complete_product=(True, bool),
+        complete_product=(False, bool),
         cycle_duration=(20.86455, float),
         delta_ac=(2.0, float),
         delta_al=(2.0, float),
@@ -118,6 +118,7 @@ class Parameters:
         ssh_plugin=(None, ssh.Interface),
         swath=(True, bool),
         swh=(2, int),
+        hierarchical_groups=(False, bool),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
     )
 

@@ -233,6 +233,7 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
 
 def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
                      encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
+                     hierarchical_groups: bool,
                      unlimited_dims: Optional[List[str]],
                      variable: xr.Variable) -> None:
     """Creation and writing of the NetCDF variable"""
@@ -251,8 +252,15 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
     dtype, kwargs = _create_variable_args(encoding, name, variable)
 
     parts = name.split("/")
-    name = parts.pop()
-    group = parts.pop() if parts else None
+    if hierarchical_groups:
+        name, group = parts.pop(), parts.pop() if parts else None
+    else:
+        name, group = "_".join(parts), None
+        # If the dimensions doesn't exist then we have to create them.
+        if not nc_dataset.dimensions:
+            for dim_name, size in xr_dataset.dims.items():
+                nc_dataset.createDimension(
+                    dim_name, None if dim_name in unlimited_dims else size)
 
     if group is not None:
         if group not in nc_dataset.groups:
@@ -278,6 +286,7 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
 
 def to_netcdf(dataset: xr.Dataset,
               path: Union[str, pathlib.Path],
+              hierarchical_groups: bool,
               encoding: Optional[Dict[str, Dict]] = None,
               unlimited_dims: Optional[List[str]] = None,
               **kwargs):
@@ -292,12 +301,12 @@ def to_netcdf(dataset: xr.Dataset,
         stream.setncatts(dataset.attrs)
 
         for name, variable in dataset.coords.items():
-            _create_variable(dataset, stream, encoding, name, unlimited_dims,
-                             variable)
+            _create_variable(dataset, stream, encoding, name,
+                             hierarchical_groups, unlimited_dims, variable)
 
         for name, variable in dataset.data_vars.items():
-            _create_variable(dataset, stream, encoding, name, unlimited_dims,
-                             variable)
+            _create_variable(dataset, stream, encoding, name,
+                             hierarchical_groups, unlimited_dims, variable)
 
 
 class ProductSpecification:
@@ -620,7 +629,7 @@ class Nadir:
                 self._data_array(k, v)
 
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
-                  complete_product: bool) -> None:
+                  complete_product: bool, hierarchical_groups: bool) -> None:
         LOGGER.info("write %s", path)
         data_vars = dict((item.name, item) for item in self.data_vars)
         # Variables that are not calculated are filled in in order to have a
@@ -660,7 +669,7 @@ class Nadir:
                                  self.product_spec.attributes, cycle_number,
                                  pass_number, self.data_vars[0].values, lng,
                                  lat))
-        to_netcdf(dataset, path, self.encoding, mode="w")
+        to_netcdf(dataset, path, hierarchical_groups, self.encoding, mode="w")
 
 
 class Swath(Nadir):

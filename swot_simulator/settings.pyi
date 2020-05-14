@@ -37,6 +37,7 @@ class Parameters:
     ssh_plugin: Optional[ssh.Interface]
     swath: bool
     swh: int
+    hierarchical_groups: bool
     working_directory: str
 
     def __init__(self, override: Dict[str, Any]) -> None:
