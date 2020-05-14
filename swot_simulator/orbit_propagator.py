@@ -219,8 +219,12 @@ def calculate_orbit(parameters: settings.Parameters,
                      parameters.delta_al,
                      dtype=distance.dtype)
     time = np.interp(x_al, distance[:-1], time[:-1])
-    lon = np.interp(x_al, distance[:-1], lon[:-1])
-    lat = np.interp(x_al, distance[:-1], lat[:-1])
+
+    x, y, z = math.spher2cart(lon, lat)
+    x = np.interp(x_al, distance[:-1], x[:-1])
+    y = np.interp(x_al, distance[:-1], y[:-1])
+    z = np.interp(x_al, distance[:-1], z[:-1])
+    lon, lat = math.cart2spher(x, y, z)
 
     return Orbit(parameters.height, lat, lon,
                  np.sort(calculate_pass_time(lat, time)), time, x_al,
