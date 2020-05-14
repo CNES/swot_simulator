@@ -158,9 +158,12 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
     if track is None:
         return
-    track.time = date
 
-    LOGGER.info("generate pass %d/%d", cycle_number, pass_number)
+    # Set the simulated date
+    track.set_time(date, pass_number)
+
+    LOGGER.info("generate pass %d/%d [%s, %s]", cycle_number, pass_number,
+                track.time[0], track.time[-1])
 
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,

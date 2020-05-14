@@ -59,7 +59,7 @@ def interpolate(lon: np.ndarray, lat: np.ndarray,
 
 def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray
-                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Rearrange orbit starting from pass 1
 
     Detect the beginning of pass 1 in the ephemeris. By definition, it is
@@ -77,13 +77,16 @@ def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
     time = (time - time[0]) % cycle_duration
     if time[np.where(time < 0)]:
         LOGGER.warning('there are negative times in your orbit')
+    return lon, lat, time
 
+
+def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
     # Compute the initial time of each pass
     dy = np.roll(lat, 1) - lat
     indexes = np.where(((dy < 0) & (np.roll(dy, 1) >= 0))
                        | ((dy > 0)
                           & (np.roll(dy, 1) <= 0)))
-    return lon, lat, time, time[indexes[0]]
+    return time[indexes[0]]
 
 
 def select_box(box: math.Box, lon: np.ndarray, lat: np.ndarray,
@@ -150,9 +153,8 @@ class Pass:
     def time(self):
         return self._time
 
-    @time.setter
-    def time(self, date: np.datetime64):
-        self._time = self.timedelta + date
+    def set_time(self, date: np.datetime64, pass_number: int) -> None:
+        self._time = (self.timedelta / pass_number) + date
 
 
 def calculate_orbit(parameters: settings.Parameters,
@@ -206,7 +208,7 @@ def calculate_orbit(parameters: settings.Parameters,
         lon = math.normalize_longitude(lon + parameters.shift_lon)
 
     # Rearrange orbit starting from pass 1
-    lon, lat, time, pass_time = rearrange_orbit(cycle_duration, lon, lat, time)
+    lon, lat, time = rearrange_orbit(cycle_duration, lon, lat, time)
 
     # Calculates the along track distance
     distance = math.curvilinear_distance(lon, lat, VOLUMETRIC_MEAN_RADIUS)
@@ -220,7 +222,8 @@ def calculate_orbit(parameters: settings.Parameters,
     lon = np.interp(x_al, distance[:-1], lon[:-1])
     lat = np.interp(x_al, distance[:-1], lat[:-1])
 
-    return Orbit(parameters.height, lat, lon, np.sort(pass_time), time, x_al,
+    return Orbit(parameters.height, lat, lon,
+                 np.sort(calculate_pass_time(lat, time)), time, x_al,
                  distance[-1], parameters.shift_time)
 
 
