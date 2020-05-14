@@ -161,7 +161,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         return
 
     # Set the simulated date
-    track.set_time(date, pass_number)
+    track.time = date
 
     LOGGER.info("generate pass %d/%d [%s, %s]", cycle_number, pass_number,
                 track.time[0], track.time[-1])

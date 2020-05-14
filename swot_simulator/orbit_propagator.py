@@ -153,8 +153,9 @@ class Pass:
     def time(self):
         return self._time
 
-    def set_time(self, date: np.datetime64, pass_number: int) -> None:
-        self._time = (self.timedelta / pass_number) + date
+    @time.setter
+    def time(self, date: np.datetime64) -> None:
+        self._time = date + (self.timedelta - self.timedelta[0])
 
 
 def calculate_orbit(parameters: settings.Parameters,
