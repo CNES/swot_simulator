@@ -40,7 +40,7 @@ def datetime_type(value):
 
 def writable_directory(value):
     """The option should define a writable directory"""
-    ## TODO: create directory if it does not exist?
+    # TODO: create directory if it does not exist?
     # Check if value exists
     if not os.path.exists(value):
         _err = f"no such file or directory: {value!r}"
