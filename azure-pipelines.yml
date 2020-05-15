@@ -89,7 +89,7 @@ jobs:
     displayName: Create Anaconda environment
   - script: |
       call activate Build
-      conda install --yes --quiet --name Build -c conda-forge python=$PYTHON_VERSION pytest setuptools dask distributed mkl_fft netcdf4 numba numpy pyinterp python-dateutil scipy xarray
+      conda install --yes --quiet --name Build -c conda-forge python=%PYTHON_VERSION% pytest setuptools dask distributed mkl_fft netcdf4 numba numpy pyinterp python-dateutil scipy xarray
     displayName: Install build requirements
   - script: |
       call activate Build
