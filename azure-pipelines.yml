@@ -25,10 +25,10 @@ jobs:
       source activate Build
       python setup.py build
     displayName: Build package
-  # - bash: |
-  #     source activate Build
-  #     python setup.py test --pytest-args="--junitxml=junit/test-results.xml --cov=pyinterp --cov-report=xml --cov-report=html"
-  #   displayName: Test cases
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases
   # - task: PublishTestResults@2
   #   condition: succeededOrFailed()
   #   inputs:
@@ -64,10 +64,10 @@ jobs:
       source activate Build
       python setup.py build
     displayName: Build package
-  # - bash: |
-  #     source activate Build
-  #     python setup.py test
-  #   displayName: Test cases
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases
 - job:
   displayName: vs2017-win2016
   pool:
@@ -95,7 +95,7 @@ jobs:
       call activate Build
       python setup.py build
     displayName: Build package
-  # - script: |
-  #     call activate Build
-  #     python setup.py test
-  #   displayName: Test cases
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases
