@@ -6,7 +6,8 @@
 Orbit Propagator
 ----------------
 """
-from typing import Dict, Iterable, Optional, TextIO, Tuple
+from typing import Dict, Iterable, Iterator, Optional, TextIO, Tuple
+import datetime
 import logging
 import numpy as np
 from . import math
@@ -21,14 +22,16 @@ def load_ephemeris(stream: TextIO, cols: Optional[Iterable[int]] = None
     """Loads a tabular file describing a satellite orbit."""
     if cols is None:
         cols = (1, 2, 0)
-    LOGGER.info("loading ephemeris:  %s", stream.name)
+    LOGGER.info("loading ephemeris: %s", stream.name)
 
     comments = []
     data = []
     for item in stream:
         item = item.strip()
-        comments.append(item[1:]) if item.startswith("#") \
-            else data.append(list(float(value) for value in item.split()))
+        if item.startswith("#"):
+            comments.append(item[1:])
+        else:
+            data.append(list(float(value) for value in item.split()))
     data = np.asarray(data, dtype=np.float64)
 
     def to_dict(comments) -> Dict[str, float]:
@@ -112,10 +115,17 @@ class Orbit:
         self.x_al = x_al
         self.curvilinear_distance = curvilinear_distance
 
+    def cycle_duration(self) -> np.timedelta64:
+        """Get the cycle duration"""
+        return ((self.time[-1]).astype(np.int64) *
+                1e6).astype("timedelta64[us]")
+
     def passes_per_cycle(self):
+        """Get the number of passes per cycle"""
         return len(self.pass_time)
 
     def pass_duration(self, number: int) -> np.timedelta64:
+        """Get the duration of a given pass."""
         if number == self.passes_per_cycle():
             return np.timedelta64(
                 int((self.time[-1] - self.pass_time[-1]) * 1e6), 'us')
@@ -124,14 +134,42 @@ class Orbit:
             'us')
 
     def decode_absolute_pass_number(self, number: int) -> Tuple[int, int]:
-        """Calculate the cycle, pass  number from a given absolute pass number.
-
-        Return:
-            tuple: cycle, track number
-        """
+        """Calculate the cycle and pass number from a given absolute pass
+        number."""
         number -= 1
         return (int(number / self.passes_per_cycle()) + 1,
                 (number % self.passes_per_cycle()) + 1)
+
+    def encode_absolute_pass_number(self, cycle_number: int,
+                                    pass_number) -> int:
+        """Calculate the absoltute pass number for a given half-orbit."""
+        passes_per_cycle = self.passes_per_cycle()
+        if not 1 <= pass_number <= passes_per_cycle:
+            raise ValueError(f"pass_number must be in [1, {passes_per_cycle}")
+        return (cycle_number - 1) * self.passes_per_cycle() + pass_number
+
+    def iterate(self,
+                first_date: Optional[np.datetime64] = None,
+                last_date: Optional[np.datetime64] = None,
+                absolute_pass_number: int = 1
+                ) -> Iterator[Tuple[int, int, np.datetime64]]:
+        """Obtain all half-orbits within the defined time interval. The
+        function returns a tuple for all traces within the interval describing
+        the cycle number, pass number and start date of the half-orbit."""
+        date = first_date or np.datetime64(datetime.datetime.now())
+        last_date = last_date or first_date + self.cycle_duration()
+        while date <= last_date:
+            cycle_number, pass_number = self.decode_absolute_pass_number(
+                absolute_pass_number)
+
+            yield cycle_number, pass_number, date
+
+            # Shift the date of the duration of the generated pass
+            date += self.pass_duration(pass_number)
+
+            # Update of the number of the next pass to be generated
+            absolute_pass_number += 1
+        return StopIteration
 
 
 class Pass:
@@ -234,6 +272,7 @@ def calculate_orbit(parameters: settings.Parameters,
 
 def calculate_pass(pass_number: int, orbit: Orbit,
                    parameters: settings.Parameters) -> Optional[Pass]:
+    """Get the properties of an half-orbit"""
     index = pass_number - 1
     # Selected indexes corresponding to the current pass
     if index == len(orbit.pass_time) - 1:
