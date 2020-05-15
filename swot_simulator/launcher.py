@@ -167,15 +167,15 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
     # Set the simulated date
     track.time = date
 
-    LOGGER.info("generate pass %d/%d [%s, %s]", cycle_number, pass_number,
-                track.time[0], track.time[-1])
-
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
                                             track.x_al, track.x_ac)
 
     if swath_path:
+        LOGGER.info("generate swath %d/%d [%s, %s]", cycle_number, pass_number,
+                    track.time[0], track.time[-1])
+
         # Create the swath dataset
         product = product_specification.Swath(track)
 
@@ -196,6 +196,9 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
     # Create the nadir dataset
     if nadir_path:
+        LOGGER.info("generate nadir %d/%d [%s, %s]", cycle_number, pass_number,
+                    track.time[0], track.time[-1])
+
         product = product_specification.Nadir(track,
                                               standalone=not parameters.swath)
 
