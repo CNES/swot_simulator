@@ -19,10 +19,12 @@ class DownloadData:
            "/0.0.0/TestDatasets.zip")
 
     def __init__(self):
-        self.prefix = os.path.join(os.path.dirname(__file__), "data")
+        self.prefix = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "data")
         os.makedirs(self.prefix, exist_ok=True)
         while not self.check():
-            temp = tempfile.NamedTemporaryFile()
+            temp = tempfile.NamedTemporaryFile(
+                dir=os.path.dirname(os.path.abspath(__file__)))
             self.download(temp)
             temp.flush()
             self.extract(temp.name)
