@@ -23,11 +23,14 @@ class DownloadData:
                                    "data")
         os.makedirs(self.prefix, exist_ok=True)
         while not self.check():
-            temp = tempfile.NamedTemporaryFile(
-                dir=os.path.dirname(os.path.abspath(__file__)))
-            self.download(temp)
-            temp.flush()
-            self.extract(temp.name)
+            archive = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "TestDatasets.zip")
+            try:
+                with open(archive, mode="wb") as stream:
+                    self.download(stream)
+                self.extract(archive)
+            finally:
+                os.unlink(archive)
 
     def extract(self, name):
         """Extraction of the downloaded archive."""
