@@ -192,8 +192,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
-                          parameters.complete_product,
-                          parameters.hierarchical_groups)
+                          parameters.complete_product)
 
     # Create the nadir dataset
     if nadir_path:
@@ -210,8 +209,7 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, nadir_path,
-                          parameters.complete_product,
-                          parameters.hierarchical_groups)
+                          parameters.complete_product)
 
 
 def available_workers(client: dask.distributed.Client) -> List[str]:

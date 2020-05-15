@@ -118,7 +118,6 @@ class Parameters:
         ssh_plugin=(None, ssh.Interface),
         swath=(True, bool),
         swh=(2, int),
-        hierarchical_groups=(False, bool),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
     )
 

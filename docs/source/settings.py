@@ -27,11 +27,6 @@ ephemeris_cols = [1, 2, 0]
 # variables will be written to the netCDF file.
 complete_product = False
 
-# If true, the netcdf file will contain the hierarchical groups defined in the
-# PDD (ex. "basic/ssh_karin") otherwise all variables will be stored in the
-# root group and will be prefixed by the group name (ex. "basic_ssh_karin").
-hierarchical_groups = False
-
 # Distance, in km, between the nadir and the beginning of the swath
 half_gap = 10.0
 

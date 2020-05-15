@@ -28,19 +28,6 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
-GROUP = collections.OrderedDict(
-    basic=dict(
-        description="Basic SSH measurement data and related information for "
-        "the full swath."),
-    error=dict(description="Simulated measurement errors."),
-    windwave=dict(
-        description="Wind and wave measurement data and related information "
-        "for the full swath."),
-    expert=dict(
-        description="Detailed contextual information, for the full swath, on "
-        "the SWOT measurements; this information is intended to allow expert "
-        "users to perform advanced analyses."))
-
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
     """ Find a tag in the xml format specifcation file"""
@@ -233,7 +220,6 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
 
 def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
                      encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
-                     hierarchical_groups: bool,
                      unlimited_dims: Optional[List[str]],
                      variable: xr.Variable) -> None:
     """Creation and writing of the NetCDF variable"""
@@ -251,29 +237,12 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
             variable.attrs["units"] == "seconds since 2000-01-01 00:00:00.0")
     dtype, kwargs = _create_variable_args(encoding, name, variable)
 
-    parts = name.split("/")
-    if hierarchical_groups:
-        name, group = parts.pop(), parts.pop() if parts else None
-    else:
-        name, group = "_".join(parts), None
-        # If the dimensions doesn't exist then we have to create them.
-        if not nc_dataset.dimensions:
-            for dim_name, size in xr_dataset.dims.items():
-                nc_dataset.createDimension(
-                    dim_name, None if dim_name in unlimited_dims else size)
+    # If the dimensions doesn't exist then we have to create them.
+    if not nc_dataset.dimensions:
+        for dim_name, size in xr_dataset.dims.items():
+            nc_dataset.createDimension(
+                dim_name, None if dim_name in unlimited_dims else size)
 
-    if group is not None:
-        if group not in nc_dataset.groups:
-            # Creating the group, dimensions and attributes
-            nc_dataset = nc_dataset.createGroup(group)
-            for dim_name, size in xr_dataset.dims.items():
-                nc_dataset.createDimension(
-                    dim_name, None if dim_name in unlimited_dims else size)
-
-            if group in GROUP:
-                nc_dataset.setncatts(GROUP[group])
-        else:
-            nc_dataset = nc_dataset.groups[group]
     ncvar = nc_dataset.createVariable(name, dtype, variable.dims, **kwargs)
     ncvar.setncatts(variable.attrs)
     values = variable.values
@@ -286,7 +255,6 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
 
 def to_netcdf(dataset: xr.Dataset,
               path: Union[str, pathlib.Path],
-              hierarchical_groups: bool,
               encoding: Optional[Dict[str, Dict]] = None,
               unlimited_dims: Optional[List[str]] = None,
               **kwargs):
@@ -301,12 +269,12 @@ def to_netcdf(dataset: xr.Dataset,
         stream.setncatts(dataset.attrs)
 
         for name, variable in dataset.coords.items():
-            _create_variable(dataset, stream, encoding, name,
-                             hierarchical_groups, unlimited_dims, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
         for name, variable in dataset.data_vars.items():
-            _create_variable(dataset, stream, encoding, name,
-                             hierarchical_groups, unlimited_dims, variable)
+            _create_variable(dataset, stream, encoding, name, unlimited_dims,
+                             variable)
 
 
 class ProductSpecification:
@@ -325,8 +293,8 @@ class ProductSpecification:
         return np.array(properties["attrs"]["_FillValue"], dtype)
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
-        encoding, data_array = self._data_array("basic/time", time)
-        return {"basic/time": encoding}, [data_array]
+        encoding, data_array = self._data_array("time", time)
+        return {"time": encoding}, [data_array]
 
     def _data_array(self, name: str,
                     data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
@@ -366,26 +334,25 @@ class ProductSpecification:
                                       attrs=attrs)
 
     def x_ac(self, x_ac: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        return self._data_array("expert/cross_track_distance", x_ac)
+        return self._data_array("cross_track_distance", x_ac)
 
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
-        return self._data_array("basic/longitude",
-                                math.normalize_longitude(lon, 0))
+        return self._data_array("longitude", math.normalize_longitude(lon, 0))
 
     def lon_nadir(self, lon_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         # Longitude must be in [0, 360.0[
-        return self._data_array("expert/longitude_nadir",
+        return self._data_array("longitude_nadir",
                                 math.normalize_longitude(lon_nadir, 0))
 
     def lat(self, lat: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        return self._data_array("basic/latitude", lat)
+        return self._data_array("latitude", lat)
 
     def lat_nadir(self, lat_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        return self._data_array("expert/latitude_nadir", lat_nadir)
+        return self._data_array("latitude_nadir", lat_nadir)
 
     def ssh_karin(self, ssh: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        return self._data_array("basic/ssh_karin", ssh)
+        return self._data_array("ssh_karin", ssh)
 
     def ssh_karin_uncert(self, array: np.ndarray) -> None:
         self._data_array("ssh_karin_uncert", array)
@@ -395,8 +362,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/time"]["shape"],
-                        name="basic/ssh_nadir",
+                        dims=self.variables["time"]["shape"],
+                        name="ssh_nadir",
                         attrs={
                             'coordinates': 'longitude latitude',
                             'long_name': 'sea surface height',
@@ -414,8 +381,8 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(
             data=array,
-            dims=self.variables["basic/time"]["shape"],
-            name="error/ssh_nadir",
+            dims=self.variables["time"]["shape"],
+            name="ssh_nadir_true",
             attrs={
                 'coordinates': 'longitude latitude',
                 'long_name': 'sea surface height',
@@ -435,8 +402,8 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(
             data=array,
-            dims=self.variables["basic/ssh_karin"]["shape"],
-            name="error/ssh_karin",
+            dims=self.variables["ssh_karin"]["shape"],
+            name="ssh_karin_true",
             attrs={
                 'coordinates': 'longitude latitude',
                 'long_name': 'sea surface height',
@@ -456,8 +423,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/baseline_dilation",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_baseline_dilation",
                         attrs={
                             'long_name': 'Error due to baseline mast dilation',
                             'scale_factor': 0.0001,
@@ -471,8 +438,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/roll",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_roll",
                         attrs={
                             'long_name': 'Error due to roll',
                             'units': 'm',
@@ -485,8 +452,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/phase",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_phase",
                         attrs={
                             'long_name': 'Error due to phase',
                             'units': 'm',
@@ -499,7 +466,7 @@ class ProductSpecification:
     #         '_FillValue': 2147483647,
     #         'dtype': 'int32'
     #     }, xr.DataArray(data=array,
-    #                     dims=self.variables["basic/ssh_karin"]["shape"],
+    #                     dims=self.variables["ssh_karin"]["shape"],
     #                     name="basic/roll_phase_est",
     #                     attrs={
     #                         'long_name': 'Error after estimaton of roll phase',
@@ -515,8 +482,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/karin",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_karin",
                         attrs={
                             'long_name': 'KaRIn error',
                             'units': 'm',
@@ -529,8 +496,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/timing",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_timing",
                         attrs={
                             'long_name': 'Timing error',
                             'units': 'm',
@@ -544,8 +511,8 @@ class ProductSpecification:
             'dtype': 'int32',
             'scale_factor': 0.0001
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/ssh_karin"]["shape"],
-                        name="error/wet_troposphere",
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="err_wet_troposphere",
                         attrs={
                             'long_name':
                             'Error due to wet troposphere path delay',
@@ -560,8 +527,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/time"]["shape"],
-                        name="error/wet_troposphere_nadir",
+                        dims=self.variables["time"]["shape"],
+                        name="err_wet_troposphere_nadir",
                         attrs={
                             'long_name':
                             'Error due to wet troposphere path delay',
@@ -575,8 +542,8 @@ class ProductSpecification:
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
-                        dims=self.variables["basic/time"]["shape"],
-                        name="error/altimeter",
+                        dims=self.variables["time"]["shape"],
+                        name="err_altimeter",
                         attrs={
                             'long_name': 'Altimeter error',
                             'standard_name': '',
@@ -629,29 +596,27 @@ class Nadir:
                 self._data_array(k, v)
 
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
-                  complete_product: bool, hierarchical_groups: bool) -> None:
+                  complete_product: bool) -> None:
         LOGGER.info("write %s", path)
         data_vars = dict((item.name, item) for item in self.data_vars)
+
+        if "longitude" in data_vars:
+            lng = data_vars["longitude"]
+            lat = data_vars["latitude"]
+        else:
+            lng = data_vars["longitude_nadir"]
+            lat = data_vars["latitude_nadir"]
+
         # Variables that are not calculated are filled in in order to have a
         # product compatible with the PDD SWOT. Longitude is used as a
         # template.
-        if complete_product and "basic/longitude" in data_vars:
-            item = data_vars["basic/longitude"]
-            shape = dict(zip(item.dims, item.shape))
+        if complete_product and len(lng.shape) == 2:
+            shape = dict(zip(lng.dims, lng.shape))
             shape["num_sides"] = 2
             for encoding, array in self.product_spec.fill_variables(
                     data_vars.keys(), shape):
                 self.encoding[array.name] = encoding
                 self.data_vars.append(array)
-        if "basic/longitude" in data_vars:
-            lng = data_vars["basic/longitude"]
-            lat = data_vars["basic/latitude"]
-        elif self.standalone:
-            lng = data_vars["expert/longitude"]
-            lat = data_vars["expert/latitude"]
-        else:
-            lng = data_vars["expert/longitude_nadir"]
-            lat = data_vars["expert/latitude_nadir"]
 
         # Variables must be written in the declaration order of the XML file
         unordered_vars = dict((item.name, item) for item in self.data_vars)
@@ -669,7 +634,7 @@ class Nadir:
                                  self.product_spec.attributes, cycle_number,
                                  pass_number, self.data_vars[0].values, lng,
                                  lat))
-        to_netcdf(dataset, path, hierarchical_groups, self.encoding, mode="w")
+        to_netcdf(dataset, path, self.encoding, mode="w")
 
 
 class Swath(Nadir):
