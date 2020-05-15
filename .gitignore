@@ -108,3 +108,6 @@ venv.bak/
 
 # The file describing the version must not be committed in GIT.
 swot_simulator/version.py
+
+# Downloaded test datasets
+tests/data

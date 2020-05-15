@@ -1,0 +1,101 @@
+trigger:
+ - master
+ - develop
+jobs:
+- job:
+  displayName: Ubuntu-16.04
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - bash: conda create --yes --quiet --name Build
+    displayName: Create Anaconda environment
+  - bash: |
+      source activate Build
+      conda install --yes --quiet --name Build -c conda-forge python=$PYTHON_VERSION pytest setuptools dask distributed mkl_fft netcdf4 numba numpy pyinterp python-dateutil scipy xarray
+    displayName: Install build requirements
+  - bash: |
+      source activate Build
+      python setup.py build
+    displayName: Build package
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases
+  # - task: PublishTestResults@2
+  #   condition: succeededOrFailed()
+  #   inputs:
+  #     testResultsFiles: '**/test-*.xml'
+  #     testRunTitle: 'Publish test results for Python $(python.version)'
+  # - task: PublishCodeCoverageResults@1
+  #   inputs:
+  #     codeCoverageTool: Cobertura
+  #     summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+  #     reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+- job:
+  displayName: macOS-10.14
+  pool:
+    vmImage: 'macOS-10.14'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - bash: sudo chown -R $USER $CONDA
+    displayName: Take ownership of conda installation
+  - bash: conda create --yes --quiet --name Build
+    displayName: Create Anaconda environment
+  - bash: |
+      source activate Build
+      conda install --yes --quiet --name Build -c conda-forge python=$PYTHON_VERSION pytest setuptools dask distributed mkl_fft netcdf4 numba numpy pyinterp python-dateutil scipy xarray
+    displayName: Install build requirements
+  - bash: |
+      source activate Build
+      python setup.py build
+    displayName: Build package
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases
+- job:
+  displayName: vs2017-win2016
+  pool:
+    vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+  steps:
+  - checkout: self
+    fetchDepth: 1
+  - script: git submodule update --init --recursive
+    displayName: Initialize the submodules
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name Build
+    displayName: Create Anaconda environment
+  - script: |
+      call activate Build
+      conda install --yes --quiet --name Build -c conda-forge python=$PYTHON_VERSION pytest setuptools dask distributed mkl_fft netcdf4 numba numpy pyinterp python-dateutil scipy xarray
+    displayName: Install build requirements
+  - script: |
+      call activate Build
+      python setup.py build
+    displayName: Build package
+  - bash: |
+      source activate Build
+      pytest tests
+    displayName: Test cases

@@ -2,7 +2,7 @@
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from . import math
 from .plugins import ssh
 
@@ -13,20 +13,31 @@ def eval_config_file(filename: str) -> Dict:
 
 class Parameters:
     area: Optional[Tuple[float, float, float, float]]
-    cycle_duration: float
-    delta_al: float
-    delta_ac: float
-    ephemeris: Optional[str]
-    ephemeris_cols: Optional[Tuple[int, int, int]]
+    beam_position: List[float]
     complete_product: bool
+    cycle_duration: float
+    delta_ac: float
+    delta_al: float
+    ephemeris_cols: Optional[Tuple[int, int, int]]
+    ephemeris: Optional[str]
+    error_spectrum: Optional[str]
     half_gap: float
     half_swath: float
     height: float
+    karin_noise: Optional[str]
+    len_repeat: float
     nadir: bool
-    swath: bool
-    ssh_plugin: Optional[ssh.Interface]
+    nbeam: int
+    noise: List[str]
+    nrand_karin: int
+    nseed: int
     shift_lon: Optional[float]
     shift_time: Optional[float]
+    sigma: float
+    ssh_plugin: Optional[ssh.Interface]
+    swath: bool
+    swh: int
+    hierarchical_groups: bool
     working_directory: str
 
     def __init__(self, override: Dict[str, Any]) -> None:

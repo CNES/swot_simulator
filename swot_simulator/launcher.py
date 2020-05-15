@@ -6,12 +6,13 @@
 Main program
 ------------
 """
-from typing import Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 import argparse
 import datetime
 import logging
 import os
 import sys
+import time
 import traceback
 import dask.distributed
 import dateutil
@@ -21,11 +22,13 @@ from . import logbook
 from . import product_specification
 from . import orbit_propagator
 from . import settings
-from .lib.error import error_swot
-from .lib.error import error_nadir
+from .error import generator
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
+
+#: Tasks launched
+TASKS = {}
 
 
 def datetime_type(value):
@@ -41,7 +44,7 @@ def datetime_type(value):
 
 def writable_directory(value):
     """The option should define a writable directory"""
-    ## TODO: create directory if it does not exist?
+    # TODO: create directory if it does not exist?
     # Check if value exists
     if not os.path.exists(value):
         _err = f"no such file or directory: {value!r}"
@@ -82,13 +85,12 @@ def usage() -> argparse.Namespace:
                        metavar='PATH',
                        help="Path to the logbook to use",
                        type=argparse.FileType("w"))
-    ## TODO: set default to 1 to avoid burning small computers
     group.add_argument("--threads-per-worker",
                        help="Number of threads per each worker. "
-                       f"Defaults to {os.cpu_count()}",
+                       f"Defaults to 1",
                        type=int,
                        metavar='N',
-                       default=os.cpu_count())
+                       default=1)
     group.add_argument("--scheduler-file",
                        help="Path to a file with scheduler information to "
                        "launch swot simulator on a cluster. By "
@@ -103,7 +105,7 @@ def file_path(date: np.datetime64,
               cycle_number: int,
               pass_number: int,
               working_directory: str,
-              nadir: Optional[bool] = False) -> str:
+              nadir: bool = False) -> str:
     """Get the absolute path of the file to be created."""
     date = datetime.datetime.utcfromtimestamp(
         date.astype("datetime64[s]").astype("int64"))
@@ -115,139 +117,191 @@ def file_path(date: np.datetime64,
     return os.path.join(dirname, _file_name)
 
 
+def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
+    """Calculate the sum of errors"""
+    dims = 2 if swath else 1
+    return np.add.reduce(
+        [item for item in errors.values() if len(item.shape) == dims])
+
+
 def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
-             first_date: np.datetime64,
+             error_generator: generator.Generator,
              orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
     """Simulate a track"""
     # Initialize this worker's logger.
     logbook.setup_worker_logging(logging_server)
-    LOGGER.info("generate pass %d/%d", cycle_number, pass_number)
+
+    # Paths of products to be generated.
+    swath_path = None
+    nadir_path = None
+
+    # Generation of the names of the files to be created.
+    if parameters.swath:
+        swath_path = file_path(date, cycle_number, pass_number,
+                               parameters.working_directory)
+
+        # If the product has already been produced, the generation of this
+        # half orbit is disabled.
+        if os.path.exists(swath_path):
+            swath_path = None
+
+    if parameters.nadir:
+        nadir_path = file_path(date,
+                               cycle_number,
+                               pass_number,
+                               parameters.working_directory,
+                               nadir=True)
+        if os.path.exists(nadir_path):
+            nadir_path = None
+
+    # To continue, there must be at least one task left for this pass.
+    if swath_path is None and nadir_path is None:
+        return
 
     # Compute the spatial/temporal position of the satellite
     track = orbit_propagator.calculate_pass(pass_number, orbit, parameters)
     if track is None:
         return
+
+    # Set the simulated date
     track.time = date
 
-    if parameters.swath:
+    # Calculation of instrumental errors
+    noise_errors = error_generator.generate(cycle_number,
+                                            orbit.curvilinear_distance,
+                                            track.x_al, track.x_ac)
+
+    if swath_path:
+        LOGGER.info("generate swath %d/%d [%s, %s]", cycle_number, pass_number,
+                    track.time[0], track.time[-1])
+
         # Create the swath dataset
         product = product_specification.Swath(track)
 
-        # If the file has already been generated, the other operations are
-        # ignored
-        path = file_path(date, cycle_number, pass_number,
-                         parameters.working_directory)
-        ## TODO: remove, option to overwrite path
-        delta_al = parameters.delta_al
-        delta_ac = parameters.delta_ac
-        if not os.path.exists(path):
+        # Interpolation of the SSH if the user wishes.
+        if parameters.ssh_plugin is not None:
+            swath_time = np.repeat(track.time,
+                                   track.lon.shape[1]).reshape(track.lon.shape)
+            _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
+                                                     track.lat.flatten(),
+                                                     swath_time.flatten())
+            ssh = _ssh.reshape(track.lon.shape)
+            product.ssh(ssh + sum_error(noise_errors))
+            product.ssh_error(ssh)
 
-            # Interpolation of the SSH if the user wishes.
-            if parameters.ssh_plugin is not None:
-                swath_time = np.repeat(track.time, track.lon.shape[1]).reshape(
-                    track.lon.shape)
-                _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
-                                                         track.lat.flatten(),
-                                                         swath_time.flatten())
-                ssh = _ssh.reshape(track.lon.shape)
-                product.ssh_true(ssh)
+        product.update_noise_errors(noise_errors)
+        product.to_netcdf(cycle_number, pass_number, swath_path,
+                          parameters.complete_product)
 
-            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
-                # Computation of noise
-                edict = error_swot.make_error(track.x_al, track.x_ac,
-                                              track.al_cycle, track.time,
-                                              cycle_number, delta_al, delta_ac,
-                                              first_date,
-                                              parameters.dict_error())
-                if parameters.ssh_plugin is not None:
-                    product.ssh(error_swot.add_error(edict, ssh))
-                product.error(parameters, edict)
-            product.to_netcdf(cycle_number, pass_number, path,
-                              parameters.complete_product)
-        standalone=False
     # Create the nadir dataset
-    if parameters.nadir:
+    if nadir_path:
+        LOGGER.info("generate nadir %d/%d [%s, %s]", cycle_number, pass_number,
+                    track.time[0], track.time[-1])
+
         product = product_specification.Nadir(track,
                                               standalone=not parameters.swath)
 
-        # If the file has already been generated, the other operations are
-        # ignored
-        path = file_path(date,
-                         cycle_number,
-                         pass_number,
-                         parameters.working_directory,
-                         nadir=True)
-        if not os.path.exists(path):
+        # Interpolation of the SSH if the user wishes.
+        if parameters.ssh_plugin is not None:
+            ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
+                                                    track.lat_nadir,
+                                                    track.time)
+            product.ssh(ssh + sum_error(noise_errors, swath=False))
+            product.ssh_error(ssh)
 
-            # Interpolation of the SSH if the user wishes.
-            if parameters.ssh_plugin is not None:
-                ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
-                                                         track.lat_nadir,
-                                                         track.time)
-                product.ssh_true(ssh)
-            if (parameters.noise is True) and (np.shape(track.x_al)[0]>1):
-                # Computation of noise
-                edict = error_nadir.make_error(track.x_al, track.al_cycle,
-                                               cycle_number, delta_al,
-                                               parameters.dict_error())
-                if parameters.ssh_plugin is not None:
-                    product.ssh(error_nadir.add_error(edict, ssh))
-                product.error(parameters, edict)
+        product.update_noise_errors(noise_errors)
+        product.to_netcdf(cycle_number, pass_number, nadir_path,
+                          parameters.complete_product)
 
-            product.to_netcdf(cycle_number, pass_number, path,
-                              parameters.complete_product)
+
+def available_workers(client: dask.distributed.Client) -> List[str]:
+    """Get the list of available workers."""
+    while True:
+        result = [
+            k for k, v in client.scheduler_info()['workers'].items()
+            if v['metrics']['executing'] == 0
+        ]
+        if result:
+            return result
+        time.sleep(1)
+
+
+def submit_one_pass(client: dask.distributed.Client,
+                    parameters: settings.Parameters,
+                    logging_server: Tuple[str, int, int],
+                    first_date: Optional[np.datetime64] = None,
+                    last_date: Optional[np.datetime64] = None
+                    ) -> Iterator[dask.distributed.Future]:
+    """Submit the pass generation to the cluster."""
+    assert parameters.ephemeris is not None
+
+    # Calculation of the properties of the orbit to be processed.
+    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
+        orbit = orbit_propagator.calculate_orbit(parameters,
+                                                 stream)  # type: ignore
+
+    # Initialization of measurement error generators
+    error_generator = generator.Generator(parameters)
+
+    # Scatter data into distributed memory
+    _error_generator = client.scatter(error_generator)
+    _parameters = client.scatter(parameters)
+    _orbit = client.scatter(orbit)
+
+    workers = available_workers(client)
+
+    for cycle_number, pass_number, date in orbit.iterate(
+            first_date, last_date):
+        try:
+            worker = workers.pop()
+        except IndexError:
+            workers = available_workers(client)
+            worker = workers.pop()
+
+        yield client.submit(simulate,
+                            cycle_number,
+                            pass_number,
+                            date,
+                            _error_generator,
+                            _orbit,
+                            _parameters,
+                            logging_server,
+                            workers=worker,
+                            allow_other_workers=False)
+    return StopIteration
 
 
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
            logging_server: Tuple[str, int, int],
-           first_date: Optional[datetime.datetime] = None,
-           last_date: Optional[datetime.datetime] = None):
+           first_date: Optional[np.datetime64] = None,
+           last_date: Optional[np.datetime64] = None):
     """Executes the simulation set to the selected period."""
     # Displaying Dask client information.
     LOGGER.info(client)
 
-    #: pylint: disable=no-member
-    # The attribute "ephemerid" is set dynamically
+    iterator = submit_one_pass(client, parameters, logging_server, first_date,
+                               last_date)
 
-    # Calculation of the properties of the orbit to be processed.
-    assert parameters.ephemeris is not None
-    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
-        orbit = orbit_propagator.calculate_orbit(parameters, stream)
-        # type: ignore
-    #: pylint: enable=no-member
-
-    if last_date is None:
-        # By default, only one cycle is processed.
-        last_date = first_date + ((orbit.time[-1]).astype(np.int64) *
-                                  1000000).astype("timedelta64[us]")
-
-    # For the moment, we start the processing on the first pass
-    absolute_track = 1
-
-    # For the entire period to be generated, the generation of orbits is
-    # assigned to dask.
-    futures = []
-
-    _parameters = client.scatter(parameters)
-    _orbit = client.scatter(orbit)
-    date = first_date or datetime.datetime.now()
-    while date <= last_date:
-        cycle, track = orbit.decode_absolute_pass_number(absolute_track)
-
-        # Generation of the simulated product.
-        futures.append(
-            client.submit(simulate, cycle, track, date, first_date, _orbit,
-                          _parameters, logging_server))
-
-        # Shift the date of the duration of the generated pass
-        date += orbit.pass_duration(track)
-
-        # Update of the number of the next pass to be generated
-        absolute_track += 1
-
-    client.gather(futures)
+    # Tasks are submitted by pool.
+    completed = dask.distributed.as_completed()
+    while True:
+        while completed.count() < len(
+                client.scheduler_info()['workers']) and iterator is not None:
+            try:
+                completed.add(next(iterator))
+            except StopIteration:
+                iterator = None
+        try:
+            client.gather(completed.next_batch())
+        except StopIteration:
+            pass
+        except:
+            client.cancel(client.futures)
+            raise
+        if completed.count() == 0 and iterator is None:
+            break
 
 
 def main():
@@ -259,11 +313,14 @@ def main():
 
     client = dask.distributed.Client(
         dask.distributed.LocalCluster(
+            protocol="tcp",
             n_workers=1,
-            processes=True,
+            processes=False,
             threads_per_worker=args.threads_per_worker)
     ) if args.scheduler_file is None else dask.distributed.Client(
         scheduler_file=args.scheduler_file.name)
+
+    client.wait_for_workers(1)
 
     try:
         parameters = settings.eval_config_file(args.settings.name)

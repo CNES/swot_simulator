@@ -13,3 +13,12 @@ VOLUMETRIC_MEAN_RADIUS: float = 6371.0
 
 #: Convert degree to km
 DEG_2_KM: float = 111.11
+
+#: CELERITY
+CELERITY: float = 299800000.0
+
+#: Baseline (m)
+BASELINE = 10
+
+#: KA frequency (in Hz)
+F_KA = 35750000000.0

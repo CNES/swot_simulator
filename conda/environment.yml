@@ -1,0 +1,15 @@
+name: RTD
+dependencies:
+  - dask
+  - distributed
+  - netcdf4
+  - numba
+  - numpy
+  - numpy
+  - pyinterp>=0.3.2
+  - python-dateutil
+  - python=3.7
+  - scipy
+  - xarray
+channels:
+  - conda-forge

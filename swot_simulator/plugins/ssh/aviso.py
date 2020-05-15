@@ -22,9 +22,6 @@ class AVISO(detail.CartesianGridHandler):
     #: Decode the product date encoded from the file name.
     PATTERN = re.compile(r"phy_l4_(\d{4})(\d{2})(\d{2})_\d{8}.nc").search
 
-    def __init__(self, path):
-        super().__init__(path)
-
     def load_ts(self):
         """Loading in memory the time axis of the time series"""
         items = []

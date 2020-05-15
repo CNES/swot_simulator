@@ -22,6 +22,8 @@ requirements:
   run:
     - dask
     - distributed
+    - mkl_fft
+    - netcdf4
     - numba
     - {{ pin_compatible('numpy') }}
     - pyinterp

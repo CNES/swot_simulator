@@ -7,7 +7,7 @@ Interpolate SSH from MIT/GCM model
 ==================================
 """
 import logging
-import dask.distributed
+import time
 import dask.array as da
 import numba as nb
 import numpy as np
@@ -58,6 +58,8 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     mesh = pyinterp.RTree(dtype="float32")
     x, y, z = (), (), ()
 
+    start_time = time.time()
+
     for face in range(13):
         x_face = x_model[face, :].compute()
         y_face = y_model[face, :].compute()
@@ -71,6 +73,7 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
         mask = box.covered_by(x_sat, y_sat)
         if not np.any(mask == 1):
             continue
+        del box, mask
 
         # The undefined values are filtered
         z_face = z_model[face, :].compute()
@@ -80,15 +83,30 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
         z += (z_face[defined].flatten(), )
 
     # The tree is built and the interpolation is calculated
-    mesh.packing(
-        np.vstack((np.concatenate(x), np.concatenate(y))).T, np.concatenate(z))
-    del x, y, z
+    x = np.concatenate(x)
+    y = np.concatenate(y)
+    coordinates = np.vstack((x, y)).T
+    del x, y
+
+    z = np.concatenate(z)
+    LOGGER.debug("loaded %d MB in %.2fs",
+                 (coordinates.nbytes + z.nbytes) // 1024**2,
+                 time.time() - start_time)
+    start_time = time.time()
+    mesh.packing(coordinates, z)
+    LOGGER.debug("mesh build in %.2fs", time.time() - start_time)
+
+    del coordinates, z
+
+    start_time = time.time()
     z, _ = mesh.inverse_distance_weighting(np.vstack(
         (x_sat, y_sat)).T.astype("float32"),
                                            within=True,
                                            k=11,
                                            radius=55000,
                                            num_threads=1)
+    LOGGER.debug("interpolation done in %.2fs", time.time() - start_time)
+    del mesh
     return z.astype("float32")
 
 
@@ -101,9 +119,9 @@ class MITGCM(detail.Interface):
         self.dt = self._calculate_dt(self.ts)
 
     @staticmethod
-    def _calculate_dt(time: xr.DataArray):
+    def _calculate_dt(dates: xr.DataArray):
         """Calculation of the delta T between two consecutive grids"""
-        frequency = np.diff(time)
+        frequency = np.diff(dates)
         if not np.all(frequency == frequency[0]):
             raise RuntimeError(
                 "Time series does not have a constant step between two "
@@ -118,10 +136,10 @@ class MITGCM(detail.Interface):
         return date
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
-                    time: np.ndarray) -> np.ndarray:
+                    dates: np.ndarray) -> np.ndarray:
         """Interpolate the SSH for the given coordinates"""
-        first_date = self._grid_date(time[0], -1)
-        last_date = self._grid_date(time[-1], 1)
+        first_date = self._grid_date(dates[0], -1)
+        last_date = self._grid_date(dates[-1], 1)
 
         if first_date < self.ts[0] or last_date > self.ts[-1]:
             raise IndexError(
@@ -131,29 +149,21 @@ class MITGCM(detail.Interface):
         # Mask for selecting data covering the time period provided.
         mask = (self.ts >= first_date) & (self.ts <= last_date)
 
-        LOGGER.debug(f"fetch data for {first_date}, {last_date}")
+        LOGGER.debug("fetch data for %s, %s", first_date, last_date)
 
         # 4D cube representing the data necessary for interpolation.
         frame = self.ssh[mask]
 
         # Spatial interpolation of the SSH on the different selected grids.
-        with dask.distributed.worker_client() as client:
-            x_sat = client.scatter(lon)
-            y_sat = client.scatter(lat)
-            x_model = client.scatter(self.lon)
-            y_model = client.scatter(self.lat)
-
-            futures = []
-            for index in range(len(frame)):
-                z_model = client.scatter(frame[index, :])
-                futures.append(
-                    client.submit(_spatial_interp, z_model, x_model, y_model,
-                                  x_sat, y_sat))
-
-            spatial_interp = client.gather(futures)
-            client.cancel([x_sat, y_sat, x_model, y_model])
+        start_time = time.time()
+        layers = []
+        for index in range(len(frame)):
+            layers.append(
+                _spatial_interp(frame[index, :], self.lon, self.lat, lon, lat))
 
         # Time interpolation of the SSH.
-        return _time_interp(self.ts[mask].astype("int64"),
-                            np.stack(spatial_interp),
-                            time.astype("datetime64[us]").astype("int64"))
+        layers = np.stack(layers)
+        LOGGER.debug("interpolation completed in %.2fs for period %s, %s",
+                     time.time() - start_time, first_date, last_date)
+        return _time_interp(self.ts[mask].astype("int64"), layers,
+                            dates.astype("datetime64[us]").astype("int64"))
