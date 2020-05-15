@@ -48,11 +48,11 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
                 break
             obj = pickle.loads(chunk)
             record = logging.makeLogRecord(obj)
+            setattr(record, "ip", address[0])
             self.handle_log_record(record)
 
     def handle_log_record(self, record: logging.LogRecord) -> None:
         """Handle an incoming logging reccord"""
-
         # if a name is specified, we use the named logger rather than the one
         # implied by the record.
         if self.logname is not None:
@@ -95,13 +95,27 @@ class LogServer:
         yield self.port
 
 
+class LogFormatter(tornado.log.LogFormatter):
+    """Inserts the IP address of the worker or scheduler."""
+    def __init__(self, *args, **kwargs):
+        hostname = socket.gethostname()
+        self._ip = socket.gethostbyname(hostname)
+        super().__init__(*args, **kwargs)
+
+    def format(self, record: logging.LogRecord) -> str:
+        if "ip" not in record.__dict__:
+            record.__dict__['ip'] = self._ip
+        return super().format(record)
+
+
 def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
                    name: str) -> logging.Logger:
     """Configures logbook handler"""
     logger = logging.getLogger(name)
     logger.propagate = True
-    formatter = tornado.log.LogFormatter(
-        '%(color)s[%(levelname)1.1s - %(asctime)s] %(message)s',
+    formatter = LogFormatter(
+        '%(color)s[%(levelname)1.1s - %(ip)s - %(asctime)s - %(module)s] '
+        '%(message)s',
         datefmt='%b %d %H:%M:%S')
     handler = logging.StreamHandler(stream) if not isinstance(
         stream, logging.Handler) else stream
