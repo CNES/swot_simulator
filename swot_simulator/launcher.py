@@ -6,12 +6,13 @@
 Main program
 ------------
 """
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 import argparse
 import datetime
 import logging
 import os
 import sys
+import time
 import traceback
 import dask.distributed
 import dateutil
@@ -25,6 +26,9 @@ from .error import generator
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
+
+#: Tasks launched
+TASKS = {}
 
 
 def datetime_type(value):
@@ -210,6 +214,63 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
                           parameters.hierarchical_groups)
 
 
+def available_workers(client: dask.distributed.Client) -> List[str]:
+    """Get the list of available workers."""
+    while True:
+        result = [
+            k for k, v in client.scheduler_info()['workers'].items()
+            if v['metrics']['executing'] == 0
+        ]
+        if result:
+            return result
+        time.sleep(1)
+
+
+def submit_one_pass(client: dask.distributed.Client,
+                    parameters: settings.Parameters,
+                    logging_server: Tuple[str, int, int],
+                    first_date: Optional[np.datetime64] = None,
+                    last_date: Optional[np.datetime64] = None
+                    ) -> Iterator[dask.distributed.Future]:
+    """Submit the pass generation to the cluster."""
+    assert parameters.ephemeris is not None
+
+    # Calculation of the properties of the orbit to be processed.
+    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
+        orbit = orbit_propagator.calculate_orbit(parameters,
+                                                 stream)  # type: ignore
+
+    # Initialization of measurement error generators
+    error_generator = generator.Generator(parameters)
+
+    # Scatter data into distributed memory
+    _error_generator = client.scatter(error_generator)
+    _parameters = client.scatter(parameters)
+    _orbit = client.scatter(orbit)
+
+    workers = available_workers(client)
+
+    for cycle_number, pass_number, date in orbit.iterate(
+            first_date, last_date):
+        try:
+            worker = workers.pop()
+        except IndexError:
+            workers = available_workers(client)
+            worker = workers.pop()
+
+        yield client.submit(simulate,
+                            cycle_number,
+                            pass_number,
+                            date,
+                            _error_generator,
+                            _orbit,
+                            _parameters,
+                            logging_server,
+                            workers=worker,
+                            allow_other_workers=False)
+    return StopIteration
+
+
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
            logging_server: Tuple[str, int, int],
@@ -219,65 +280,25 @@ def launch(client: dask.distributed.Client,
     # Displaying Dask client information.
     LOGGER.info(client)
 
-    #: pylint: disable=no-member
-    # The attribute "ephemerid" is set dynamically
-
-    # Calculation of the properties of the orbit to be processed.
-    assert parameters.ephemeris is not None
-    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
-        orbit = orbit_propagator.calculate_orbit(parameters,
-                                                 stream)  # type: ignore
-    #: pylint: enable=no-member
-
-    if last_date is None:
-        # By default, only one cycle is processed.
-        last_date = first_date + ((orbit.time[-1]).astype(np.int64) *
-                                  1000000).astype("timedelta64[us]")
-
-    # Initialization of measurement error generators
-    error_generator = generator.Generator(parameters)
-
-    _error_generator = client.scatter(error_generator)
-    _parameters = client.scatter(parameters)
-    _orbit = client.scatter(orbit)
-
-    workers = len(client.scheduler_info()['workers'])
-
-    def submit() -> Iterator[dask.distributed.Future]:
-        # For the moment, we start the processing on the first pass
-        absolute_track = 1
-
-        date = first_date or np.datetime64(datetime.datetime.now())
-        while date <= last_date:
-            cycle, track = orbit.decode_absolute_pass_number(absolute_track)
-
-            yield client.submit(simulate,
-                                cycle,
-                                track,
-                                date,
-                                _error_generator,
-                                _orbit,
-                                _parameters,
-                                logging_server,
-                                retries=3)
-
-            # Shift the date of the duration of the generated pass
-            date += orbit.pass_duration(track)
-
-            # Update of the number of the next pass to be generated
-            absolute_track += 1
-
-    iterator = submit()
+    iterator = submit_one_pass(client, parameters, logging_server, first_date,
+                               last_date)
 
     # Tasks are submitted by pool.
     completed = dask.distributed.as_completed()
     while True:
-        while completed.count() < workers and iterator is not None:
+        while completed.count() < len(
+                client.scheduler_info()['workers']) and iterator is not None:
             try:
                 completed.add(next(iterator))
             except StopIteration:
                 iterator = None
-        client.gather(completed.next_batch())
+        try:
+            client.gather(completed.next_batch())
+        except StopIteration:
+            pass
+        except:
+            client.cancel(client.futures)
+            raise
         if completed.count() == 0 and iterator is None:
             break
 
@@ -297,6 +318,8 @@ def main():
             threads_per_worker=args.threads_per_worker)
     ) if args.scheduler_file is None else dask.distributed.Client(
         scheduler_file=args.scheduler_file.name)
+
+    client.wait_for_workers(1)
 
     try:
         parameters = settings.eval_config_file(args.settings.name)
