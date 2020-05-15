@@ -7,6 +7,7 @@ Interpolate SSH from MIT/GCM model
 ==================================
 """
 import logging
+import time
 import dask.array as da
 import numba as nb
 import numpy as np
@@ -57,6 +58,8 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     mesh = pyinterp.RTree(dtype="float32")
     x, y, z = (), (), ()
 
+    start_time = time.time()
+
     for face in range(13):
         x_face = x_model[face, :].compute()
         y_face = y_model[face, :].compute()
@@ -70,6 +73,7 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
         mask = box.covered_by(x_sat, y_sat)
         if not np.any(mask == 1):
             continue
+        del box, mask
 
         # The undefined values are filtered
         z_face = z_model[face, :].compute()
@@ -85,15 +89,24 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     del x, y
 
     z = np.concatenate(z)
+    LOGGER.debug("loaded %d MB in %.2fs",
+                 (coordinates.nbytes + z.nbytes) // 1024**2,
+                 time.time() - start_time)
+    start_time = time.time()
     mesh.packing(coordinates, z)
+    LOGGER.debug("mesh build in %.2fs", time.time() - start_time)
+
     del coordinates, z
 
+    start_time = time.time()
     z, _ = mesh.inverse_distance_weighting(np.vstack(
         (x_sat, y_sat)).T.astype("float32"),
                                            within=True,
                                            k=11,
                                            radius=55000,
                                            num_threads=1)
+    LOGGER.debug("interpolation done in %.2fs", time.time() - start_time)
+    del mesh
     return z.astype("float32")
 
 
@@ -106,9 +119,9 @@ class MITGCM(detail.Interface):
         self.dt = self._calculate_dt(self.ts)
 
     @staticmethod
-    def _calculate_dt(time: xr.DataArray):
+    def _calculate_dt(dates: xr.DataArray):
         """Calculation of the delta T between two consecutive grids"""
-        frequency = np.diff(time)
+        frequency = np.diff(dates)
         if not np.all(frequency == frequency[0]):
             raise RuntimeError(
                 "Time series does not have a constant step between two "
@@ -123,10 +136,10 @@ class MITGCM(detail.Interface):
         return date
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
-                    time: np.ndarray) -> np.ndarray:
+                    dates: np.ndarray) -> np.ndarray:
         """Interpolate the SSH for the given coordinates"""
-        first_date = self._grid_date(time[0], -1)
-        last_date = self._grid_date(time[-1], 1)
+        first_date = self._grid_date(dates[0], -1)
+        last_date = self._grid_date(dates[-1], 1)
 
         if first_date < self.ts[0] or last_date > self.ts[-1]:
             raise IndexError(
@@ -142,6 +155,7 @@ class MITGCM(detail.Interface):
         frame = self.ssh[mask]
 
         # Spatial interpolation of the SSH on the different selected grids.
+        start_time = time.time()
         layers = []
         for index in range(len(frame)):
             layers.append(
@@ -149,5 +163,7 @@ class MITGCM(detail.Interface):
 
         # Time interpolation of the SSH.
         layers = np.stack(layers)
+        LOGGER.debug("interpolation completed in %.2fs for period %s, %s",
+                     time.time() - start_time, first_date, last_date)
         return _time_interp(self.ts[mask].astype("int64"), layers,
-                            time.astype("datetime64[us]").astype("int64"))
+                            dates.astype("datetime64[us]").astype("int64"))
