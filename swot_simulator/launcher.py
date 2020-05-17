@@ -174,10 +174,13 @@ def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
         [item for item in errors.values() if len(item.shape) == dims])
 
 
-def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
+def simulate(cycle_number: int,
+             pass_number: int,
+             date: np.datetime64,
              error_generator: generator.Generator,
-             orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
-             logging_server: Tuple[str, int, int]) -> None:
+             orbit: orbit_propagator.Orbit,
+             parameters: settings.Parameters,
+             logging_server: Optional[Tuple[str, int, int]] = None) -> None:
     """Simulate a pass.
 
     Args:
@@ -187,10 +190,11 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
         error_generator (generator.Generator): Measurement error generator.
         orbit (orbit_propagator.Orbit): Orbit propagator.
         parameters (settings.Parameters): Simulation parameters.
-        logging_server (tuple): Log server connection settings.
+        logging_server (tuple, optional): Log server connection settings.
     """
     # Initialize this worker's logger.
-    logbook.setup_worker_logging(logging_server)
+    if logging_server is not None:
+        logbook.setup_worker_logging(logging_server)
 
     # Paths of products to be generated.
     swath_path = None
@@ -297,7 +301,7 @@ def available_workers(client: dask.distributed.Client) -> List[str]:
 
 def submit_one_pass(client: dask.distributed.Client,
                     parameters: settings.Parameters,
-                    logging_server: Tuple[str, int, int],
+                    logging_server: Optional[Tuple[str, int, int]],
                     first_date: Optional[np.datetime64] = None,
                     last_date: Optional[np.datetime64] = None
                     ) -> Iterator[dask.distributed.Future]:
@@ -307,7 +311,7 @@ def submit_one_pass(client: dask.distributed.Client,
         client (dask.distributed.Client): Client connected to the Dask
             cluster.
         parameters (settings.Parameters): Simulation parameters.
-        logging_server (tuple): Log server connection settings.
+        logging_server (tuple, optional): Log server connection settings.
         first_date (numpy.datetime64): First date of the simulation.
         last_date (numpy.datetime64): Last date of the simulation.
 
@@ -354,7 +358,7 @@ def submit_one_pass(client: dask.distributed.Client,
 
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
-           logging_server: Tuple[str, int, int],
+           logging_server: Optional[Tuple[str, int, int]],
            first_date: Optional[np.datetime64] = None,
            last_date: Optional[np.datetime64] = None):
     """Executes the simulation set to the selected period.
@@ -363,7 +367,7 @@ def launch(client: dask.distributed.Client,
         client (dask.distributed.Client): Client connected to the Dask
             cluster.
         parameters (settings.Parameters): Simulation parameters.
-        logging_server (tuple): Log server connection settings.
+        logging_server (tuple, optional): Log server connection settings.
         first_date (numpy.datetime64): First date of the simulation.
         last_date (numpy.datetime64): Last date of the simulation.
     """

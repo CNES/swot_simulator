@@ -595,9 +595,8 @@ class Nadir:
             if v.ndim == 1:
                 self._data_array(k, v)
 
-    def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
-                  complete_product: bool) -> None:
-        LOGGER.info("write %s", path)
+    def to_xarray(self, cycle_number: int, pass_number: int,
+                  complete_product: bool) -> xr.Dataset:
         data_vars = dict((item.name, item) for item in self.data_vars)
 
         if "longitude" in data_vars:
@@ -629,11 +628,16 @@ class Nadir:
         for item in set(unordered_vars.keys()) - set(data_vars.keys()):
             data_vars[item] = unordered_vars[item]
 
-        dataset = xr.Dataset(data_vars=data_vars,
-                             attrs=global_attributes(
-                                 self.product_spec.attributes, cycle_number,
-                                 pass_number, self.data_vars[0].values, lng,
-                                 lat))
+        return xr.Dataset(data_vars=data_vars,
+                          attrs=global_attributes(self.product_spec.attributes,
+                                                  cycle_number, pass_number,
+                                                  self.data_vars[0].values,
+                                                  lng, lat))
+
+    def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
+                  complete_product: bool) -> None:
+        LOGGER.info("write %s", path)
+        dataset = self.to_xarray(cycle_number, pass_number, complete_product)
         to_netcdf(dataset, path, self.encoding, mode="w")
 
 
