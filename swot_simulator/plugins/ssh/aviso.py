@@ -4,14 +4,15 @@
 # BSD-style license that can be found in the LICENSE file.
 """
 Interpolation of the SSH AVISO
-====================================
+==============================
 """
-from . import detail
 import os
 import re
 import numpy as np
 import pyinterp.backends.xarray
 import xarray as xr
+
+from . import detail
 
 
 class AVISO(detail.CartesianGridHandler):

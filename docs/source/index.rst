@@ -10,5 +10,6 @@ Welcome to SWOT simulator's documentation!
 
    about
    changelog
+   install
    api
 

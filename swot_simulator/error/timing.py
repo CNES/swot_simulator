@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Timing errors
+-------------
+"""
 from typing import Dict
 import numpy as np
 from . import utils
@@ -7,6 +15,14 @@ from .. import settings
 
 
 class Timing:
+    """
+    Timing errors
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+        timing_psd (numpy.ndarray): Power spectral density the timing error
+        spatial_frequency (numpy.ndarray): Spatial frequency
+    """
     CONVERSION_FACTOR = CELERITY * 5e-13
 
     def __init__(self, parameters: settings.Parameters, timing_psd: np.ndarray,
@@ -44,7 +60,15 @@ class Timing:
 
     def generate(self, x_al: np.ndarray,
                  x_ac: np.ndarray) -> Dict[str, np.ndarray]:
-        '''Reconstruct 2D errors from 1D instrumental error simulation'''
+        """Generate timing errors
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+
+        Returns:
+            dict: variable name and errors simulated.
+        """
         timing_1d = self._generate_1d(x_al)
         num_pixels = x_ac.shape[0]
         swath_center = num_pixels // 2

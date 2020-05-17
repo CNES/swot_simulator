@@ -85,7 +85,7 @@ def writable_directory(value: str) -> str:
 
 def usage() -> argparse.Namespace:
     """Parse the options provided on the command line.
-    
+
     Returns:
         argparse.Namespace: The parameters provided on the command line.
     """
@@ -135,7 +135,7 @@ def file_path(date: np.datetime64,
               working_directory: str,
               nadir: bool = False) -> str:
     """Get the absolute path of the file to be created.
-    
+
     Args:
         date (numpy.datetime64): Date of the first simulated measurement.
         cycle_number (int): Cycle number of the file to be created.

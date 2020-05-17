@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Altimeter instrument error
+--------------------------
+"""
 from typing import Dict
 import numpy as np
 
@@ -6,7 +14,11 @@ from .. import settings
 
 
 class Altimeter:
-    """Class errornadir defines the error on the nadir."""
+    """Altimeter instrument error.
+    
+    Args:
+        parameters (settings.Parameters): Simulation settings
+    """
     def __init__(self, parameters: settings.Parameters) -> None:
         # Store the generation parameters of the random signal.
         self.delta_al = 2 * parameters.delta_al
@@ -22,8 +34,13 @@ class Altimeter:
         self.freq = freq
 
     def generate(self, x_al: np.array) -> Dict[str, np.ndarray]:
-        """Build errors corresponding to each selected noise
-        among the effect of the wet_tropo, and the instrumental error
+        """Generate altimeter instrument error.
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+
+        Returns:
+            dict: variable name and errors simulated.
         """
         # Compute random noise of 10**2 cm**2/(km/cycle)
         # Compute the correspond error on the nadir in m

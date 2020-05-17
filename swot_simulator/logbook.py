@@ -166,7 +166,7 @@ def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
 def setup(stream: IO[str],
           debug: bool) -> Tuple[logging.Logger, Tuple[str, int, int]]:
     """Setup the logging system
-    
+
     Args:
         stream (io): Flux used to write in the log.
         debug (bool): True if the log should record debugging traces.

@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Roll errors
+-----------
+"""
 from typing import Dict, Tuple
 import numpy as np
 
@@ -7,6 +15,15 @@ from .. import VOLUMETRIC_MEAN_RADIUS, CELERITY, F_KA, BASELINE
 
 
 class RollPhase:
+    """
+    Roll errors
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+        roll_psd (numpy.ndarray): Power spectral density the roll control angle
+        phase_psd (numpy.ndarray): Power spectral density the error angle
+        spatial_frequency (numpy.ndarray): Spatial frequency
+    """
     def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
                  phase_psd: np.ndarray, spatial_frequency: np.ndarray) -> None:
         # Store the generation parameters of the random signal.
@@ -66,7 +83,15 @@ class RollPhase:
             x_al: np.ndarray,
             x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
-        """TODO"""
+        """Generate roll and phase errors
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+
+        Returns:
+            dict: variable name and errors simulated.
+        """
         roll_1d, phase_1d = self._generate_1d(x_al)
         num_pixels = x_ac.shape[0]
         swath_center = num_pixels // 2

@@ -133,7 +133,7 @@ def select_box(box: math.Box, lon: np.ndarray, lat: np.ndarray,
                time: np.ndarray
                ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Selects the orbit in the defined box.
-    
+
     Args:
         box (math.Box): Geographical selection
         lon (numpy.ndarray): Longitudes (in degrees)
@@ -215,8 +215,8 @@ class Orbit:
 
     def encode_absolute_pass_number(self, cycle_number: int,
                                     pass_number: int) -> int:
-        """Calculate the absoltute pass number for a given half-orbit.
-        
+        """Calculate the absolute pass number for a given half-orbit.
+
         Args:
             cycle_number (int): Cycle number
             pass_number (int): Pass number
@@ -383,7 +383,7 @@ def calculate_orbit(parameters: settings.Parameters,
 def calculate_pass(pass_number: int, orbit: Orbit,
                    parameters: settings.Parameters) -> Optional[Pass]:
     """Get the properties of an half-orbit
-    
+
     Args:
         pass_number (int): Pass number
         orbit (Orbit): Orbit describing the pass to be calculated.

@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Generate instrumental errors
+----------------------------
+"""
 from typing import Dict
 import dask.distributed
 import numpy as np
@@ -8,6 +16,11 @@ from . import utils
 
 
 class Generator:
+    """Instrumental error generator.
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+    """
     def __init__(self, parameters: settings.Parameters):
         #: The list of user-defined error generators
         self.generators = []
@@ -45,6 +58,19 @@ class Generator:
 
     def generate(self, cycle_number: int, curvilinear_distance: float,
                  x_al: np.ndarray, x_ac: np.ndarray) -> Dict[str, np.ndarray]:
+        """Generate errors
+
+        Args:
+            cycle_number (int): Cycle number
+            curvilinear_distance (float): Curvilinear distance covered by the
+                satellite during a complete cycle.
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+
+        Returns:
+            dict: Associative array between error variables and simulated
+            values.
+        """
         result = {}
         if not self.generators or x_al.shape[0] == 0:
             return result

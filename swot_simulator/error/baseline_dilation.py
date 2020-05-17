@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Baseling dilation errors
+------------------------
+"""
 from typing import Dict
 import numpy as np
 
@@ -7,6 +15,15 @@ from .. import VOLUMETRIC_MEAN_RADIUS, BASELINE
 
 
 class BaselineDilation:
+    """
+    Baseline dilation errors
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+        dilation_psd (numpy.ndarray): Power spectral density of the baseline
+            dilation.
+        spatial_frequency (numpy.ndarray): Spatial frequency
+    """
     def __init__(self, parameters: settings.Parameters,
                  dilation_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
@@ -39,7 +56,15 @@ class BaselineDilation:
 
     def generate(self, x_al: np.ndarray,
                  x_ac: np.ndarray) -> Dict[str, np.ndarray]:
-        """TODO"""
+        """Generate the baseline dilation error
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+
+        Returns:
+            dict: variable name and errors simulated.
+        """
         baseline_dilation_1d = self._generate_1d(x_al)
         return {
             "baseline_dilation": x_ac**2 * baseline_dilation_1d[:, np.newaxis]

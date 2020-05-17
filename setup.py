@@ -99,11 +99,12 @@ def read_version():
 
     # Finally, write the file containing the version number.
     with open(module, 'w') as handler:
-        handler.write('''"""
+        handler.write('''
 # Copyright (c) 2020 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
+"""
 Get software version information
 ================================
 """

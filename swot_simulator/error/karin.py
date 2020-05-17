@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Karin noise
+-----------
+"""
 from typing import Dict
 import numpy as np
 
@@ -6,7 +14,11 @@ from .. import settings
 
 
 class Karin:
-    """Karin instrumental error computed from random realization"""
+    """Karin instrumental error computed from random realization
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+    """
     def __init__(self, parameters: settings.Parameters) -> None:
         assert parameters.karin_noise is not None
 
@@ -22,6 +34,18 @@ class Karin:
     def generate(self, x_al: np.array, x_ac: np.array,
                  curvilinear_distance: float,
                  cycle: int) -> Dict[str, np.ndarray]:
+        """Generate the karin noise
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+            curvilinear_distance (float): Curvilinear distance covered by the
+                satellite during a complete cycle.
+            cycle (int): Cycle number
+
+        Returns:
+            dict: variable name and errors simulated.
+        """
         num_pixels = x_ac.shape[0]
 
         # Generate random noise for left and right part of the mast

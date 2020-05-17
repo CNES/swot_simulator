@@ -469,7 +469,7 @@ class ProductSpecification:
     #                     dims=self.variables["ssh_karin"]["shape"],
     #                     name="basic/roll_phase_est",
     #                     attrs={
-    #                         'long_name': 'Error after estimaton of roll phase',
+    #                         'long_name': 'Error after estimation of roll phase',
     #                         'units': 'm',
     #                         'scale_factor': 0.0001,
     #                         'valid_min': -15000000.0,

@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Wet troposphere errors
+----------------------
+"""
 from typing import Dict, List, Tuple
 import numba as nb
 import numpy as np
@@ -81,6 +89,11 @@ def _calculate_path_delay(sigma: float, radio: np.ndarray, x_al: np.ndarray,
 
 
 class WetTroposphere:
+    """Wet troposphere errors
+
+    Args:
+        parameters (settings.Parameters): Simulation settings
+    """
     ALPHA = 10
     LC_MAX = 500
     F_MAX = 0.05
@@ -154,7 +167,18 @@ class WetTroposphere:
 
         return radio_r, radio_l
 
-    def generate(self, x_al: np.array, x_ac: np.array) -> Dict[str, np.ndarray]:
+    def generate(self, x_al: np.array,
+                 x_ac: np.array) -> Dict[str, np.ndarray]:
+        """
+        Generate wet troposphere errors
+
+        Args:
+            x_al (numpy.ndarray): Along track distance
+            x_ac (numpy.ndarray): Across track distance
+
+        Returns:
+            dict: variable name and errors simulated.
+        """
         num_lines = x_al.shape[0]
         num_pixels = x_ac.shape[0]
 

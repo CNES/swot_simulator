@@ -1,3 +1,11 @@
+# Copyright (c) 2020 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+"""
+Random signal generation utilities
+----------------------------------
+"""
 from typing import Optional, Tuple
 import warnings
 import numba as nb
@@ -15,7 +23,7 @@ except ImportError:
 
 def read_file_instr(file_instr: str, delta_al: float,
                     lambda_max: float) -> xr.Dataset:
-    """ Retrieve power spectrum from intrumental noise file provided by
+    """ Retrieve power spectrum from instrumental noise file provided by
     """
     dataset = xr.load_dataset(file_instr)
 
@@ -47,7 +55,7 @@ def read_file_instr(file_instr: str, delta_al: float,
 
 def read_file_karin(path: str,
                     threshold: float) -> Tuple[np.ndarray, np.ndarray]:
-    """Retrieve power spectrum from intrumental noise file provided by
+    """Retrieve power spectrum from instrumental noise file provided by
     """
     with xr.open_dataset(path) as dataset:
         height_sdt = dataset['height_sdt'].data
@@ -79,7 +87,7 @@ def gen_signal_1d(fi: np.ndarray,
                   alpha: int = 10,
                   lf_extpl: bool = False,
                   hf_extpl: bool = False) -> np.ndarray:
-    """Generate 1d random signal using Fouriner coefficient"""
+    """Generate 1d random signal using Fourier coefficient"""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
     fi = fi[fi > 0]
@@ -151,8 +159,7 @@ def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     dy = y - y[0]
 
     for ix_n in range(int(xn + 1)):
-        ix0 = np.where((dx >= (ix_n * xgmax))
-                       & (dx < ((ix_n + 1) * xgmax)))[0]
+        ix0 = np.where((dx >= (ix_n * xgmax)) & (dx < ((ix_n + 1) * xgmax)))[0]
         for iy_n in range(int(yn + 1)):
             iy0 = np.where((dy >= (iy_n * ygmax))
                            & (dy < ((iy_n + 1) * ygmax)))[0]
@@ -169,7 +176,7 @@ def gen_ps2d(fi: np.ndarray,
              alpha: int = 10,
              lf_extpl: bool = False,
              hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
-
+    """TODO(lgaultier)"""
     if fminy < fminx:
         fmin, fminy = fminy, fminx
     else:
@@ -219,7 +226,7 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
                             fmax: Optional[float] = None,
                             alpha: int = 10,
                             nseed: int = 0) -> np.ndarray:
-
+    """TODO(lgaultier)"""
     revert = fminy < fminx
     if revert:
         fmin, fminy = fminy, fminx
