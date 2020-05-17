@@ -247,10 +247,10 @@ def simulate(cycle_number: int,
         if parameters.ssh_plugin is not None:
             swath_time = np.repeat(track.time,
                                    track.lon.shape[1]).reshape(track.lon.shape)
-            _ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
-                                                     track.lat.flatten(),
-                                                     swath_time.flatten())
-            ssh = _ssh.reshape(track.lon.shape)
+            ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
+                                                    track.lat.flatten(),
+                                                    swath_time.flatten())
+            ssh = ssh.reshape(track.lon.shape)
             product.ssh(ssh + sum_error(noise_errors))
             product.ssh_error(ssh)
 
@@ -391,7 +391,7 @@ def launch(client: dask.distributed.Client,
         except StopIteration:
             pass
         except:
-            client.cancel(client.futures)
+            client.close()
             raise
         if completed.count() == 0 and iterator is None:
             break
