@@ -32,11 +32,14 @@ release = '0.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
 ]
+
+autosummary_generate = True
 
 numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False

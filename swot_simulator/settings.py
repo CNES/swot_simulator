@@ -88,10 +88,16 @@ class Parameters:
     """
     Simulator parameter management.
 
+    The simulator parameters are defined in a Python file. The expected
+    parameters are described in the code below.
+
+    .. literalinclude:: ../settings.py
+
     Args:
         path (str, optional): Path to the configuration file used to override
-        the default settings
+            the default settings.
     """
+    #: Known parameters.
     CONFIG_VALUES: Dict[str, Tuple[Any, Any]] = dict(
         area=(None, [float, 4]),
         beam_position=((-20, 20), [float, 2]),
@@ -187,6 +193,7 @@ class Parameters:
 
     @property
     def box(self) -> math.Box:
+        """Get the geographical area of interest."""
         area = self.__dict__["area"]
         if area is None:
             return math.Box()

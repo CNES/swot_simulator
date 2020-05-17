@@ -5,6 +5,9 @@
 """
 Main program
 ------------
+
+This module defines the main :func:`function <launch>` handling the simulation
+of SWOT products as well as the entry point of the main program.
 """
 from typing import Dict, Iterator, List, Optional, Tuple
 import argparse
@@ -31,8 +34,18 @@ LOGGER = logging.getLogger(__name__)
 TASKS = {}
 
 
-def datetime_type(value):
-    """The option should define a datetime"""
+def datetime_type(value: str) -> np.datetime64:
+    """The option should define a datetime
+
+    Args:
+        value (str): Value to parse
+
+    Returns:
+        numpy.datetime64: The date parsed
+
+    Raises:
+        ValueError: if the option provided does not set a valid date.
+    """
     # Check if value is a datetime
     try:
         value = dateutil.parser.parse(value)
@@ -42,8 +55,19 @@ def datetime_type(value):
     return np.datetime64(value)
 
 
-def writable_directory(value):
-    """The option should define a writable directory"""
+def writable_directory(value: str) -> str:
+    """The option should define a writable directory
+
+    Args:
+        value (str): Value to parse
+
+    Returns:
+        str: The path to the directory
+
+    Raises:
+        argparse.ArgumentTypeError: If the option provided does not define a
+        writable directory.
+    """
     # TODO: create directory if it does not exist?
     # Check if value exists
     if not os.path.exists(value):
@@ -60,7 +84,11 @@ def writable_directory(value):
 
 
 def usage() -> argparse.Namespace:
-    """Command syntax"""
+    """Parse the options provided on the command line.
+    
+    Returns:
+        argparse.Namespace: The parameters provided on the command line.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("settings",
                         type=argparse.FileType('r'),
@@ -106,7 +134,20 @@ def file_path(date: np.datetime64,
               pass_number: int,
               working_directory: str,
               nadir: bool = False) -> str:
-    """Get the absolute path of the file to be created."""
+    """Get the absolute path of the file to be created.
+    
+    Args:
+        date (numpy.datetime64): Date of the first simulated measurement.
+        cycle_number (int): Cycle number of the file to be created.
+        pass_number (int): Pass number of the file to be created.
+        working_directory (str): File storage directory.
+        nadir (bool, optional): True if the product to be created contains the
+            nadir measurements, false if it is a product containing the swath
+            measurements.
+
+    Returns:
+        str: The path to the file to be created.
+    """
     date = datetime.datetime.utcfromtimestamp(
         date.astype("datetime64[s]").astype("int64"))
     product_type = "nadir" if nadir else "karin"
@@ -118,7 +159,16 @@ def file_path(date: np.datetime64,
 
 
 def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
-    """Calculate the sum of errors"""
+    """Calculate the sum of errors
+
+    Args:
+        errors (dict): Simulated errors.
+        swath (bool, optional): True if the measurements processed concern the
+            swath.
+
+    Returns:
+        numpy.ndarray: The sum of errors
+    """
     dims = 2 if swath else 1
     return np.add.reduce(
         [item for item in errors.values() if len(item.shape) == dims])
@@ -128,7 +178,17 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
              error_generator: generator.Generator,
              orbit: orbit_propagator.Orbit, parameters: settings.Parameters,
              logging_server: Tuple[str, int, int]) -> None:
-    """Simulate a track"""
+    """Simulate a pass.
+
+    Args:
+        cycle_number (int): Cycle number.
+        pass_number (int): Pass number.
+        date (numpy.datetime64): Date of the first half-orbit measurement.
+        error_generator (generator.Generator): Measurement error generator.
+        orbit (orbit_propagator.Orbit): Orbit propagator.
+        parameters (settings.Parameters): Simulation parameters.
+        logging_server (tuple): Log server connection settings.
+    """
     # Initialize this worker's logger.
     logbook.setup_worker_logging(logging_server)
 
@@ -216,7 +276,15 @@ def simulate(cycle_number: int, pass_number: int, date: np.datetime64,
 
 
 def available_workers(client: dask.distributed.Client) -> List[str]:
-    """Get the list of available workers."""
+    """Get the list of available workers.
+
+    Args:
+        client (dask.distributed.Client): Client connected to the Dask
+            cluster.
+
+    Returns:
+        list: The list of available workers.
+    """
     while True:
         result = [
             k for k, v in client.scheduler_info()['workers'].items()
@@ -233,7 +301,19 @@ def submit_one_pass(client: dask.distributed.Client,
                     first_date: Optional[np.datetime64] = None,
                     last_date: Optional[np.datetime64] = None
                     ) -> Iterator[dask.distributed.Future]:
-    """Submit the pass generation to the cluster."""
+    """Distribute the half-orbit simulation to each worker in the cluster.
+
+    Args:
+        client (dask.distributed.Client): Client connected to the Dask
+            cluster.
+        parameters (settings.Parameters): Simulation parameters.
+        logging_server (tuple): Log server connection settings.
+        first_date (numpy.datetime64): First date of the simulation.
+        last_date (numpy.datetime64): Last date of the simulation.
+
+    Returns:
+        iterator: Iterator on the delayed tasks submitted to the cluster.
+    """
     assert parameters.ephemeris is not None
 
     # Calculation of the properties of the orbit to be processed.
@@ -277,7 +357,16 @@ def launch(client: dask.distributed.Client,
            logging_server: Tuple[str, int, int],
            first_date: Optional[np.datetime64] = None,
            last_date: Optional[np.datetime64] = None):
-    """Executes the simulation set to the selected period."""
+    """Executes the simulation set to the selected period.
+
+    Args:
+        client (dask.distributed.Client): Client connected to the Dask
+            cluster.
+        parameters (settings.Parameters): Simulation parameters.
+        logging_server (tuple): Log server connection settings.
+        first_date (numpy.datetime64): First date of the simulation.
+        last_date (numpy.datetime64): Last date of the simulation.
+    """
     # Displaying Dask client information.
     LOGGER.info(client)
 

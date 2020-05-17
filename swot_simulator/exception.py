@@ -14,7 +14,15 @@ import traceback
 def structured_traceback(exc: Exception,
                          call_stack: traceback.StackSummary) -> str:
     """Return a nice text describing the call stack which threw an
-    exception"""
+    exception.
+
+    Args:
+        exc (Exception): Exception raised.
+        call_stack (traceback.StackSummary): Exception call stack thrown out.
+
+    Returns:
+        str: The text representing the call stack of the thrown exception.
+    """
     exc_name = "%s.%s" % (exc.__module__, exc.__class__.__name__) if hasattr(
         exc, '__module__') else exc.__class__.__name__
     message = ["%s - Traceback (most recent call last):" % exc_name]

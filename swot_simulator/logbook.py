@@ -26,7 +26,11 @@ LOCK = threading.RLock()
 
 class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
     """
-    Simple TCP socket-based logging receiver suitable for testing.
+    Simple TCP socket-based logging receiver.
+
+    Args:
+        name (str, optional): Logger name.
+        **kwargs: Base class keyword arguments.
     """
     def __init__(self, name: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
@@ -34,7 +38,12 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
 
     async def handle_stream(self, stream: tornado.iostream.IOStream,
                             address: Tuple) -> Optional[Awaitable[None]]:
-        """Override to handle a new IOStream from an incoming connection."""
+        """Override to handle a new IOStream from an incoming connection.
+
+        Args:
+            stream (tornado.iostream.IOStream): Incoming stream.
+            address (tuple): IP address and TCP port.
+        """
         while True:
             try:
                 chunk = await stream.read_bytes(4)
@@ -52,7 +61,11 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
             self.handle_log_record(record)
 
     def handle_log_record(self, record: logging.LogRecord) -> None:
-        """Handle an incoming logging reccord"""
+        """Handle an incoming logging reccord
+
+        Args:
+            record (logging.LogRecord): The event being logged.
+        """
         # if a name is specified, we use the named logger rather than the one
         # implied by the record.
         if self.logname is not None:
@@ -69,7 +82,13 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
 
 
 class LogServer:
-    """Handle the log server"""
+    """Handle the log server
+
+    Args:
+        hostname (str, optional): Specifies the IP address we want to listen
+            to.
+        port (int, optional): Specifies the port we want to listen to.
+    """
     def __init__(self,
                  hostname: Optional[str] = None,
                  port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -85,7 +104,12 @@ class LogServer:
         self.thread = threading.Thread(target=ioloop.start)
 
     def start(self, daemon: bool = False) -> None:
-        """Start the server"""
+        """Start the server
+
+        Args:
+            daemon (bool, optional): Indicates whether this thread is a daemon
+                thread (True) or not (False)
+        """
         if daemon:
             self.thread.daemon = True
         self.thread.start()
@@ -96,13 +120,26 @@ class LogServer:
 
 
 class LogFormatter(tornado.log.LogFormatter):
-    """Inserts the IP address of the worker or scheduler."""
+    """Inserts the IP address of the worker or scheduler.
+
+    Args:
+        *args: Base class arguments.
+        **kwarsg: Base class keyword arguments.
+    """
     def __init__(self, *args, **kwargs):
         hostname = socket.gethostname()
         self._ip = socket.gethostbyname(hostname)
         super().__init__(*args, **kwargs)
 
     def format(self, record: logging.LogRecord) -> str:
+        """Do formatting for a record.
+
+        Args:
+            record (logging.Record): information to the event being logged.
+
+        Returns:
+            str: The record formatted.
+        """
         if "ip" not in record.__dict__:
             record.__dict__['ip'] = self._ip
         return super().format(record)
@@ -128,7 +165,15 @@ def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
 
 def setup(stream: IO[str],
           debug: bool) -> Tuple[logging.Logger, Tuple[str, int, int]]:
-    """Setup the logging system"""
+    """Setup the logging system
+    
+    Args:
+        stream (io): Flux used to write in the log.
+        debug (bool): True if the log should record debugging traces.
+
+    Returns:
+        tuple: The channel logging and log server settings.
+    """
     logging_server = LogServer()
     logging_server.start(True)
 
@@ -145,7 +190,11 @@ def setup(stream: IO[str],
 
 
 def setup_worker_logging(logging_server: Tuple[str, int, int]):
-    """Setup the logging server to log worker calculations"""
+    """Setup the logging server to log worker calculations
+
+    Args:
+        logging_server (tuple): Log server connection settings.
+    """
     with LOCK:
         for name in [
                 "distributed",

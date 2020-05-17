@@ -6,7 +6,7 @@
 Orbit Propagator
 ----------------
 """
-from typing import Dict, Iterable, Iterator, Optional, TextIO, Tuple
+from typing import Dict, Iterator, Optional, TextIO, Tuple
 import datetime
 import logging
 import numpy as np
@@ -17,9 +17,20 @@ from . import VOLUMETRIC_MEAN_RADIUS
 LOGGER = logging.getLogger(__name__)
 
 
-def load_ephemeris(stream: TextIO, cols: Optional[Iterable[int]] = None
+def load_ephemeris(stream: TextIO, cols: Optional[Tuple[int, int, int]] = None
                    ) -> Tuple[Dict[str, float], Tuple]:
-    """Loads a tabular file describing a satellite orbit."""
+    """Loads a tabular file describing a satellite orbit.
+
+    Args:
+        stream (typing.TextIO): Stream to the text file to be processed.
+        cols (tuple): A tuple of 3 elements describing the columns
+            representing the longitude, latitude and number of seconds elapsed
+            since the beginning of the orbit.
+
+    Returns:
+        tuple: A tuple of 2 elements containing the properties of the orbit
+        and the positions of the satellite.
+    """
     if cols is None:
         cols = (1, 2, 0)
     LOGGER.info("loading ephemeris: %s", stream.name)
@@ -45,9 +56,17 @@ def load_ephemeris(stream: TextIO, cols: Optional[Iterable[int]] = None
     return to_dict(comments), tuple(data[:, item] for item in cols)
 
 
-def interpolate(lon: np.ndarray, lat: np.ndarray,
-                time: np.ndarray) -> np.ndarray:
-    """Interpolate the given orbit at high resolution (0.5 seconds)"""
+def interpolate(lon: np.ndarray, lat: np.ndarray, time: np.ndarray) -> Tuple:
+    """Interpolate the given orbit at high resolution (0.5 seconds)
+
+    Args:
+        lon (numpy.ndarray): Longitudes (in degrees)
+        lat (numpy.ndarray): Latitudes (in degrees)
+        time (np.ndarray): Date of the positions (in seconds).
+
+    Returns:
+        tuple: lon, lat, and time interpolated
+    """
     x, y, z = math.spher2cart(lon, lat)
     time_hr = np.arange(time[0], time[-1], 0.5, dtype=time.dtype)
 
@@ -66,7 +85,17 @@ def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
     """Rearrange orbit starting from pass 1
 
     Detect the beginning of pass 1 in the ephemeris. By definition, it is
-    the first passage at southernmost latitude."""
+    the first passage at southernmost latitude.
+
+    Args:
+        cycle_duration (float): Cycle time in seconds.
+        lon (numpy.ndarray): Longitudes (in degrees)
+        lat (numpy.ndarray): Latitudes (in degrees)
+        time (np.ndarray): Date of the positions (in seconds).
+
+    Returns:
+        tuple: lon, lat, and time rearranged.
+    """
     dy = np.roll(lat, 1) - lat
     indexes = np.where((dy < 0) & (np.roll(dy, 1) >= 0))[0]
 
@@ -84,7 +113,15 @@ def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
 
 
 def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
-    # Compute the initial time of each pass
+    """Compute the initial time of each pass
+
+    Args:
+        lat (numpy.ndarray): Latitudes (in degrees)
+        time (np.ndarray): Date of the latitudes (in seconds).
+
+    Returns:
+        numpy.ndarray: Start date of half-orbits.
+    """
     dy = np.roll(lat, 1) - lat
     indexes = np.where(((dy < 0) & (np.roll(dy, 1) >= 0))
                        | ((dy > 0)
@@ -95,14 +132,36 @@ def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
 def select_box(box: math.Box, lon: np.ndarray, lat: np.ndarray,
                time: np.ndarray
                ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Selects the orbit in the defined box."""
+    """Selects the orbit in the defined box.
+    
+    Args:
+        box (math.Box): Geographical selection
+        lon (numpy.ndarray): Longitudes (in degrees)
+        lat (numpy.ndarray): Latitudes (in degrees)
+        time (np.ndarray): Date of the positions (in seconds).
+
+    Returns:
+        tuple: the selected positions and associated dates.
+    """
     mask = box.within(lon, lat)
     x_al = math.curvilinear_distance(lon, lat, VOLUMETRIC_MEAN_RADIUS)
     return lon[mask], lat[mask], time[mask], x_al[mask]
 
 
 class Orbit:
-    """Properties of one orbit"""
+    """Properties of one orbit
+
+    Args:
+        heigth (float): Satellite height (in m)
+        lat (numpy.ndarray): Latitudes (in degrees)
+        lon (numpy.ndarray): Longitudes (in degrees)
+        pass_time (np.ndarray): Start date of half-orbits.
+        time (np.ndarray): Date of the positions (in seconds).
+        x_al (np.ndarray): Along track distance
+        curvilinear_distance (float): Distance covered by the satellite during
+            a complete cycle.
+        shift_time (float): Time shift to be applied.
+    """
     def __init__(self, height: float, lat: np.ndarray, lon: np.ndarray,
                  pass_time: np.ndarray, time: np.ndarray, x_al: np.ndarray,
                  curvilinear_distance: float, shift_time: Optional[float]):
@@ -125,7 +184,14 @@ class Orbit:
         return len(self.pass_time)
 
     def pass_duration(self, number: int) -> np.timedelta64:
-        """Get the duration of a given pass."""
+        """Get the duration of a given pass.
+
+        Args:
+            number (int): track number (must be in [1, passes_per_cycle()])
+
+        Returns:
+            numpy.datetime64: track duration
+        """
         if number == self.passes_per_cycle():
             return np.timedelta64(
                 int((self.time[-1] - self.pass_time[-1]) * 1e6), 'us')
@@ -135,14 +201,29 @@ class Orbit:
 
     def decode_absolute_pass_number(self, number: int) -> Tuple[int, int]:
         """Calculate the cycle and pass number from a given absolute pass
-        number."""
+        number.
+
+        Args:
+            number (int): absolute pass number
+
+        Returns:
+            tuple: cycle and pass number
+        """
         number -= 1
         return (int(number / self.passes_per_cycle()) + 1,
                 (number % self.passes_per_cycle()) + 1)
 
     def encode_absolute_pass_number(self, cycle_number: int,
-                                    pass_number) -> int:
-        """Calculate the absoltute pass number for a given half-orbit."""
+                                    pass_number: int) -> int:
+        """Calculate the absoltute pass number for a given half-orbit.
+        
+        Args:
+            cycle_number (int): Cycle number
+            pass_number (int): Pass number
+
+        Returns:
+            int: Absolute pass number
+        """
         passes_per_cycle = self.passes_per_cycle()
         if not 1 <= pass_number <= passes_per_cycle:
             raise ValueError(f"pass_number must be in [1, {passes_per_cycle}")
@@ -153,9 +234,20 @@ class Orbit:
                 last_date: Optional[np.datetime64] = None,
                 absolute_pass_number: int = 1
                 ) -> Iterator[Tuple[int, int, np.datetime64]]:
-        """Obtain all half-orbits within the defined time interval. The
-        function returns a tuple for all traces within the interval describing
-        the cycle number, pass number and start date of the half-orbit."""
+        """Obtain all half-orbits within the defined time interval.
+
+        Args:
+            first_date (numpy.datetime64): First date of the period to be
+                considered.
+            last_date (numpy.datetime64): Last date of the period to be
+                considered.
+            absolute_pass_number (int, optional): Absolute number of the first
+                pass to be returned.
+
+        Returns:
+            iterator: An iterator for all passes in the interval pointing to
+            the cycle number, pass number and start date of the half-orbit.
+        """
         date = first_date or np.datetime64(datetime.datetime.now())
         last_date = last_date or first_date + self.cycle_duration()
         while date <= last_date:
@@ -173,7 +265,16 @@ class Orbit:
 
 
 class Pass:
-    """Handle one pass"""
+    """Handle one pass
+
+    Args:
+        lat_nadir (np.ndarray): Latitudes at nadir
+        lat (np.ndarray): Latitudes of the swath
+        lon_nadir (np.ndarray): Longitudes at nadir
+        lon (np.ndarray): Longitudes of the swath
+        x_ac (np.ndarray): Across track distance.
+        x_al (np.ndarray): Along track distance.
+    """
     def __init__(self, lat_nadir: np.ndarray, lat: np.ndarray,
                  lon_nadir: np.ndarray, lon: np.ndarray, time: np.ndarray,
                  x_ac: np.ndarray, x_al: np.ndarray):
@@ -202,7 +303,16 @@ def calculate_orbit(parameters: settings.Parameters,
 
     The path of the satellite is given by the orbit file and the subdomain
     corresponds to the one in the model. Note that a subdomain can be manually
-    added in the parameters file."""
+    added in the parameters file.
+
+    Args:
+        parameters (settings.Parameters): Simulation parameters.
+        ephemeris (typing.TextIO): Stream to the ephemeris CSV file to be
+            processed.
+
+    Returns:
+        Orbit: The orbit's loaded into memory.
+    """
     properties, (lon, lat,
                  time) = load_ephemeris(ephemeris,
                                         cols=parameters.ephemeris_cols)
@@ -272,7 +382,17 @@ def calculate_orbit(parameters: settings.Parameters,
 
 def calculate_pass(pass_number: int, orbit: Orbit,
                    parameters: settings.Parameters) -> Optional[Pass]:
-    """Get the properties of an half-orbit"""
+    """Get the properties of an half-orbit
+    
+    Args:
+        pass_number (int): Pass number
+        orbit (Orbit): Orbit describing the pass to be calculated.
+        parameters (settings.Parameters): Simulation parameters.
+
+    Returns:
+        Pass, optional: The properties of the pass or None, if the pas is
+        missing in the selected area.
+    """
     index = pass_number - 1
     # Selected indexes corresponding to the current pass
     if index == len(orbit.pass_time) - 1:
