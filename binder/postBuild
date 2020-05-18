@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+jupyter labextension install --clean \
+                            @jupyter-widgets/jupyterlab-manager \
+                            dask-labextension \
+                            @pyviz/jupyterlab_pyviz \
+                            jupyter-leaflet
+git clone https://github.com/CNES/swot_simulator.git
+cd swot_simulator
+python setup.py install
+cd ..
+rm -rf swot_simulator
+#EOF

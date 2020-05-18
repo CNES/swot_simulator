@@ -1,3 +1,5 @@
+[![Binder](https://binder.pangeo.io/badge_logo.svg)](https://binder.pangeo.io/v2/gh/CNES/swot_simulator/master?filepath=notebooks)
+
 # TODO
 
 ## Running the software.
