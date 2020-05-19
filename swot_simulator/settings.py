@@ -119,6 +119,7 @@ class Parameters:
         noise=(None, [str, -1]),
         nrand_karin=(1000, int),
         nseed=(0, int),
+        requirement_bounds=(None, [float, 2]),
         shift_lon=(None, float),
         shift_time=(None, float),
         sigma=(6, float),

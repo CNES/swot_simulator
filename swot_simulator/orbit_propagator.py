@@ -274,14 +274,23 @@ class Pass:
         lon (np.ndarray): Longitudes of the swath
         x_ac (np.ndarray): Across track distance.
         x_al (np.ndarray): Along track distance.
+        requirement_bounds: Limits of swath requirements. Measurements outside
+            the span will be set to NaN.
     """
-    def __init__(self, lat_nadir: np.ndarray, lat: np.ndarray,
-                 lon_nadir: np.ndarray, lon: np.ndarray, time: np.ndarray,
-                 x_ac: np.ndarray, x_al: np.ndarray):
+    def __init__(self,
+                 lat_nadir: np.ndarray,
+                 lat: np.ndarray,
+                 lon_nadir: np.ndarray,
+                 lon: np.ndarray,
+                 time: np.ndarray,
+                 x_ac: np.ndarray,
+                 x_al: np.ndarray,
+                 requirement_bounds: Optional[Tuple[float, float]] = None):
         self.lat_nadir = lat_nadir
         self.lat = lat
         self.lon_nadir = lon_nadir
         self.lon = lon
+        self.requirement_bounds = requirement_bounds
         self.timedelta = ((time * 1e6).astype(
             np.int64)).astype("timedelta64[us]")
         self._time = None
@@ -295,6 +304,17 @@ class Pass:
     @time.setter
     def time(self, date: np.datetime64) -> None:
         self._time = date + (self.timedelta - self.timedelta[0])
+
+    def mask(self) -> np.ndarray:
+        """Obtain a mask to set NaN values outside the mission
+        requirements."""
+        if self.requirement_bounds is not None:
+            valid = np.full_like(self.x_ac, np.nan)
+            valid[(np.abs(self.x_ac) >= self.requirement_bounds[0])
+                  & (np.abs(self.x_ac) <= self.requirement_bounds[1])] = 1
+            along_track = np.full(self.lon_nadir.shape, 1, dtype=np.float64)
+            return along_track[:, np.newaxis] * valid
+        return np.full(self.lon.shape, 1, dtype=np.float64)
 
 
 def calculate_orbit(parameters: settings.Parameters,
@@ -432,4 +452,11 @@ def calculate_pass(pass_number: int, orbit: Orbit,
                                     half_swath, VOLUMETRIC_MEAN_RADIUS,
                                     location, satellite_direction)
 
-    return Pass(lat_nadir, lat, lon_nadir, lon, time, x_ac, x_al)
+    return Pass(lat_nadir,
+                lat,
+                lon_nadir,
+                lon,
+                time,
+                x_ac,
+                x_al,
+                requirement_bounds=parameters.requirement_bounds)

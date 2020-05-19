@@ -31,11 +31,17 @@ ephemeris_cols = [1, 2, 0]
 # variables will be written to the netCDF file.
 complete_product = False
 
-# Distance, in km, between the nadir and the beginning of the swath
-half_gap = 10.0
+# Distance, in km, between the nadir and the center of the first pixel of the
+# swath
+half_gap = 1.0
 
-# Distance, in km, between the nadir and the end of the swath
-half_swath = 60.0
+# Distance, in km, between the nadir and the center of the last pixel of the
+# swath
+half_swath = 69.0
+
+# Limits of SWOT swath requirements. Measurements outside the span will be set
+# with fill values.
+requirement_bounds = [10, 60]
 
 # The next two parameters (cycle_duration and height) can be read from the
 # ephemeris file if it includes these values in comments. The ephemeris

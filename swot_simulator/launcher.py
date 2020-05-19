@@ -231,10 +231,18 @@ def simulate(cycle_number: int,
     # Set the simulated date
     track.time = date
 
+    # Mask to set the measurements outside the requirements of the mission to
+    # NaN.
+    mask = track.mask()
+
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
                                             track.time, track.x_al, track.x_ac)
+    for error in noise_errors.values():
+        # Only the swaths must be masked
+        if len(error.shape) == 2:
+            error *= mask
 
     if swath_path:
         LOGGER.info("generate swath %d/%d [%s, %s]", cycle_number, pass_number,
@@ -250,7 +258,7 @@ def simulate(cycle_number: int,
             ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
                                                     track.lat.flatten(),
                                                     swath_time.flatten())
-            ssh = ssh.reshape(track.lon.shape)
+            ssh = ssh.reshape(track.lon.shape) * mask
             product.ssh(ssh + sum_error(noise_errors))
             product.ssh_error(ssh)
 
