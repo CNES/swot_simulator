@@ -10,8 +10,8 @@ from typing import Dict
 import dask.distributed
 import numpy as np
 from .. import settings
-from . import (Altimeter, BaselineDilation, Karin, RollPhase, Timing,
-               WetTroposphere)
+from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
+               RollPhase, Timing, WetTroposphere)
 from . import utils
 
 
@@ -20,8 +20,11 @@ class Generator:
 
     Args:
         parameters (settings.Parameters): Simulation settings
+        first_date (numpy.datetime64): Date of the first simulated
+            measurement.
     """
-    def __init__(self, parameters: settings.Parameters):
+    def __init__(self, parameters: settings.Parameters,
+                 first_date: np.datetime64):
         #: The list of user-defined error generators
         self.generators = []
 
@@ -38,6 +41,9 @@ class Generator:
                     BaselineDilation(parameters,
                                      error_spectrum['dilationPSD'].data,
                                      error_spectrum['spatial_frequency'].data))
+            elif item == CorrectedRollPhase.__name__:
+                self.generators.append(
+                    CorrectedRollPhase(parameters, first_date))
             elif item == Karin.__name__:
                 self.generators.append(Karin(parameters))
             elif item == RollPhase.__name__:
@@ -57,15 +63,17 @@ class Generator:
                 raise ValueError(f"unknown error generation class: {item}")
 
     def generate(self, cycle_number: int, curvilinear_distance: float,
-                 x_al: np.ndarray, x_ac: np.ndarray) -> Dict[str, np.ndarray]:
+                 time: np.ndarray, x_al: np.ndarray,
+                 x_ac: np.ndarray) -> Dict[str, np.ndarray]:
         """Generate errors
 
         Args:
-            cycle_number (int): Cycle number
+            cycle_number (int): Cycle number.
             curvilinear_distance (float): Curvilinear distance covered by the
                 satellite during a complete cycle.
-            x_al (numpy.ndarray): Along track distance
-            x_ac (numpy.ndarray): Across track distance
+            time (numpy.ndarray): Date of measurements.
+            x_al (numpy.ndarray): Along track distance.
+            x_ac (numpy.ndarray): Across track distance.
 
         Returns:
             dict: Associative array between error variables and simulated
@@ -82,6 +90,8 @@ class Generator:
                     futures.append(client.submit(item.generate, x_al))
                 elif isinstance(item, BaselineDilation):
                     futures.append(client.submit(item.generate, x_al, x_ac))
+                elif isinstance(item, CorrectedRollPhase):
+                    futures.append(client.submit(item.generate, time, x_ac))
                 elif isinstance(item, Karin):
                     futures.append(
                         client.submit(item.generate, x_al, x_ac,

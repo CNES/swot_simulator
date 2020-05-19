@@ -15,6 +15,7 @@ class Parameters:
     area: Optional[Tuple[float, float, float, float]]
     beam_position: List[float]
     complete_product: bool
+    corrected_roll_phase_dataset: Optional[str]
     cycle_duration: float
     delta_ac: float
     delta_al: float

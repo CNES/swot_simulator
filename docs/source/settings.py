@@ -1,3 +1,7 @@
+"""
+Simulation settings
+-------------------
+"""
 import os
 import swot_simulator.plugins.ssh
 
@@ -63,10 +67,17 @@ ssh_plugin = swot_simulator.plugins.ssh.AVISO("PATH to AVISO files")
 # #working_directory=
 
 # Generation of measurement noise.
+
+# The calculation of roll errors can be simulated, option "roll_phase", or
+# interpolated, option "corrected_roll_phase", from the dataset specified by
+# the option "roll_phase_dataset". Therefore, these two options are
+# mutually exclusive. In other words, if the "roll_phase" option is present,
+# the "corrected_roll_phase" option must be omitted, and vice versa.
 noise = [
     'altimeter',
     'baseline_dilation',
     'karin',
+    # 'corrected_roll_phase',
     'roll_phase',
     'timing',
     'wet_troposphere',
@@ -81,13 +92,17 @@ error_spectrum = os.path.join("..", "..", "data", "error_spectrum.nc")
 # KaRIN file containing spectrum for several SWH
 karin_noise = os.path.join("..", "..", "data", "karin_noise_v2.nc")
 
+# Estimated roll phase dataset
+# #corrected_roll_phase_dataset =
+
 # SWH for the region
 swh = 2.0
 
-#  Number of km of random coefficients for KaRIN noise (recommended nrandkarin=1000)
+#  Number of km of random coefficients for KaRIN noise (recommended
+# nrand_karin=1000)
 nrand_karin = 1000
 
-# Number of beam used to correct wet_tropo signal (1, 2 or 'both')
+# Number of beam used to correct wet troposphere signal (1, 2 or 'both')
 nbeam = 2
 
 # Gaussian footprint of sigma km

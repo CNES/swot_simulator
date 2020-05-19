@@ -108,6 +108,7 @@ class Parameters:
         ephemeris_cols=(None, [int, 3]),
         ephemeris=(None, str),
         error_spectrum=(None, str),
+        corrected_roll_phase_dataset=(None, str),
         half_gap=(10.0, float),
         half_swath=(60.0, float),
         height=(891000, float),
@@ -138,6 +139,14 @@ class Parameters:
 
         noise = getattr(self, "noise")
         if noise is not None:
+            if "corrected_roll_phase" in noise:
+                if "roll_phase" in noise:
+                    raise TypeError(
+                        "option 'corrected_roll_phase' not allowed with option "
+                        "'roll_phase'")
+                if "corrected_roll_phase_dataset" not in overrides:
+                    raise TypeError("missing required argument: "
+                                    "'corrected_roll_phase_dataset'")
             noise = [
                 "".join(word.capitalize() for word in item.split("_"))
                 for item in noise

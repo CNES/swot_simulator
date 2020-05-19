@@ -461,21 +461,19 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    # def roll_phase_est(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-    #     return {
-    #         '_FillValue': 2147483647,
-    #         'dtype': 'int32'
-    #     }, xr.DataArray(data=array,
-    #                     dims=self.variables["ssh_karin"]["shape"],
-    #                     name="basic/roll_phase_est",
-    #                     attrs={
-    #                         'long_name': 'Error after estimation of roll phase',
-    #                         'units': 'm',
-    #                         'scale_factor': 0.0001,
-    #                         'valid_min': -15000000.0,
-    #                         'valid_max': 150000000.0,
-    #                         'coordinates': 'longitude latitude'
-    #                     })
+    def roll_phase_est(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32'
+        }, xr.DataArray(data=array,
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="roll_phase_est",
+                        attrs={
+                            'long_name': 'Error after estimation of roll phase',
+                            'units': 'm',
+                            'scale_factor': 0.0001,
+                            'coordinates': 'longitude latitude'
+                        })
 
     def karin(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         return {

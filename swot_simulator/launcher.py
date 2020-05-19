@@ -234,7 +234,7 @@ def simulate(cycle_number: int,
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
-                                            track.x_al, track.x_ac)
+                                            track.time, track.x_al, track.x_ac)
 
     if swath_path:
         LOGGER.info("generate swath %d/%d [%s, %s]", cycle_number, pass_number,
@@ -326,7 +326,7 @@ def submit_one_pass(client: dask.distributed.Client,
                                                  stream)  # type: ignore
 
     # Initialization of measurement error generators
-    error_generator = generator.Generator(parameters)
+    error_generator = generator.Generator(parameters, first_date)
 
     # Scatter data into distributed memory
     _error_generator = client.scatter(error_generator)
