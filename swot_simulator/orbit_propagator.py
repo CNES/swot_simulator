@@ -184,6 +184,27 @@ class Orbit:
         """Get the number of passes per cycle"""
         return len(self.pass_time)
 
+    def pass_shift(self, number: int) -> np.timedelta64:
+        """Get the time offset between the first measurement and the last
+        measurement of the trace.
+
+        Args:
+            number (int): track number (must be in [1, passes_per_cycle()])
+
+        Returns:
+            numpy.datetime64: time offset
+        """
+        passes_per_cycle = self.passes_per_cycle()
+        if number < 1 or number > passes_per_cycle:
+            raise ValueError(f"number must be in [1, {passes_per_cycle}]")
+        if number == passes_per_cycle:
+            indexes = np.where(self.time >= self.pass_time[-1])[0]
+        else:
+            indexes = np.where((self.time >= self.pass_time[number - 1])
+                               & (self.time < self.pass_time[number]))[0]
+        return np.sum(
+            np.diff((self.time[indexes] * 1e6).astype("timedelta64[us]")))
+
     def pass_duration(self, number: int) -> np.timedelta64:
         """Get the duration of a given pass.
 
