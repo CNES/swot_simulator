@@ -198,7 +198,7 @@ class Orbit:
             raise ValueError(f"number must be in [1, {passes_per_cycle}]")
         if number == passes_per_cycle:
             return ((self.time[-1] - self.pass_time[-1]) *
-                    1e6).astype("timedelta64[us]")
+                    1e6).astype("timedelta64[us]") + self.delta_t()
         return ((self.pass_time[number] - self.pass_time[number - 1]) *
                 1e6).astype("timedelta64[us]")
 
@@ -231,6 +231,14 @@ class Orbit:
         if not 1 <= pass_number <= passes_per_cycle:
             raise ValueError(f"pass_number must be in [1, {passes_per_cycle}")
         return (cycle_number - 1) * self.passes_per_cycle() + pass_number
+
+    def delta_t(self) -> np.timedelta64:
+        """Returns the average time difference between two measurements.
+
+        Returns:
+            int: average time difference
+        """
+        return (np.diff(self.time).mean() * 1e6).astype("timedelta64[us]")
 
     def iterate(self,
                 first_date: Optional[np.datetime64] = None,
