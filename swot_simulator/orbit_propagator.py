@@ -125,8 +125,10 @@ def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
     dy = np.roll(lat, 1) - lat
     indexes = np.where(((dy < 0) & (np.roll(dy, 1) >= 0))
                        | ((dy > 0)
-                          & (np.roll(dy, 1) <= 0)))
-    return time[indexes[0]]
+                          & (np.roll(dy, 1) <= 0)))[0]
+    # The duration of the first pass is zero.
+    indexes[0] = 0
+    return time[indexes]
 
 
 def select_box(box: math.Box, lon: np.ndarray, lat: np.ndarray,
@@ -152,7 +154,7 @@ class Orbit:
     """Properties of one orbit
 
     Args:
-        heigth (float): Satellite height (in m)
+        height (float): Satellite height (in m)
         lat (numpy.ndarray): Latitudes (in degrees)
         lon (numpy.ndarray): Longitudes (in degrees)
         pass_time (np.ndarray): Start date of half-orbits.
@@ -176,8 +178,7 @@ class Orbit:
 
     def cycle_duration(self) -> np.timedelta64:
         """Get the cycle duration"""
-        return ((self.time[-1]).astype(np.int64) *
-                1e6).astype("timedelta64[us]")
+        return (self.time[-1] * 1e6).astype("timedelta64[us]")
 
     def passes_per_cycle(self):
         """Get the number of passes per cycle"""
@@ -192,12 +193,14 @@ class Orbit:
         Returns:
             numpy.datetime64: track duration
         """
-        if number == self.passes_per_cycle():
-            return np.timedelta64(
-                int((self.time[-1] - self.pass_time[-1]) * 1e6), 'us')
-        return np.timedelta64(
-            int((self.pass_time[number] - self.pass_time[number - 1]) * 1e6),
-            'us')
+        passes_per_cycle = self.passes_per_cycle()
+        if number < 1 or number > passes_per_cycle:
+            raise ValueError(f"number must be in [1, {passes_per_cycle}]")
+        if number == passes_per_cycle:
+            return ((self.time[-1] - self.pass_time[-1]) *
+                    1e6).astype("timedelta64[us]")
+        return ((self.pass_time[number] - self.pass_time[number - 1]) *
+                1e6).astype("timedelta64[us]")
 
     def decode_absolute_pass_number(self, number: int) -> Tuple[int, int]:
         """Calculate the cycle and pass number from a given absolute pass
