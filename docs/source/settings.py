@@ -33,11 +33,11 @@ complete_product = False
 
 # Distance, in km, between the nadir and the center of the first pixel of the
 # swath
-half_gap = 1.0
+half_gap = 2.0
 
 # Distance, in km, between the nadir and the center of the last pixel of the
 # swath
-half_swath = 69.0
+half_swath = 70.0
 
 # Limits of SWOT swath requirements. Measurements outside the span will be set
 # with fill values.

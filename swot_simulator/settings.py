@@ -8,6 +8,7 @@ Settings handling
 """
 from typing import Any, Dict, Iterator, Tuple
 import contextlib
+import copy
 import importlib
 import os
 import logging
@@ -79,9 +80,11 @@ def error_classes() -> Iterator[str]:
 
 
 class NumberOfBeams(int):
-    def __init__(self, value):
+    """Handle the number of beams"""
+    def __new__(cls, value, *args, **kwargs):
         if value not in [1, 2]:
             raise ValueError("nbeam must be in [1, 2]")
+        return super().__new__(cls, value, *args, **kwargs)  # type: ignore
 
 
 class Parameters:
@@ -184,8 +187,9 @@ class Parameters:
         return value
 
     def _init_user_parameters(self, overrides: Dict[str, Any]):
-        settings = dict(
-            (key, value[0]) for key, value in self.CONFIG_VALUES.items())
+        # To avoid side effects, default values are copied.
+        settings = dict((key, copy.copy(value[0]))
+                        for key, value in self.CONFIG_VALUES.items())
         for name, value in overrides.items():
             if name in ["__file__", "__builtins__"] or isinstance(
                     value, types.ModuleType) or isinstance(
