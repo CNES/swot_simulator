@@ -13,6 +13,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 import argparse
 import datetime
 import logging
+import fnmatch
 import os
 import sys
 import time
@@ -129,7 +130,8 @@ def usage() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def file_path(date: np.datetime64,
+def file_path(first_date: np.datetime64,
+              last_date: np.datetime64,
               cycle_number: int,
               pass_number: int,
               working_directory: str,
@@ -137,7 +139,8 @@ def file_path(date: np.datetime64,
     """Get the absolute path of the file to be created.
 
     Args:
-        date (numpy.datetime64): Date of the first simulated measurement.
+        first_date (numpy.datetime64): Date of the first simulated measurement.
+        last_date (numpy.datetime64): Date of the last simulated measurement.
         cycle_number (int): Cycle number of the file to be created.
         pass_number (int): Pass number of the file to be created.
         working_directory (str): File storage directory.
@@ -148,14 +151,22 @@ def file_path(date: np.datetime64,
     Returns:
         str: The path to the file to be created.
     """
-    date = datetime.datetime.utcfromtimestamp(
-        date.astype("datetime64[s]").astype("int64"))
+    first_date = first_date.astype(datetime.datetime)
+    last_date = last_date.astype(datetime.datetime)
     product_type = "nadir" if nadir else "karin"
     dirname = os.path.join(working_directory, product_type,
-                           date.strftime("%Y"))
+                           first_date.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
-    _file_name = f"swot_{product_type}_c{cycle_number:03d}_p{pass_number:03d}.nc"
-    return os.path.join(dirname, _file_name)
+    if nadir:
+        filename = (f"SWOT_GPN_2P1P{cycle_number:03d}_{pass_number:03d}_"
+                    f"{first_date:%Y%m%d}_{first_date:%H%M%S}_"
+                    f"{last_date:%Y%m%d}_{last_date:%H%M%S}.nc")
+    else:
+        filename = ("SWOT_L2_LR_SSH_Expert_"
+                    f"{cycle_number:03d}_{pass_number:03d}_"
+                    f"{first_date:%Y%m%dT%H%M%S}_{last_date:%Y%m%dT%H%M%S}_"
+                    "DG10_01.nc")
+    return os.path.join(dirname, filename)
 
 
 def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
@@ -196,13 +207,16 @@ def simulate(cycle_number: int,
     if logging_server is not None:
         logbook.setup_worker_logging(logging_server)
 
+    # Calculation of the end date of the track.
+    last_date = date + orbit.pass_shift(pass_number)
+
     # Paths of products to be generated.
     swath_path = None
     nadir_path = None
 
     # Generation of the names of the files to be created.
     if parameters.swath:
-        swath_path = file_path(date, cycle_number, pass_number,
+        swath_path = file_path(date, last_date, cycle_number, pass_number,
                                parameters.working_directory)
 
         # If the product has already been produced, the generation of this
@@ -212,6 +226,7 @@ def simulate(cycle_number: int,
 
     if parameters.nadir:
         nadir_path = file_path(date,
+                               last_date,
                                cycle_number,
                                pass_number,
                                parameters.working_directory,
@@ -231,6 +246,8 @@ def simulate(cycle_number: int,
     # Set the simulated date
     track.time = date
 
+    assert last_date == track.time[-1]
+
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
     mask = track.mask()
@@ -244,6 +261,19 @@ def simulate(cycle_number: int,
         if len(error.shape) == 2:
             error *= mask
 
+    # Interpolation of the SSH if the user wishes.
+    if parameters.ssh_plugin is not None:
+        # The nadir and swath data are concatenated to process the
+        # interpolation of the SSH in one time (swath and nadir).
+        lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]
+        lat = np.c_[track.lat, track.lat_nadir[:, np.newaxis]]
+        swath_time = np.repeat(track.time, lon.shape[1]).reshape(lon.shape)
+        ssh = parameters.ssh_plugin.interpolate(lon.flatten(), lat.flatten(),
+                                                swath_time.flatten())
+        ssh = ssh.reshape(lon.shape)
+    else:
+        ssh = None
+
     if swath_path:
         LOGGER.info("generate swath %d/%d [%s, %s]", cycle_number, pass_number,
                     track.time[0], track.time[-1])
@@ -251,16 +281,9 @@ def simulate(cycle_number: int,
         # Create the swath dataset
         product = product_specification.Swath(track)
 
-        # Interpolation of the SSH if the user wishes.
-        if parameters.ssh_plugin is not None:
-            swath_time = np.repeat(track.time,
-                                   track.lon.shape[1]).reshape(track.lon.shape)
-            ssh = parameters.ssh_plugin.interpolate(track.lon.flatten(),
-                                                    track.lat.flatten(),
-                                                    swath_time.flatten())
-            ssh = ssh.reshape(track.lon.shape) * mask
-            product.ssh(ssh + sum_error(noise_errors))
-            product.ssh_error(ssh)
+        if ssh is not None:
+            product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
+            product.ssh_error(ssh[:, -1])
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
@@ -275,12 +298,9 @@ def simulate(cycle_number: int,
                                               standalone=not parameters.swath)
 
         # Interpolation of the SSH if the user wishes.
-        if parameters.ssh_plugin is not None:
-            ssh = parameters.ssh_plugin.interpolate(track.lon_nadir,
-                                                    track.lat_nadir,
-                                                    track.time)
-            product.ssh(ssh + sum_error(noise_errors, swath=False))
-            product.ssh_error(ssh)
+        if ssh is not None:
+            product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))
+            product.ssh_error(ssh[:, -1])
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, nadir_path,
