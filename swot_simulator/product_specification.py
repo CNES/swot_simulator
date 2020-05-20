@@ -30,7 +30,7 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
 
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
-    """ Find a tag in the xml format specifcation file"""
+    """Find a tag in the xml format specifcation file"""
     result = element.find(tag)
     if result is None:
         raise RuntimeError("The XML tag '" + tag + "' doesn't exist")
@@ -38,7 +38,7 @@ def _find(element: xt.Element, tag: str) -> xt.Element:
 
 
 def _parse_type(dtype, width, signed):
-    """ Parse type from xml format specification file. """
+    """Parse type from xml format specification file. """
     if dtype == "real":
         return getattr(np, "float" + width)
     elif dtype == "integer":
@@ -51,18 +51,22 @@ def _parse_type(dtype, width, signed):
 
 
 def _cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
+    """Cast the attribute value to the numpy data type required"""
     return getattr(np, properties["dtype"])(attr_value)
 
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
                       lat: np.ndarray) -> Dict[str, Any]:
+    """Calculates the global attributes of the pass"""
     def _iso_date(date: np.datetime64) -> str:
+        """Return the time formatted according to ISO."""
         return datetime.datetime.utcfromtimestamp(
             date.astype("datetime64[us]").astype("int64") *
             1e-6).isoformat() + "Z"
 
     def _iso_duration(timedelta: np.timedelta64) -> str:
+        """Return the time delta formatted according to ISO."""
         seconds = timedelta.astype("timedelta64[s]").astype("int64")
         hours = seconds // 3600
         seconds -= hours * 3600
@@ -152,6 +156,7 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
 
 def _strtobool(value: str) -> bool:
+    """Return the boolean value encoded in the string"""
     value = value.lower()
     if value == "true":
         return True
@@ -161,7 +166,7 @@ def _strtobool(value: str) -> bool:
 
 
 def _parser(tree: xt.ElementTree):
-    """ Parse variables, attributes and shapes from xml format specification
+    """Parse variables, attributes and shapes from xml format specification
     file"""
     variables = dict()
     attributes = dict()
@@ -286,18 +291,22 @@ class ProductSpecification:
         self.variables, self.attributes = _parser(xt.parse(self.SPECIFICATION))
 
     @staticmethod
-    def fill_value(properties):
+    def fill_value(properties: Dict[str, Any]) -> np.ndarray:
+        """Returns the fill value encoded with the data type specified"""
         dtype = properties["dtype"]
         if isinstance(dtype, str):
             return getattr(np, dtype)(properties["attrs"]["_FillValue"])
         return np.array(properties["attrs"]["_FillValue"], dtype)
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
+        """Gets the time axis"""
         encoding, data_array = self._data_array("time", time)
         return {"time": encoding}, [data_array]
 
     def _data_array(self, name: str,
                     data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns a tuple containing the netCDF encoding of the variable and
+        the data array."""
         properties = self.variables[name]
         attrs = copy.deepcopy(properties["attrs"])
 
@@ -334,30 +343,41 @@ class ProductSpecification:
                                       attrs=attrs)
 
     def x_ac(self, x_ac: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the cross track
+        distance"""
         return self._data_array("cross_track_distance", x_ac)
 
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the longitudes of
+        the swath"""
         # Longitude must be in [0, 360.0[
         return self._data_array("longitude", math.normalize_longitude(lon, 0))
 
     def lon_nadir(self, lon_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the longitudes of
+        the reference ground track"""
         # Longitude must be in [0, 360.0[
         return self._data_array("longitude_nadir",
                                 math.normalize_longitude(lon_nadir, 0))
 
     def lat(self, lat: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the latitudes of
+        the swath"""
         return self._data_array("latitude", lat)
 
     def lat_nadir(self, lat_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the latitudes of
+        the reference ground track"""
         return self._data_array("latitude_nadir", lat_nadir)
 
     def ssh_karin(self, ssh: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the SSH measured
+        by KaRIn"""
         return self._data_array("ssh_karin", ssh)
 
-    def ssh_karin_uncert(self, array: np.ndarray) -> None:
-        self._data_array("ssh_karin_uncert", array)
-
     def ssh_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the SSH to
+        nadir."""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -376,6 +396,8 @@ class ProductSpecification:
                         })
 
     def ssh_nadir_error(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the SSH to nadir
+        free of measurement errors."""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -397,6 +419,8 @@ class ProductSpecification:
             })
 
     def ssh_karin_error(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the SSH KaRIn free
+        of measurement errors."""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -419,6 +443,8 @@ class ProductSpecification:
 
     def baseline_dilation(self,
                           array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        baseline mast dilation"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -434,6 +460,8 @@ class ProductSpecification:
                         })
 
     def roll(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        roll"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -448,6 +476,8 @@ class ProductSpecification:
                         })
 
     def phase(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        phase"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -462,6 +492,8 @@ class ProductSpecification:
                         })
 
     def roll_phase_est(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the roll phase
+        correction estimated"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -469,13 +501,15 @@ class ProductSpecification:
                         dims=self.variables["ssh_karin"]["shape"],
                         name="roll_phase_est",
                         attrs={
-                            'long_name': 'Error after estimation of roll phase',
+                            'long_name':
+                            'Error after estimation of roll phase',
                             'units': 'm',
                             'scale_factor': 0.0001,
                             'coordinates': 'longitude latitude'
                         })
 
     def karin(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the KaRIn error"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -490,6 +524,7 @@ class ProductSpecification:
                         })
 
     def timing(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the timing error"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -504,6 +539,8 @@ class ProductSpecification:
                         })
 
     def wet_troposphere(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        wet troposphere path delay"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32',
@@ -521,6 +558,8 @@ class ProductSpecification:
 
     def wet_troposphere_nadir(self,
                               array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        wet troposphere path delay to nadir."""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -536,6 +575,8 @@ class ProductSpecification:
                         })
 
     def altimeter(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the altimeter
+        error"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
@@ -552,6 +593,8 @@ class ProductSpecification:
 
     def fill_variables(self, variables,
                        shape) -> Iterator[Tuple[Dict, xr.DataArray]]:
+        """Returns the properties of variables present in the official format
+        of the SWOT product, but not calculated by this software."""
         for item in self.variables:
             if item in variables:
                 continue
@@ -563,6 +606,13 @@ class ProductSpecification:
 
 
 class Nadir:
+    """Handle the nadir measurements dataset.
+
+    Args:
+        track (orbit_propagator.Pass): Properties of the half-orbit to write
+        standalone (bool): True if this dataset is independent of the KaRIn
+            dataset.
+    """
     def __init__(self,
                  track: orbit_propagator.Pass,
                  standalone: Optional[bool] = True):
@@ -574,7 +624,29 @@ class Nadir:
                          track.lon_nadir)._data_array("lat_nadir",
                                                       track.lat_nadir)
 
-    def _data_array(self, attr, data: np.ndarray):
+    def _data_array(self,
+                    attr: str,
+                    data: np.ndarray,
+                    fill_value: Optional[np.ndarray] = None) -> 'Nadir':
+        """Get the properties of a data array to be inserted in the dataset.
+
+        Args:
+            attr (dict): Name of the method of the `ProductSpec` class defining
+                the variable to be inserted.
+            data (np.array): data to be recorded
+            fill_value (np.array, optional): Fill value of the reference
+                track vector to be inserted in the centre of the swath.
+        """
+        if len(data.shape) == 2:
+            # If the data is a grid, then the defined fill values are inserted
+            # or a Nan vector if the fill values are undefined.
+            if fill_value is None:
+                fill_value = np.full((data.shape[0], ),
+                                     np.nan,
+                                     dtype=np.float64)
+            middle = data.shape[1] // 2
+            data = np.c_[data[:, :middle], fill_value[:, np.newaxis],
+                         data[:, middle:]]
         encoding, array = getattr(self.product_spec, attr)(data)
         if self.standalone:
             array.name = array.name.replace("_nadir", "")
@@ -583,18 +655,46 @@ class Nadir:
         return self
 
     def ssh(self, array: np.ndarray) -> None:
+        """Sets the variable describing the SSH to nadir.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
         self._data_array("ssh_nadir", array)
 
     def ssh_error(self, array: np.ndarray) -> None:
+        """Sets the variable describing the SSH to nadir free of measurement
+        errors.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
         self._data_array("ssh_nadir_error", array)
 
     def update_noise_errors(self, noise_errors: Dict[str, np.ndarray]) -> None:
+        """Sets the values of the simulated errors.
+
+        Args:
+            noise_errors (dict): Simulated errors to be recorded
+        """
         for k, v in noise_errors.items():
             if v.ndim == 1:
                 self._data_array(k, v)
 
     def to_xarray(self, cycle_number: int, pass_number: int,
                   complete_product: bool) -> xr.Dataset:
+        """Converts this instance into a xarray dataset.
+
+        Args:
+            cycle_number (int): Cycle number.
+            pass_number (int): Pass number.
+            complete_product (bool): True if you want to obtain a complete
+                SWOT dataset, i.e. containing all the variables of the
+                official dataset, even those not calculated by the simulator.
+
+        Returns:
+            xr.Dataset: xarray dataset
+        """
         data_vars = dict((item.name, item) for item in self.data_vars)
 
         if "longitude" in data_vars:
@@ -634,29 +734,64 @@ class Nadir:
 
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:
+        """Writes the dataset in a netCDF file.
+
+        Args:
+            cycle_number (int): Cycle number.
+            pass_number (int): Pass number.
+            complete_product (bool): True if you want to obtain a complete
+                SWOT dataset, i.e. containing all the variables of the
+                official dataset, even those not calculated by the simulator.
+        """
         LOGGER.info("write %s", path)
         dataset = self.to_xarray(cycle_number, pass_number, complete_product)
         to_netcdf(dataset, path, self.encoding, mode="w")
 
 
 class Swath(Nadir):
+    """Handle the KaRIn measurements dataset.
+
+    Args:
+        track (orbit_propagator.Pass): Properties of the half-orbit to write
+    """
     def __init__(self, track: orbit_propagator.Pass) -> None:
         super().__init__(track, False)
-        self.num_pixels = track.x_ac.size
+        # The centre pixel contains the reference ground track which is not
+        # handled in the swath calculation.
+        self.num_pixels = track.x_ac.size + 1
         _x_ac = np.full((track.time.size, track.x_ac.size),
                         track.x_ac,
                         dtype=track.x_ac.dtype)
-        self._data_array("x_ac", _x_ac)._data_array("lon",
-                                                    track.lon)._data_array(
-                                                        "lat", track.lat)
+        self._data_array("x_ac", _x_ac,
+                         np.full((track.time.size, ), 0,
+                                 dtype=np.float64))._data_array(
+                                     "lon", track.lon,
+                                     track.lon_nadir)._data_array(
+                                         "lat", track.lat, track.lat_nadir)
 
     def ssh(self, array: np.ndarray) -> None:
+        """Sets the variable describing the KaRIn SSH.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
         self._data_array("ssh_karin", array)
 
     def ssh_error(self, array: np.ndarray) -> None:
+        """Sets the variable describing the KaRIn SSH free of measurement
+        errors.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
         self._data_array("ssh_karin_error", array)
 
     def update_noise_errors(self, noise_errors: Dict[str, np.ndarray]) -> None:
+        """Sets the values of the simulated errors.
+
+        Args:
+            noise_errors (dict): Simulated errors to be recorded
+        """
         for k, v in noise_errors.items():
             if v.ndim == 2:
                 self._data_array(k, v)
