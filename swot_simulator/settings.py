@@ -14,6 +14,7 @@ import os
 import logging
 import traceback
 import types
+import numpy as np
 from . import math
 from .plugins import ssh
 
@@ -87,6 +88,12 @@ class NumberOfBeams(int):
         return super().__new__(cls, value, *args, **kwargs)  # type: ignore
 
 
+class TimeDelta:
+    """Handle a time delta in seconds in the configuration file."""
+    def __call__(self, value):
+        return np.timedelta64(value, "s")
+
+
 class Parameters:
     """
     Simulator parameter management.
@@ -124,7 +131,7 @@ class Parameters:
         nseed=(0, int),
         requirement_bounds=(None, [float, 2]),
         shift_lon=(None, float),
-        shift_time=(None, float),
+        shift_time=(None, TimeDelta()),
         sigma=(6, float),
         ssh_plugin=(None, ssh.Interface),
         swath=(True, bool),

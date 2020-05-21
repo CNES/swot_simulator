@@ -9,6 +9,7 @@ Orbit Propagator
 from typing import Dict, Iterator, Optional, TextIO, Tuple
 import datetime
 import logging
+import warnings
 import numpy as np
 from . import math
 from . import settings
@@ -107,8 +108,8 @@ def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
     lat = np.hstack([lat[shift:], lat[:shift]])
     time = np.hstack([time[shift:], time[:shift]])
     time = (time - time[0]) % cycle_duration
-    if time[np.where(time < 0)]:
-        LOGGER.warning('there are negative times in your orbit')
+    if np.any(time < 0):
+        warnings.warn('there are negative times in your orbit', RuntimeWarning)
     return lon, lat, time
 
 
@@ -166,7 +167,8 @@ class Orbit:
     """
     def __init__(self, height: float, lat: np.ndarray, lon: np.ndarray,
                  pass_time: np.ndarray, time: np.ndarray, x_al: np.ndarray,
-                 curvilinear_distance: float, shift_time: Optional[float]):
+                 curvilinear_distance: float,
+                 shift_time: Optional[np.timedelta64]):
         self.height = height
         self.lat = lat
         self.lon = lon
@@ -178,7 +180,7 @@ class Orbit:
 
     def cycle_duration(self) -> np.timedelta64:
         """Get the cycle duration"""
-        return (self.time[-1] * 1e6).astype("timedelta64[us]")
+        return self.time[-1]
 
     def passes_per_cycle(self):
         """Get the number of passes per cycle"""
@@ -186,7 +188,7 @@ class Orbit:
 
     def pass_shift(self, number: int) -> np.timedelta64:
         """Get the time offset between the first measurement and the last
-        measurement of the trace.
+        measurement of the track.
 
         Args:
             number (int): track number (must be in [1, passes_per_cycle()])
@@ -202,8 +204,7 @@ class Orbit:
         else:
             indexes = np.where((self.time >= self.pass_time[number - 1])
                                & (self.time < self.pass_time[number]))[0]
-        return np.sum(
-            np.diff((self.time[indexes] * 1e6).astype("timedelta64[us]")))
+        return np.sum(np.diff(self.time[indexes]))
 
     def pass_duration(self, number: int) -> np.timedelta64:
         """Get the duration of a given pass.
@@ -218,10 +219,9 @@ class Orbit:
         if number < 1 or number > passes_per_cycle:
             raise ValueError(f"number must be in [1, {passes_per_cycle}]")
         if number == passes_per_cycle:
-            return ((self.time[-1] - self.pass_time[-1]) *
-                    1e6).astype("timedelta64[us]") + self.delta_t()
-        return ((self.pass_time[number] - self.pass_time[number - 1]) *
-                1e6).astype("timedelta64[us]")
+            return self.time[-1] - self.pass_time[-1] + self.time[
+                1] - self.time[0]
+        return self.pass_time[number] - self.pass_time[number - 1]
 
     def decode_absolute_pass_number(self, number: int) -> Tuple[int, int]:
         """Calculate the cycle and pass number from a given absolute pass
@@ -259,7 +259,7 @@ class Orbit:
         Returns:
             int: average time difference
         """
-        return (np.diff(self.time).mean() * 1e6).astype("timedelta64[us]")
+        return np.diff(self.time).mean()
 
     def iterate(self,
                 first_date: Optional[np.datetime64] = None,
@@ -323,8 +323,7 @@ class Pass:
         self.lon_nadir = lon_nadir
         self.lon = lon
         self.requirement_bounds = requirement_bounds
-        self.timedelta = ((time * 1e6).astype(
-            np.int64)).astype("timedelta64[us]")
+        self.timedelta = time
         self._time = None
         self.x_ac = x_ac
         self.x_al = x_al
@@ -419,7 +418,10 @@ def calculate_orbit(parameters: settings.Parameters,
                      distance[-2],
                      parameters.delta_al,
                      dtype=distance.dtype)
-    time = np.interp(x_al, distance[:-1], time[:-1])
+    # In order to avoid any problem of calculation of dates on real numbers,
+    # we manipulate dates encoded on integers from this point.
+    time = (np.interp(x_al, distance[:-1], time[:-1]) *
+            1e6).astype("timedelta64[us]")
 
     x, y, z = math.spher2cart(lon, lat)
     x = np.interp(x_al, distance[:-1], x[:-1])
