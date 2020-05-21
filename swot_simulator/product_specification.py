@@ -619,15 +619,15 @@ class Nadir:
         self.standalone = standalone
         self.product_spec = ProductSpecification()
         self.num_lines = track.time.size
+        self.num_pixels = 1
         self.encoding, self.data_vars = self.product_spec.time(track.time)
-        self._data_array("lon_nadir",
-                         track.lon_nadir)._data_array("lat_nadir",
-                                                      track.lat_nadir)
+        self._data_array("lon_nadir", track.lon_nadir)
+        self._data_array("lat_nadir", track.lat_nadir)
 
     def _data_array(self,
                     attr: str,
                     data: np.ndarray,
-                    fill_value: Optional[np.ndarray] = None) -> 'Nadir':
+                    fill_value: Optional[np.ndarray] = None) -> None:
         """Get the properties of a data array to be inserted in the dataset.
 
         Args:
@@ -637,7 +637,8 @@ class Nadir:
             fill_value (np.array, optional): Fill value of the reference
                 track vector to be inserted in the centre of the swath.
         """
-        if len(data.shape) == 2:
+        # Is it necessary to insert a central pixel?
+        if len(data.shape) == 2 and self.num_pixels % 2 == 1:
             # If the data is a grid, then the defined fill values are inserted
             # or a Nan vector if the fill values are undefined.
             if fill_value is None:
@@ -652,7 +653,6 @@ class Nadir:
             array.name = array.name.replace("_nadir", "")
         self.encoding[array.name] = encoding
         self.data_vars.append(array)
-        return self
 
     def ssh(self, array: np.ndarray) -> None:
         """Sets the variable describing the SSH to nadir.
@@ -753,21 +753,21 @@ class Swath(Nadir):
 
     Args:
         track (orbit_propagator.Pass): Properties of the half-orbit to write
+        central_pixel (bool): Inserts or not in the swath, a central pixel
+            divided in two by the reference ground track.
     """
-    def __init__(self, track: orbit_propagator.Pass) -> None:
+    def __init__(self,
+                 track: orbit_propagator.Pass,
+                 central_pixel: bool = False) -> None:
         super().__init__(track, False)
-        # The centre pixel contains the reference ground track which is not
-        # handled in the swath calculation.
-        self.num_pixels = track.x_ac.size + 1
+        self.num_pixels = track.x_ac.size + int(central_pixel)
         _x_ac = np.full((track.time.size, track.x_ac.size),
                         track.x_ac,
                         dtype=track.x_ac.dtype)
         self._data_array("x_ac", _x_ac,
-                         np.full((track.time.size, ), 0,
-                                 dtype=np.float64))._data_array(
-                                     "lon", track.lon,
-                                     track.lon_nadir)._data_array(
-                                         "lat", track.lat, track.lat_nadir)
+                         np.full((track.time.size, ), 0, dtype=np.float64))
+        self._data_array("lon", track.lon, track.lon_nadir)
+        self._data_array("lat", track.lat, track.lat_nadir)
 
     def ssh(self, array: np.ndarray) -> None:
         """Sets the variable describing the KaRIn SSH.

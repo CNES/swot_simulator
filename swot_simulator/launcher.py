@@ -279,7 +279,7 @@ def simulate(cycle_number: int,
                     track.time[0], track.time[-1])
 
         # Create the swath dataset
-        product = product_specification.Swath(track)
+        product = product_specification.Swath(track, parameters.central_pixel)
 
         if ssh is not None:
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))

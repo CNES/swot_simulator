@@ -14,6 +14,7 @@ def eval_config_file(filename: str) -> Dict:
 class Parameters:
     area: Optional[Tuple[float, float, float, float]]
     beam_position: List[float]
+    central_pixel: bool
     complete_product: bool
     corrected_roll_phase_dataset: Optional[str]
     cycle_duration: float

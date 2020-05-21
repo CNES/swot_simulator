@@ -26,6 +26,10 @@ ephemeris = os.path.join("..", "..", "data", "ephem_science_sept2015_ell.txt")
 # Default: 1, 2, 0
 ephemeris_cols = [1, 2, 0]
 
+# If true, the swath, in the final dataset, will contain a center pixel
+# divided in half by the reference ground track.
+central_pixel = True
+
 # If true, the generated netCDF file will be the complete product compliant
 # with SWOT's Product Description Document (PDD), otherwise only the calculated
 # variables will be written to the netCDF file.
