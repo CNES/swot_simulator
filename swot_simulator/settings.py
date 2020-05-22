@@ -167,7 +167,9 @@ class Parameters:
             if unknowns:
                 raise ValueError(
                     f"Unknown error generators: {', '.join(unknowns)}")
-            setattr(self, "noise", noise)
+        else:
+            noise = []
+        setattr(self, "noise", noise)
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
