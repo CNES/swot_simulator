@@ -13,13 +13,12 @@ from typing import Dict, Iterator, List, Optional, Tuple
 import argparse
 import datetime
 import logging
-import fnmatch
 import os
 import sys
 import time
 import traceback
 import dask.distributed
-import dateutil
+import dateutil.parser
 import numpy as np
 from . import exception
 from . import logbook
@@ -49,11 +48,11 @@ def datetime_type(value: str) -> np.datetime64:
     """
     # Check if value is a datetime
     try:
-        value = dateutil.parser.parse(value)
+        result = dateutil.parser.parse(value)
     except ValueError as error:
         raise argparse.ArgumentTypeError(
             f"invalid date time {value!r}: {error!s}")
-    return np.datetime64(value)
+    return np.datetime64(result)
 
 
 def writable_directory(value: str) -> str:
@@ -114,19 +113,37 @@ def usage() -> argparse.Namespace:
                        metavar='PATH',
                        help="Path to the logbook to use",
                        type=argparse.FileType("w"))
-    group.add_argument("--threads-per-worker",
-                       help="Number of threads per each worker. "
-                       f"Defaults to 1",
-                       type=int,
-                       metavar='N',
-                       default=1)
     group.add_argument("--scheduler-file",
                        help="Path to a file with scheduler information to "
                        "launch swot simulator on a cluster. By "
                        "default, use a local cluster.",
                        metavar='PATH',
                        type=argparse.FileType("r"))
-
+    group = parser.add_argument_group("LocalCluster",
+                                      "Dask local cluster option")
+    group.add_argument("--n-workers",
+                       help="Number of workers to start (Default to 1)",
+                       type=int,
+                       metavar='N',
+                       default=1)
+    group.add_argument("--processes",
+                       help="Whether to use processes (True) or threads "
+                       "(False).  Defaults to False",
+                       action="store_true")
+    group.add_argument("--threads-per-worker",
+                       help="Number of threads per each worker. "
+                       "(Default to 1)",
+                       type=int,
+                       metavar='N',
+                       default=1)
+    namespace = argparse.Namespace()
+    namespace, _ = parser._parse_known_args(sys.argv[1:], namespace)
+    if "scheduler_file" in namespace:
+        for item in ["n_workers", "processes", "threads_per_worker"]:
+            if item in namespace:
+                item = item.replace("_", "-")
+                raise RuntimeError(
+                    f"--{item}: not allowed with argument --scheduler-file")
     return parser.parse_args()
 
 
@@ -437,8 +454,8 @@ def main():
     client = dask.distributed.Client(
         dask.distributed.LocalCluster(
             protocol="tcp",
-            n_workers=1,
-            processes=False,
+            n_workers=args.n_workers,
+            processes=args.processes,
             threads_per_worker=args.threads_per_worker)
     ) if args.scheduler_file is None else dask.distributed.Client(
         scheduler_file=args.scheduler_file.name)
