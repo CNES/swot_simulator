@@ -301,7 +301,7 @@ def simulate(cycle_number: int,
         if ssh is not None:
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
             if noise_errors:
-                product.ssh_error(ssh[:, -1])
+                product.ssh_error(ssh[:, :-1])
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
