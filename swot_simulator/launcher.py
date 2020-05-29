@@ -263,8 +263,6 @@ def simulate(cycle_number: int,
     # Set the simulated date
     track.time = date
 
-    assert last_date == track.time[-1]
-
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
     mask = track.mask()
