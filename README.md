@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/fbriol/swot_simulator/_apis/build/status/CNES.swot-simulator?branchName=master)](https://dev.azure.com/fbriol/swot_simulator/_build/latest?definitionId=2&branchName=master)
+[![Build Status](https://dev.azure.com/fbriol/swot_simulator/_apis/build/status/CNES.swot_simulator?branchName=master)](https://dev.azure.com/fbriol/swot_simulator/_build/latest?definitionId=2&branchName=master)
 [![conda](https://anaconda.org/conda-forge/swot_simulator/badges/installer/conda.svg?service=github)](https://www.anaconda.com/distribution/)
 [![downloads](https://anaconda.org/conda-forge/swot_simulator/badges/downloads.svg?service=github)](https://www.anaconda.com/distribution/)
 [![platforms](https://anaconda.org/conda-forge/swot_simulator/badges/platforms.svg?service=github)](https://anaconda.org/conda-forge/swot_simulator)
