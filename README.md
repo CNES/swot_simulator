@@ -2,7 +2,7 @@
 [![conda](https://anaconda.org/conda-forge/swot_simulator/badges/installer/conda.svg?service=github)](https://www.anaconda.com/distribution/)
 [![downloads](https://anaconda.org/conda-forge/swot_simulator/badges/downloads.svg?service=github)](https://www.anaconda.com/distribution/)
 [![platforms](https://anaconda.org/conda-forge/swot_simulator/badges/platforms.svg?service=github)](https://anaconda.org/conda-forge/swot_simulator)
-[![latest-release-date](https://anaconda.org/conda-forge/swot_simulator/badges/latest_release_date.svg?service=github)](https://github.com/CNES/swot-simulator/commits/master)
+[![latest-release-date](https://anaconda.org/conda-forge/swot_simulator/badges/latest_release_date.svg?service=github)](https://github.com/CNES/swot_simulator/commits/master)
 [![license](https://anaconda.org/conda-forge/swot_simulator/badges/license.svg?service=github)](https://opensource.org/licenses/BSD-3-Clause)
 [![Binder](https://binder.pangeo.io/badge_logo.svg)](https://binder.pangeo.io/v2/gh/CNES/swot_simulator/master?filepath=notebooks)
 
