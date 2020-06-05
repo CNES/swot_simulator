@@ -24,4 +24,4 @@ and suggestions from the science community.
 
 ## Documentation
 
-Learn more about xarray in its official documentation at https://swot-simulator.readthedocs.io/
+Learn more about swot_simulator in its official documentation at https://swot-simulator.readthedocs.io/
