@@ -151,7 +151,7 @@ def file_path(first_date: np.datetime64,
               last_date: np.datetime64,
               cycle_number: int,
               pass_number: int,
-              working_directory: str,
+              parameters: settings.Parameters,
               nadir: bool = False) -> str:
     """Get the absolute path of the file to be created.
 
@@ -160,7 +160,7 @@ def file_path(first_date: np.datetime64,
         last_date (numpy.datetime64): Date of the last simulated measurement.
         cycle_number (int): Cycle number of the file to be created.
         pass_number (int): Pass number of the file to be created.
-        working_directory (str): File storage directory.
+        parameters (settings.Parameters): Simulation parameters.
         nadir (bool, optional): True if the product to be created contains the
             nadir measurements, false if it is a product containing the swath
             measurements.
@@ -171,7 +171,7 @@ def file_path(first_date: np.datetime64,
     first_date = first_date.astype(datetime.datetime)
     last_date = last_date.astype(datetime.datetime)
     product_type = "nadir" if nadir else "karin"
-    dirname = os.path.join(working_directory, product_type,
+    dirname = os.path.join(parameters.working_directory, product_type,
                            first_date.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
     if nadir:
@@ -179,7 +179,9 @@ def file_path(first_date: np.datetime64,
                     f"{first_date:%Y%m%d}_{first_date:%H%M%S}_"
                     f"{last_date:%Y%m%d}_{last_date:%H%M%S}.nc")
     else:
-        filename = ("SWOT_L2_LR_SSH_Expert_"
+        product_type = "".join(
+            [item.capitalize() for item in parameters.product_type.split("_")])
+        filename = (f"SWOT_L2_LR_SSH_{product_type}_"
                     f"{cycle_number:03d}_{pass_number:03d}_"
                     f"{first_date:%Y%m%dT%H%M%S}_{last_date:%Y%m%dT%H%M%S}_"
                     "DG10_01.nc")
@@ -234,7 +236,7 @@ def simulate(cycle_number: int,
     # Generation of the names of the files to be created.
     if parameters.swath:
         swath_path = file_path(date, last_date, cycle_number, pass_number,
-                               parameters.working_directory)
+                               parameters)
 
         # If the product has already been produced, the generation of this
         # half orbit is disabled.
@@ -246,7 +248,7 @@ def simulate(cycle_number: int,
                                last_date,
                                cycle_number,
                                pass_number,
-                               parameters.working_directory,
+                               parameters,
                                nadir=True)
         if os.path.exists(nadir_path):
             nadir_path = None
@@ -294,7 +296,8 @@ def simulate(cycle_number: int,
                     track.time[0], track.time[-1])
 
         # Create the swath dataset
-        product = product_specification.Swath(track, parameters.central_pixel)
+        product = product_specification.Swath(track, parameters.central_pixel,
+                                              parameters.product_type)
 
         if ssh is not None:
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))

@@ -16,6 +16,7 @@ import traceback
 import types
 import numpy as np
 from . import math
+from . import product_specification
 from .plugins import ssh
 
 #: Default working directory
@@ -130,6 +131,7 @@ class Parameters:
         noise=(None, [str, -1]),
         nrand_karin=(1000, int),
         nseed=(0, int),
+        product_type=("expert", str),
         requirement_bounds=(None, [float, 2]),
         shift_lon=(None, float),
         shift_time=(None, TimeDelta()),
@@ -170,6 +172,10 @@ class Parameters:
         else:
             noise = []
         setattr(self, "noise", noise)
+
+        product_type = getattr(self, "product_type")
+        if product_type not in product_specification.TYPE:
+            raise ValueError(f"Unknown product type: {product_type}")
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]

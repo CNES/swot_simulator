@@ -33,6 +33,7 @@ class Parameters:
     noise: List[str]
     nrand_karin: int
     nseed: int
+    product_type: str
     requirement_bounds: Optional[Tuple[float, float]]
     shift_lon: Optional[float]
     shift_time: Optional[float]

@@ -63,6 +63,10 @@ nadir = False
 # True to generate swath products
 swath = True
 
+# Type of SWOT product to be generated. Possible products are "expert",
+# "basic" and "wind_wave". Default to expert
+product_type = "expert"
+
 # The plug-in handling the SSH interpolation under the satellite swath.
 ssh_plugin = swot_simulator.plugins.ssh.AVISO("PATH to AVISO files")
 

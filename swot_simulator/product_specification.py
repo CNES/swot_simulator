@@ -28,6 +28,11 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
+TYPE = {
+    "expert": "l2b-expert.xml",
+    "basic": "l2b-ssh.xml",
+    "wind_wave": "l2b-windwave.xml"
+}
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
     """Find a tag in the xml format specifcation file"""
@@ -285,10 +290,16 @@ def to_netcdf(dataset: xr.Dataset,
 class ProductSpecification:
     """Parse and load into memory the product specification"""
     SPECIFICATION = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "l2b-expert.xml")
+                                 "l2b-ssh.xml")
 
-    def __init__(self):
-        self.variables, self.attributes = _parser(xt.parse(self.SPECIFICATION))
+    def __init__(self, product_type: Optional[str]):
+        product_type = product_type or "expert"
+        self.specification = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), TYPE[product_type])
+        self.variables, self.attributes = _parser(xt.parse(self.specification))
+
+    def __contains__(self, item):
+        return item in self.variables
 
     @staticmethod
     def fill_value(properties: Dict[str, Any]) -> np.ndarray:
@@ -300,13 +311,15 @@ class ProductSpecification:
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Gets the time axis"""
-        encoding, data_array = self._data_array("time", time)
+        encoding, data_array = self._data_array("time", time)  # type: ignore
         return {"time": encoding}, [data_array]
 
     def _data_array(self, name: str,
-                    data: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+                    data: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns a tuple containing the netCDF encoding of the variable and
         the data array."""
+        if name not in self.variables:
+            return None
         properties = self.variables[name]
         attrs = copy.deepcopy(properties["attrs"])
 
@@ -342,7 +355,7 @@ class ProductSpecification:
                                       name=name,
                                       attrs=attrs)
 
-    def x_ac(self, x_ac: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def x_ac(self, x_ac: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the cross track
         distance"""
         return self._data_array("cross_track_distance", x_ac)
@@ -351,9 +364,13 @@ class ProductSpecification:
         """Returns the properties of the variable describing the longitudes of
         the swath"""
         # Longitude must be in [0, 360.0[
-        return self._data_array("longitude", math.normalize_longitude(lon, 0))
+        result = self._data_array("longitude",
+                                  math.normalize_longitude(lon, 0))
+        assert result is not None
+        return result
 
-    def lon_nadir(self, lon_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def lon_nadir(self, lon_nadir: np.ndarray
+                  ) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the longitudes of
         the reference ground track"""
         # Longitude must be in [0, 360.0[
@@ -363,9 +380,12 @@ class ProductSpecification:
     def lat(self, lat: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the latitudes of
         the swath"""
-        return self._data_array("latitude", lat)
+        result = self._data_array("latitude", lat)
+        assert result is not None
+        return result
 
-    def lat_nadir(self, lat_nadir: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def lat_nadir(self, lat_nadir: np.ndarray
+                  ) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the latitudes of
         the reference ground track"""
         return self._data_array("latitude_nadir", lat_nadir)
@@ -373,7 +393,9 @@ class ProductSpecification:
     def ssh_karin(self, ssh: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the SSH measured
         by KaRIn"""
-        return self._data_array("ssh_karin", ssh)
+        result = self._data_array("ssh_karin", ssh)
+        assert result is not None
+        return result
 
     def ssh_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the SSH to
@@ -602,7 +624,10 @@ class ProductSpecification:
             fill_value = self.fill_value(properties)
             data = np.full(tuple(shape[dim] for dim in properties["shape"]),
                            fill_value, properties["dtype"])
-            yield self._data_array(item, data)
+            variable = self._data_array(item, data)
+            if variable is not None:
+                yield variable
+        return StopIteration
 
 
 class Nadir:
@@ -615,9 +640,10 @@ class Nadir:
     """
     def __init__(self,
                  track: orbit_propagator.Pass,
-                 standalone: Optional[bool] = True):
+                 standalone: bool = True,
+                 product_type: Optional[str] = None):
         self.standalone = standalone
-        self.product_spec = ProductSpecification()
+        self.product_spec = ProductSpecification(product_type)
         self.num_lines = track.time.size
         self.num_pixels = 1
         self.encoding, self.data_vars = self.product_spec.time(track.time)
@@ -648,11 +674,13 @@ class Nadir:
             middle = data.shape[1] // 2
             data = np.c_[data[:, :middle], fill_value[:, np.newaxis],
                          data[:, middle:]]
-        encoding, array = getattr(self.product_spec, attr)(data)
-        if self.standalone:
-            array.name = array.name.replace("_nadir", "")
-        self.encoding[array.name] = encoding
-        self.data_vars.append(array)
+        variable = getattr(self.product_spec, attr)(data)
+        if variable is not None:
+            encoding, array = variable
+            if self.standalone:
+                array.name = array.name.replace("_nadir", "")
+            self.encoding[array.name] = encoding
+            self.data_vars.append(array)
 
     def ssh(self, array: np.ndarray) -> None:
         """Sets the variable describing the SSH to nadir.
@@ -758,8 +786,9 @@ class Swath(Nadir):
     """
     def __init__(self,
                  track: orbit_propagator.Pass,
-                 central_pixel: bool = False) -> None:
-        super().__init__(track, False)
+                 central_pixel: bool = False,
+                 product_type: Optional[str] = None) -> None:
+        super().__init__(track, False, product_type)
         self.num_pixels = track.x_ac.size + int(central_pixel)
         _x_ac = np.full((track.time.size, track.x_ac.size),
                         track.x_ac,
@@ -792,6 +821,7 @@ class Swath(Nadir):
         Args:
             noise_errors (dict): Simulated errors to be recorded
         """
-        for k, v in noise_errors.items():
-            if v.ndim == 2:
-                self._data_array(k, v)
+        if "ssh_karin" in self.product_spec:
+            for k, v in noise_errors.items():
+                if v.ndim == 2:
+                    self._data_array(k, v)

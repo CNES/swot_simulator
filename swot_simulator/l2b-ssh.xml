@@ -1,0 +1,191 @@
+  <product>
+    <science uid="l2b_ssh">
+      <nodes>
+        <real name="/time" shape="num_lines_shape" width="64">
+          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in UTC" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DD hh:mm:ss" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute leap_second is set to the UTC time at which the leap second occurs."/>
+        </real>
+        <real name="/time_tai" shape="num_lines_shape" width="64">
+          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in TAI" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DD hh:mm:ss" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the TAI time scale since 1 Jan 2000 00:00:00 TAI. This time scale contains no leap seconds. The difference (in seconds) with time in UTC is given by the attribute [time:tai_utc_difference]."/>
+        </real>
+        <integer name="/latitude" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="latitude (positive N, negative S)" standard_name="latitude" units="degrees_north" scale_factor="0.000001"  valid_min="-80000000" valid_max="80000000" comment="Latitude of measurement [-80,80]. Positive latitude is North latitude, negative latitude is South latitude."/>
+        </integer>
+        <integer name="/longitude" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="longitude (degrees East)" standard_name="longitude" units="degrees_east" scale_factor="0.000001"  valid_min="0" valid_max="359999999" comment="Longitude of measurement. East longitude relative to Greenwich meridian."/>
+        </integer>
+        <integer name="/ssh_karin" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height" standard_name="sea surface height above reference ellipsoid" units="m" scale_factor="0.000100"  valid_min="-15000000" valid_max="150000000" coordinates="longitude latitude" comment="Fully corrected sea surface height measured by KaRIn. The height is relative to the reference ellipsoid defined in the global attributes. This value is computed using radiometer measurements for wet troposphere effects on the KaRIn measurement (e.g., rad_wet_tropo_cor and sea_state_bias_cor)."/>
+        </integer>
+        <integer name="/ssh_karin_uncert" shape="num_lines_num_pixels_shape" width="16" signed="false">
+          <annotation app="conformance" _FillValue="65535" long_name="sea surface height anomaly uncertainty" units="m" scale_factor="0.000100"  valid_min="0" valid_max="60000" coordinates="longitude latitude" comment="1-sigma uncertainty on the sea surface height from the KaRIn measurement."/>
+        </integer>
+        <integer name="/ssha_karin" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin - mean_sea_surface_sol1 - solid_earth_tide - ocean_tide_sol1 - pole_tide - dac."/>
+        </integer>
+        <integer name="/ssh_karin_2" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height" standard_name="sea surface height above reference ellipsoid" units="m" scale_factor="0.000100"  valid_min="-15000000" valid_max="150000000" coordinates="longitude latitude" comment="Fully corrected sea surface height measured by KaRIn. The height is relative to the reference ellipsoid defined in the global attributes. This value is computed using model-based estimates for wet troposphere effects on the KaRIn measurement (e.g., model_wet_tropo_cor and sea_state_bias_cor_2)."/>
+        </integer>
+        <integer name="/ssha_karin_2" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin_2 - mean_sea_surface_sol1 - solid_earth_tide - ocean_tide_sol1 - pole_tide - dac."/>
+        </integer>
+        <integer name="/ssha_karin_qual" shape="num_lines_num_pixels_shape" width="32" signed="false">
+          <annotation app="conformance" _FillValue="4294967295" long_name="sea surface height quality flag" standard_name="status_flag" flag_meanings="good bad" flag_values="0 1" valid_min="0" valid_max="1" coordinates="longitude latitude" comment="Quality flag for the SSHA from KaRIn."/>
+        </integer>
+        <integer name="/num_pt_avg" shape="num_lines_num_pixels_shape" width="16" signed="false">
+          <annotation app="conformance" _FillValue="65535" long_name="number of samples averaged" units="1" valid_min="0" valid_max="289" coordinates="longitude latitude" comment="Number of native unsmoothed, beam-combined KaRIn samples averaged."/>
+        </integer>
+        <integer name="/distance_to_coast" shape="num_lines_num_pixels_shape" width="16" signed="false">
+          <annotation app="conformance" _FillValue="65535" long_name="distance to coast" source="MODIS/GlobCover" institution="European Space Agency" units="m" scale_factor="1000.000000"  valid_min="0" valid_max="21000" coordinates="longitude latitude" comment="Approximate distance to the nearest coast point along the Earth surface."/>
+        </integer>
+        <integer name="/heading_to_coast" shape="num_lines_num_pixels_shape" width="16" signed="false">
+          <annotation app="conformance" _FillValue="65535" long_name="heading to coast" units="degrees" scale_factor="0.010000"  valid_min="0" valid_max="35999" coordinates="longitude latitude" comment="Approximate compass heading (0-360 degrees with respect to true north) to the nearest coast point."/>
+        </integer>
+        <integer name="/ancillary_surface_classification_flag" shape="num_lines_num_pixels_shape" width="8" signed="false">
+          <annotation app="conformance" _FillValue="255" long_name="surface classification" standard_name="status_flag" source="MODIS/GlobCover" institution="European Space Agency" flag_meanings="open_ocean land continental_water aquatic_vegetation continental_ice_snow floating_ice salted_basin" flag_values="0 1 2 3 4 5 6" valid_min="0" valid_max="6" coordinates="longitude latitude" comment="7-state surface type classification computed from a mask built with MODIS and GlobCover data."/>
+        </integer>
+        <integer name="/dynamic_ice_flag" shape="num_lines_num_pixels_shape" width="8" signed="false">
+          <annotation app="conformance" _FillValue="255" long_name="dynamic ice flag" standard_name="status_flag" source="EUMETSAT Ocean and Sea Ice Satellite Applications Facility" institution="EUMETSAT" flag_meanings="no_ice probable_ice ice" flag_values="0 1 2" valid_min="0" valid_max="2" coordinates="longitude latitude" comment="Dynamic ice flag for the location of the KaRIn measurement."/>
+        </integer>
+        <integer name="/rain_flag" shape="num_lines_num_pixels_shape" width="8" signed="false">
+          <annotation app="conformance" _FillValue="255" long_name="rain flag" standard_name="status_flag" flag_meanings="no_rain probable_rain rain" flag_values="0 1 2" valid_min="0" valid_max="2" coordinates="longitude latitude" comment="Flag indicates that signal is attenuated, probably from rain."/>
+        </integer>
+        <integer name="/rad_surface_type_flag" shape="num_lines_num_sides_shape" width="8" signed="false">
+          <annotation app="conformance" _FillValue="255" long_name="radiometer surface type flag" standard_name="status_flag" source="Advanced Microwave Radiometer" flag_meanings="open_ocean coastal_ocean land" flag_values="0 1 2" valid_min="0" valid_max="2" comment="Flag indicating the validity and type of processing applied to generate the wet troposphere correction (rad_wet_tropo_cor). A value of 0 indicates that open ocean processing is used, a value of 1 indicates coastal processing, and a value of 2 indicates that rad_wet_tropo_cor is invalid due to land contamination."/>
+        </integer>
+        <integer name="/mean_sea_surface_sol1" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="mean sea surface height from model 1" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="-1500000" valid_max="1500000" coordinates="longitude latitude" comment="Mean sea surface height above the reference ellipsoid. The value is referenced to the mean tide system, i.e. includes the permanent tide (zero frequency)."/>
+        </integer>
+        <integer name="/mean_sea_surface_sol1_uncert" shape="num_lines_num_pixels_shape" width="16" signed="true">
+          <annotation app="conformance" _FillValue="32767" long_name="mean sea surface height accuracy from model 1" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="0" valid_max="10000" coordinates="longitude latitude" comment="Accuracy of the mean sea surface height (mean_sea_surface_sol1)."/>
+        </integer>
+        <integer name="/geoid" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="geoid height" standard_name="geoid_height_above_reference_ellipsoid" source="EGM2008 (Pavlis et al., 2012)" units="m" scale_factor="0.000100"  valid_min="-1500000" valid_max="1500000" coordinates="longitude latitude" comment="Geoid height above the reference ellipsoid with a correction to refer the value to the mean tide system, i.e. includes the permanent tide (zero frequency)."/>
+        </integer>
+        <integer name="/internal_tide_sol1" shape="num_lines_num_pixels_shape" width="16" signed="true">
+          <annotation app="conformance" _FillValue="32767" long_name="coherent internal tide from model 1" source="Zaron (2019)" units="m" scale_factor="0.000100"  valid_min="-2000" valid_max="2000" coordinates="longitude latitude" comment="Coherent internal tide. To apply this correction the value of internal_tide_sol1 should be subtracted from ssha_karin or ssha_karin_2."/>
+        </integer>
+        <integer name="/height_cor_xover" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="height correction from KaRIn crossovers" units="m" scale_factor="0.000100"  valid_min="-100000" valid_max="100000" coordinates="longitude latitude" comment="Height correction from KaRIn crossover calibration. To apply this correction the value of height_cor_xover should be added to the value of ssh_karin, ssh_karin_2, ssha_karin, and ssha_karin_2."/>
+        </integer>
+        <string name="/@Conventions" shape="Scalar" width="0">
+          <annotation description="NetCDF-4 conventions adopted in this group. This attribute should be set to CF-1.7 to indicate that the group is compliant with the Climate and Forecast NetCDF conventions."/>
+        </string>
+        <string name="/@title" shape="Scalar" width="0">
+          <annotation description="Level 2 Low Rate Sea Surface Height Data Product - Basic SSH/Wind and Wave/Expert SSH with Wind and Wave/Unsmoothed."/>
+        </string>
+        <string name="/@institution" shape="Scalar" width="0">
+          <annotation description="Name of producing agency."/>
+        </string>
+        <string name="/@source" shape="Scalar" width="0">
+          <annotation description="The method of production of the original data. If it was model-generated, source should name the model and its version, as specifically as could be useful. If it is observational, source should characterize it (e.g., 'Ka-band radar interferometer')."/>
+        </string>
+        <string name="/@history" shape="Scalar" width="0">
+          <annotation description="UTC time when file generated. Format is: 'YYYY-MM-DD hh:mm:ss : Creation'"/>
+        </string>
+        <string name="/@platform" shape="Scalar" width="0">
+          <annotation description="SWOT"/>
+        </string>
+        <string name="/@references" shape="Scalar" width="0">
+          <annotation description="Published or web-based references that describe the data or methods used to product it. Provides version number of software generating product."/>
+        </string>
+        <string name="/@reference_document" shape="Scalar" width="0">
+          <annotation description="Name and version of Product Description Document to use as reference for product."/>
+        </string>
+        <string name="/@contact" shape="Scalar" width="0">
+          <annotation description="Contact information for producer of product. (e.g., 'ops@jpl.nasa.gov')."/>
+        </string>
+        <integer name="/@cycle_number" shape="Scalar" width="16" signed="true">
+          <annotation description="Cycle number of the product granule."/>
+        </integer>
+        <integer name="/@pass_number" shape="Scalar" width="16" signed="true">
+          <annotation description="Pass number of the product granule."/>
+        </integer>
+        <string name="/@time_coverage_start" shape="Scalar" width="0">
+          <annotation description="UTC time of first measurement. Format is: YYYY-MM-DD hh:mm:ss.ssssssZ"/>
+        </string>
+        <string name="/@time_coverage_end" shape="Scalar" width="0">
+          <annotation description="UTC time of last measurement. Format is: YYYY-MM-DD hh:mm:ss.ssssssZ"/>
+        </string>
+        <real name="/@geospatial_lon_min" shape="Scalar" width="64">
+          <annotation description="Westernmost longitude (deg) of granule bounding box"/>
+        </real>
+        <real name="/@geospatial_lon_max" shape="Scalar" width="64">
+          <annotation description="Easternmost longitude (deg) of granule bounding box"/>
+        </real>
+        <real name="/@geospatial_lat_min" shape="Scalar" width="64">
+          <annotation description="Southernmost latitude (deg) of granule bounding box"/>
+        </real>
+        <real name="/@geospatial_lat_max" shape="Scalar" width="64">
+          <annotation description="Northernmost latitude (deg) of granule bounding box"/>
+        </real>
+        <real name="/@left_first_longitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner longitude for the first range line and left edge of the swath (degrees_east)"/>
+        </real>
+        <real name="/@left_first_latitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner latitude for the first range line and left edge of the swath (degrees_north)"/>
+        </real>
+        <real name="/@left_last_longitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner longitude for the last range line and left edge of the swath (degrees_east)"/>
+        </real>
+        <real name="/@left_last_latitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner latitude for the last range line and left edge of the swath (degrees_north)"/>
+        </real>
+        <real name="/@right_first_longitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner longitude for the first range line and right edge of the swath (degrees_east)"/>
+        </real>
+        <real name="/@right_first_latitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner latitude for the first range line and right edge of the swath (degrees_north)"/>
+        </real>
+        <real name="/@right_last_longitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner longitude for the last range line and right edge of the swath (degrees_east)"/>
+        </real>
+        <real name="/@right_last_latitude" shape="Scalar" width="64">
+          <annotation description="Nominal swath corner latitude for the last range line and right edge of the swath (degrees_north)"/>
+        </real>
+        <real name="/@wavelength" shape="Scalar" width="64">
+          <annotation description="Wavelength (m) of the transmitted signal, which is determined based on the transmitter center frequency of the transmit chirp."/>
+        </real>
+        <string name="/@orbit_solution" shape="Scalar" width="0">
+          <annotation description="TBD attribute to indicate POE or MOE (also available from CRID)."/>
+        </string>
+        <string name="/@xref_input_l1b_lr_intf_file" shape="Scalar" width="0">
+          <annotation description="Name of input Level 1B Low-Rate Interferogram file."/>
+        </string>
+        <string name="/@xref_input_static_karin_cal_file" shape="Scalar" width="0">
+          <annotation description="Name of input static KaRIn calibration file."/>
+        </string>
+        <string name="/@xref_input_static_geophys_files" shape="Scalar" width="0">
+          <annotation description="List of static geophysical parameter files (TBD: to be split into specific input types)."/>
+        </string>
+        <string name="/@xref_input_dynamic_geophys_files" shape="Scalar" width="0">
+          <annotation description="List of dynamic geophysical parameter files (TBD: to be split into specific input types)."/>
+        </string>
+        <string name="/@xref_input_l1_nalt_gdr_files" shape="Scalar" width="0">
+          <annotation description="Name of input L2 Nadir Altimeter Geophysical Data Record files."/>
+        </string>
+        <string name="/@xref_input_int_lr_xover_cal_files" shape="Scalar" width="0">
+          <annotation description="Name of input crossover calibration files."/>
+        </string>
+        <string name="/@xref_input_l2_rad_gdr_files" shape="Scalar" width="0">
+          <annotation description="Name of input Level 2 Radiometer Geophysical Data Record files."/>
+        </string>
+        <real name="/@ellipsoid_semi_major_axis" shape="Scalar" width="64">
+          <annotation description="Semi-major axis of reference ellipsoid in meters."/>
+        </real>
+        <real name="/@ellipsoid_flattening" shape="Scalar" width="64">
+          <annotation description="Flattening of reference ellipsoid"/>
+        </real>
+      </nodes>
+    </science>
+    <shape name="Scalar" order="irrelevant"/>    <shape name="num_lines_shape" order="slowest...fastest">
+      <dimension extent="0" name="num_lines"/>
+    </shape>
+    <shape name="num_lines_num_pixels_shape" order="slowest...fastest">
+      <dimension extent="0" name="num_lines"/>
+      <dimension extent="0" name="num_pixels"/>
+    </shape>
+    <shape name="num_lines_num_sides_shape" order="slowest...fastest">
+      <dimension extent="0" name="num_lines"/>
+      <dimension extent="0" name="num_sides"/>
+    </shape>
+  </product>
