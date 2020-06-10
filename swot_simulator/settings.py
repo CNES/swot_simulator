@@ -16,7 +16,7 @@ import traceback
 import types
 import numpy as np
 from . import math
-from . import product_specification
+from . import PRODUCT_TYPE
 from .plugins import ssh
 
 #: Default working directory
@@ -152,7 +152,7 @@ class Parameters:
         self._init_user_parameters(overrides)
 
         product_type = getattr(self, "product_type")
-        if product_type not in product_specification.TYPE:
+        if product_type not in PRODUCT_TYPE:
             raise ValueError(f"Unknown product type: {product_type}")
 
         if product_type == "wind_wave":

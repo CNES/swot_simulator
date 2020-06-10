@@ -20,6 +20,7 @@ import numpy as np
 import xarray as xr
 from . import orbit_propagator
 from . import math
+from . import PRODUCT_TYPE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,11 +29,6 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
-TYPE = {
-    "expert": "l2b-expert.xml",
-    "basic": "l2b-ssh.xml",
-    "wind_wave": "l2b-windwave.xml"
-}
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
     """Find a tag in the xml format specifcation file"""
@@ -288,14 +284,15 @@ def to_netcdf(dataset: xr.Dataset,
 
 
 class ProductSpecification:
-    """Parse and load into memory the product specification"""
+    """Parse and load into memory the product specification@@"""
     SPECIFICATION = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "l2b-ssh.xml")
 
     def __init__(self, product_type: Optional[str]):
         product_type = product_type or "expert"
         self.specification = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), TYPE[product_type])
+            os.path.dirname(os.path.abspath(__file__)),
+            PRODUCT_TYPE[product_type])
         self.variables, self.attributes = _parser(xt.parse(self.specification))
 
     def __contains__(self, item):
