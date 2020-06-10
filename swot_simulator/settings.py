@@ -151,6 +151,17 @@ class Parameters:
                 raise TypeError(f"missing required argument: {required!r}")
         self._init_user_parameters(overrides)
 
+        product_type = getattr(self, "product_type")
+        if product_type not in product_specification.TYPE:
+            raise ValueError(f"Unknown product type: {product_type}")
+
+        if product_type == "wind_wave":
+            if getattr(self, "ssh_plugin") is not None:
+                raise ValueError("The wind/wave product cannot store SSH.")
+
+            if getattr(self, "noise") is not None:
+                raise ValueError("The wind/wave product cannot store errors.")
+
         noise = getattr(self, "noise")
         if noise is not None:
             if "corrected_roll_phase" in noise:
@@ -172,14 +183,6 @@ class Parameters:
         else:
             noise = []
         setattr(self, "noise", noise)
-
-        product_type = getattr(self, "product_type")
-        if product_type not in product_specification.TYPE:
-            raise ValueError(f"Unknown product type: {product_type}")
-
-        if product_type == "windwave" and getattr(self,
-                                                  "ssh_plugin") is not None:
-            raise ValueError(f"The wind/wave product cannot store SSH.")
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
