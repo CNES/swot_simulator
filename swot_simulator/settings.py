@@ -177,6 +177,10 @@ class Parameters:
         if product_type not in product_specification.TYPE:
             raise ValueError(f"Unknown product type: {product_type}")
 
+        if product_type == "windwave" and getattr(self,
+                                                  "ssh_plugin") is not None:
+            raise ValueError(f"The wind/wave product cannot store SSH.")
+
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
         try:
