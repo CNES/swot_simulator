@@ -83,10 +83,10 @@
           <annotation app="conformance" _FillValue="255" long_name="radiometer surface type flag" standard_name="status_flag" source="Advanced Microwave Radiometer" flag_meanings="open_ocean coastal_ocean land" flag_values="0 1 2" valid_min="0" valid_max="2" comment="Flag indicating the validity and type of processing applied to generate the wet troposphere correction (rad_wet_tropo_cor). A value of 0 indicates that open ocean processing is used, a value of 1 indicates coastal processing, and a value of 2 indicates that rad_wet_tropo_cor is invalid due to land contamination."/>
         </integer>
         <string name="/@Conventions" shape="Scalar" width="0">
-          <annotation description="NetCDF-4 conventions adopted in this group. This attribute should be set to CF-1.7 to indicate that the group is compliant with the Climate and Forecast NetCDF conventions."/>
+          <annotation description="NetCDF-4 conventions adopted in this file. This attribute should be set to CF-1.7 to indicate that the file is compliant with the Climate and Forecast NetCDF conventions."/>
         </string>
         <string name="/@title" shape="Scalar" width="0">
-          <annotation description="Level 2 Low Rate Sea Surface Height Data Product - Basic SSH/Wind and Wave/Expert SSH with Wind and Wave/Unsmoothed."/>
+          <annotation description="Level 2 Low Rate Sea Surface Height Data Product - Wind and Wave"/>
         </string>
         <string name="/@institution" shape="Scalar" width="0">
           <annotation description="Name of producing agency."/>

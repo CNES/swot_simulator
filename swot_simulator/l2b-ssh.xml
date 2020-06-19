@@ -20,13 +20,13 @@
           <annotation app="conformance" _FillValue="65535" long_name="sea surface height anomaly uncertainty" units="m" scale_factor="0.000100"  valid_min="0" valid_max="60000" coordinates="longitude latitude" comment="1-sigma uncertainty on the sea surface height from the KaRIn measurement."/>
         </integer>
         <integer name="/ssha_karin" shape="num_lines_num_pixels_shape" width="32" signed="true">
-          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin - mean_sea_surface_sol1 - solid_earth_tide - ocean_tide_sol1 - pole_tide - dac."/>
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin - mean_sea_surface_cnescls - solid_earth_tide - ocean_tide_fes – internal_tide_hret - pole_tide - dac."/>
         </integer>
         <integer name="/ssh_karin_2" shape="num_lines_num_pixels_shape" width="32" signed="true">
           <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height" standard_name="sea surface height above reference ellipsoid" units="m" scale_factor="0.000100"  valid_min="-15000000" valid_max="150000000" coordinates="longitude latitude" comment="Fully corrected sea surface height measured by KaRIn. The height is relative to the reference ellipsoid defined in the global attributes. This value is computed using model-based estimates for wet troposphere effects on the KaRIn measurement (e.g., model_wet_tropo_cor and sea_state_bias_cor_2)."/>
         </integer>
         <integer name="/ssha_karin_2" shape="num_lines_num_pixels_shape" width="32" signed="true">
-          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin_2 - mean_sea_surface_sol1 - solid_earth_tide - ocean_tide_sol1 - pole_tide - dac."/>
+          <annotation app="conformance" _FillValue="2147483647" long_name="sea surface height anomaly" units="m" scale_factor="0.000100"  valid_min="-1000000" valid_max="1000000" coordinates="longitude latitude" comment="Sea surface height anomaly from the KaRIn measurement = ssh_karin_2 - mean_sea_surface_cnescls - solid_earth_tide - ocean_tide_fes – internal_tide_hret - pole_tide - dac."/>
         </integer>
         <integer name="/ssha_karin_qual" shape="num_lines_num_pixels_shape" width="32" signed="false">
           <annotation app="conformance" _FillValue="4294967295" long_name="sea surface height quality flag" standard_name="status_flag" flag_meanings="good bad" flag_values="0 1" valid_min="0" valid_max="1" coordinates="longitude latitude" comment="Quality flag for the SSHA from KaRIn."/>
@@ -52,26 +52,26 @@
         <integer name="/rad_surface_type_flag" shape="num_lines_num_sides_shape" width="8" signed="false">
           <annotation app="conformance" _FillValue="255" long_name="radiometer surface type flag" standard_name="status_flag" source="Advanced Microwave Radiometer" flag_meanings="open_ocean coastal_ocean land" flag_values="0 1 2" valid_min="0" valid_max="2" comment="Flag indicating the validity and type of processing applied to generate the wet troposphere correction (rad_wet_tropo_cor). A value of 0 indicates that open ocean processing is used, a value of 1 indicates coastal processing, and a value of 2 indicates that rad_wet_tropo_cor is invalid due to land contamination."/>
         </integer>
-        <integer name="/mean_sea_surface_sol1" shape="num_lines_num_pixels_shape" width="32" signed="true">
-          <annotation app="conformance" _FillValue="2147483647" long_name="mean sea surface height from model 1" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="-1500000" valid_max="1500000" coordinates="longitude latitude" comment="Mean sea surface height above the reference ellipsoid. The value is referenced to the mean tide system, i.e. includes the permanent tide (zero frequency)."/>
+        <integer name="/mean_sea_surface_cnescls" shape="num_lines_num_pixels_shape" width="32" signed="true">
+          <annotation app="conformance" _FillValue="2147483647" long_name="mean sea surface height (CNES/CLS)" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="-1500000" valid_max="1500000" coordinates="longitude latitude" comment="Mean sea surface height above the reference ellipsoid. The value is referenced to the mean tide system, i.e. includes the permanent tide (zero frequency)."/>
         </integer>
-        <integer name="/mean_sea_surface_sol1_uncert" shape="num_lines_num_pixels_shape" width="16" signed="true">
-          <annotation app="conformance" _FillValue="32767" long_name="mean sea surface height accuracy from model 1" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="0" valid_max="10000" coordinates="longitude latitude" comment="Accuracy of the mean sea surface height (mean_sea_surface_sol1)."/>
+        <integer name="/mean_sea_surface_cnescls_uncert" shape="num_lines_num_pixels_shape" width="16" signed="false">
+          <annotation app="conformance" _FillValue="65535" long_name="mean sea surface height accuracy (CNES/CLS)" source="CNES_CLS_15" institution="CNES/CLS" units="m" scale_factor="0.000100"  valid_min="0" valid_max="10000" coordinates="longitude latitude" comment="Accuracy of the mean sea surface height (mean_sea_surface_cnescls)."/>
         </integer>
         <integer name="/geoid" shape="num_lines_num_pixels_shape" width="32" signed="true">
           <annotation app="conformance" _FillValue="2147483647" long_name="geoid height" standard_name="geoid_height_above_reference_ellipsoid" source="EGM2008 (Pavlis et al., 2012)" units="m" scale_factor="0.000100"  valid_min="-1500000" valid_max="1500000" coordinates="longitude latitude" comment="Geoid height above the reference ellipsoid with a correction to refer the value to the mean tide system, i.e. includes the permanent tide (zero frequency)."/>
         </integer>
-        <integer name="/internal_tide_sol1" shape="num_lines_num_pixels_shape" width="16" signed="true">
-          <annotation app="conformance" _FillValue="32767" long_name="coherent internal tide from model 1" source="Zaron (2019)" units="m" scale_factor="0.000100"  valid_min="-2000" valid_max="2000" coordinates="longitude latitude" comment="Coherent internal tide. To apply this correction the value of internal_tide_sol1 should be subtracted from ssha_karin or ssha_karin_2."/>
+        <integer name="/internal_tide_hret" shape="num_lines_num_pixels_shape" width="16" signed="true">
+          <annotation app="conformance" _FillValue="32767" long_name="coherent internal tide (HRET)" source="Zaron (2019)" units="m" scale_factor="0.000100"  valid_min="-2000" valid_max="2000" coordinates="longitude latitude" comment="Coherent internal ocean tide. This value is subtracted from the ssh_karin and ssh_karin_2 to compute ssha_karin and ssha_karin_2, respectively."/>
         </integer>
         <integer name="/height_cor_xover" shape="num_lines_num_pixels_shape" width="32" signed="true">
           <annotation app="conformance" _FillValue="2147483647" long_name="height correction from KaRIn crossovers" units="m" scale_factor="0.000100"  valid_min="-100000" valid_max="100000" coordinates="longitude latitude" comment="Height correction from KaRIn crossover calibration. To apply this correction the value of height_cor_xover should be added to the value of ssh_karin, ssh_karin_2, ssha_karin, and ssha_karin_2."/>
         </integer>
         <string name="/@Conventions" shape="Scalar" width="0">
-          <annotation description="NetCDF-4 conventions adopted in this group. This attribute should be set to CF-1.7 to indicate that the group is compliant with the Climate and Forecast NetCDF conventions."/>
+          <annotation description="NetCDF-4 conventions adopted in this file. This attribute should be set to CF-1.7 to indicate that the file is compliant with the Climate and Forecast NetCDF conventions."/>
         </string>
         <string name="/@title" shape="Scalar" width="0">
-          <annotation description="Level 2 Low Rate Sea Surface Height Data Product - Basic SSH/Wind and Wave/Expert SSH with Wind and Wave/Unsmoothed."/>
+          <annotation description="Level 2 Low Rate Sea Surface Height Data Product - Basic SSH"/>
         </string>
         <string name="/@institution" shape="Scalar" width="0">
           <annotation description="Name of producing agency."/>
