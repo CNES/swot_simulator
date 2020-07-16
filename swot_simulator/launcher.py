@@ -9,15 +9,15 @@ Main program
 This module defines the main :func:`function <launch>` handling the simulation
 of SWOT products as well as the entry point of the main program.
 """
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 import argparse
 import datetime
 import logging
 import os
 import sys
-import time
 import traceback
 import dask.distributed
+import dask.bag
 import dateutil.parser
 import numpy as np
 from . import exception
@@ -204,9 +204,7 @@ def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
         [item for item in errors.values() if len(item.shape) == dims])
 
 
-def simulate(cycle_number: int,
-             pass_number: int,
-             date: np.datetime64,
+def simulate(args: Tuple[int, int, np.datetime64],
              error_generator: generator.Generator,
              orbit: orbit_propagator.Orbit,
              parameters: settings.Parameters,
@@ -214,14 +212,15 @@ def simulate(cycle_number: int,
     """Simulate a pass.
 
     Args:
-        cycle_number (int): Cycle number.
-        pass_number (int): Pass number.
-        date (numpy.datetime64): Date of the first half-orbit measurement.
+        simulation arguments (tuple): cycle & pass number, date of the first
+            half-orbit measurement
         error_generator (generator.Generator): Measurement error generator.
         orbit (orbit_propagator.Orbit): Orbit propagator.
         parameters (settings.Parameters): Simulation parameters.
         logging_server (tuple, optional): Log server connection settings.
     """
+    cycle_number, pass_number, date = args
+
     # Initialize this worker's logger.
     if logging_server is not None:
         logbook.setup_worker_logging(logging_server)
@@ -327,83 +326,6 @@ def simulate(cycle_number: int,
                           parameters.complete_product)
 
 
-def available_workers(client: dask.distributed.Client) -> List[str]:
-    """Get the list of available workers.
-
-    Args:
-        client (dask.distributed.Client): Client connected to the Dask
-            cluster.
-
-    Returns:
-        list: The list of available workers.
-    """
-    while True:
-        result = [
-            k for k, v in client.scheduler_info()['workers'].items()
-            if v['metrics']['executing'] == 0
-        ]
-        if result:
-            return result
-        time.sleep(1)
-
-
-def submit_one_pass(client: dask.distributed.Client,
-                    parameters: settings.Parameters,
-                    logging_server: Optional[Tuple[str, int, int]],
-                    first_date: Optional[np.datetime64] = None,
-                    last_date: Optional[np.datetime64] = None
-                    ) -> Iterator[dask.distributed.Future]:
-    """Distribute the half-orbit simulation to each worker in the cluster.
-
-    Args:
-        client (dask.distributed.Client): Client connected to the Dask
-            cluster.
-        parameters (settings.Parameters): Simulation parameters.
-        logging_server (tuple, optional): Log server connection settings.
-        first_date (numpy.datetime64): First date of the simulation.
-        last_date (numpy.datetime64): Last date of the simulation.
-
-    Returns:
-        iterator: Iterator on the delayed tasks submitted to the cluster.
-    """
-    assert parameters.ephemeris is not None
-
-    # Calculation of the properties of the orbit to be processed.
-    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
-        orbit = orbit_propagator.calculate_orbit(parameters,
-                                                 stream)  # type: ignore
-
-    # Initialization of measurement error generators
-    error_generator = generator.Generator(parameters, first_date)
-
-    # Scatter data into distributed memory
-    _error_generator = client.scatter(error_generator)
-    _parameters = client.scatter(parameters)
-    _orbit = client.scatter(orbit)
-
-    workers = available_workers(client)
-
-    for cycle_number, pass_number, date in orbit.iterate(
-            first_date, last_date):
-        try:
-            worker = workers.pop()
-        except IndexError:
-            workers = available_workers(client)
-            worker = workers.pop()
-
-        yield client.submit(simulate,
-                            cycle_number,
-                            pass_number,
-                            date,
-                            _error_generator,
-                            _orbit,
-                            _parameters,
-                            logging_server,
-                            workers=worker,
-                            allow_other_workers=False)
-    return StopIteration
-
-
 def launch(client: dask.distributed.Client,
            parameters: settings.Parameters,
            logging_server: Optional[Tuple[str, int, int]],
@@ -422,27 +344,29 @@ def launch(client: dask.distributed.Client,
     # Displaying Dask client information.
     LOGGER.info(client)
 
-    iterator = submit_one_pass(client, parameters, logging_server, first_date,
-                               last_date)
+    assert parameters.ephemeris is not None
 
-    # Tasks are submitted by pool.
-    completed = dask.distributed.as_completed()
-    while True:
-        while completed.count() < len(
-                client.scheduler_info()['workers']) and iterator is not None:
-            try:
-                completed.add(next(iterator))
-            except StopIteration:
-                iterator = None
-        try:
-            client.gather(completed.next_batch())
-        except StopIteration:
-            pass
-        except:
-            client.close()
-            raise
-        if completed.count() == 0 and iterator is None:
-            break
+    # Calculation of the properties of the orbit to be processed.
+    with open(parameters.ephemeris, "r") as stream:  # type: TextIO
+        orbit = orbit_propagator.calculate_orbit(parameters,
+                                                 stream)  # type: ignore
+
+    # Initialization of measurement error generators
+    error_generator = generator.Generator(parameters, first_date)
+
+    # Scatter data into distributed memory
+    _error_generator = client.scatter(error_generator)
+    _parameters = client.scatter(parameters)
+    _orbit = client.scatter(orbit)
+
+    bag = dask.bag.from_sequence(orbit.iterate(first_date, last_date),
+                                 npartitions=len(
+                                     client.scheduler_info()['workers']))
+    bag.map(simulate,
+            error_generator=_error_generator,
+            orbit=_orbit,
+            parameters=_parameters,
+            logging_server=logging_server).compute()
 
 
 def main():
