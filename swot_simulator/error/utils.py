@@ -132,7 +132,7 @@ def gen_signal_1d(fi: np.ndarray,
 
 @nb.njit("(float64[:, ::1])"
          "(float64[::1], float64[:, ::1], float64[::1], float64, float64)",
-         cache=True)
+         cache=True, nogil=True)
 def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
                     dfx: np.ndarray, dfy: np.ndarray) -> np.ndarray:
     result = np.zeros(f2.shape)
@@ -150,7 +150,7 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
 
 @nb.njit("(float64[:, ::1])"
          "(float64[:, ::1], float64[::1], float64[::1], float64, float64)",
-         cache=True)
+         cache=True, nogil=True)
 def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     result = np.zeros((len(y), len(x)))
     xn = (x.max() - x[0]) // xgmax

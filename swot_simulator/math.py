@@ -12,14 +12,16 @@ import numpy as np
 import numba as nb
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, nogil=True)
 def normalize_longitude(lon: np.ndarray,
                         lon_min: Optional[float] = -180.0) -> np.ndarray:
     """Normalize longitudes between [lon_min, lon_min + 360]"""
     return ((lon - lon_min) % 360) + lon_min
 
 
-@nb.njit('UniTuple(float64[:], 3)(float64[:], float64[:])', cache=True)
+@nb.njit('UniTuple(float64[:], 3)(float64[:], float64[:])',
+         cache=True,
+         nogil=True)
 def spher2cart(lon: np.ndarray,
                lat: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Convert spherical coordinates to cartesian coordinates"""
@@ -32,7 +34,8 @@ def spher2cart(lon: np.ndarray,
 
 
 @nb.njit('UniTuple(float64[:], 2)(float64[:], float64[:], float64[:])',
-         cache=True)
+         cache=True,
+         nogil=True)
 def cart2spher(x: np.ndarray, y: np.ndarray,
                z: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Convert cartesian coordinates to spherical coordinates"""
@@ -48,7 +51,7 @@ def cart2spher(x: np.ndarray, y: np.ndarray,
     return np.degrees(lon), np.degrees(lat)
 
 
-@nb.njit('float64[:, ::1](float64, float64[::1])', cache=True)
+@nb.njit('float64[:, ::1](float64, float64[::1])', cache=True, nogil=True)
 def rotation_3d_matrix(theta: float, axis: np.ndarray) -> np.ndarray:
     """Creates a rotation matrix: Slow method.
 
@@ -71,7 +74,9 @@ def rotation_3d_matrix(theta: float, axis: np.ndarray) -> np.ndarray:
     return result
 
 
-@nb.njit('float64[::1](float64[::1], float64[::1], float64)', cache=True)
+@nb.njit('float64[::1](float64[::1], float64[::1], float64)',
+         cache=True,
+         nogil=True)
 def curvilinear_distance(lon: np.ndarray, lat: np.ndarray,
                          radius: float) -> np.ndarray:
     """Calculating the curvilinear distance."""
@@ -86,7 +91,7 @@ def curvilinear_distance(lon: np.ndarray, lat: np.ndarray,
     return np.cumsum(distance)
 
 
-@nb.njit('float64[:, :](float64[:, :])', cache=True)
+@nb.njit('float64[:, :](float64[:, :])', cache=True, nogil=True)
 def satellite_direction(location: np.ndarray) -> np.ndarray:
     """Calculate satellite direction"""
     direction = np.empty_like(location)
@@ -107,7 +112,9 @@ def satellite_direction(location: np.ndarray) -> np.ndarray:
     return direction
 
 
-@nb.njit('UniTuple(float64, 2)(float64, float64, float64)', cache=True)
+@nb.njit('UniTuple(float64, 2)(float64, float64, float64)',
+         cache=True,
+         nogil=True)
 def __cartesian2spherical(x: float, y: float, z: float) -> Tuple[float, float]:
     """Convert cartesian coordinates to spherical coordinates for scalar
     values. This function is for internal use only"""
@@ -120,7 +127,8 @@ def __cartesian2spherical(x: float, y: float, z: float) -> Tuple[float, float]:
 
 @nb.njit('UniTuple(float64[:, ::1], 2)(float64, float64, int64, float64, '
          'float64[:, ::1], float64[:, ::1])',
-         cache=True)
+         cache=True,
+         nogil=True)
 def calculate_swath(delta_ac: float, half_gap: float, half_swath: int,
                     radius: float, location: np.ndarray,
                     direction: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -135,13 +143,15 @@ def calculate_swath(delta_ac: float, half_gap: float, half_swath: int,
 
             loc = np.dot(rotation, location[ix])
             kx = half_swath + jx
-            lon[ix, kx], lat[ix, kx] = __cartesian2spherical(
-                loc[0], loc[1], loc[2])
+            lon[ix,
+                kx], lat[ix,
+                         kx] = __cartesian2spherical(loc[0], loc[1], loc[2])
 
             loc = np.dot(rotation.T, location[ix])
             kx = half_swath - jx - 1
-            lon[ix, kx], lat[ix, kx] = __cartesian2spherical(
-                loc[0], loc[1], loc[2])
+            lon[ix,
+                kx], lat[ix,
+                         kx] = __cartesian2spherical(loc[0], loc[1], loc[2])
     return lon, lat
 
 
