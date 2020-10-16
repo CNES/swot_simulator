@@ -30,7 +30,7 @@ def _meshgrid(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 @nb.njit(cache=True)
-def _calculate_path_delay_lr(beam_positions: list[float], sigma: float,
+def _calculate_path_delay_lr(beam_positions: List[float], sigma: float,
                              radio_r: np.ndarray, radio_l: np.ndarray,
                              x_al: np.ndarray, x_ac_large: np.ndarray,
                              wt_large: np.ndarray):
