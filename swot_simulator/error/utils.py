@@ -132,7 +132,8 @@ def gen_signal_1d(fi: np.ndarray,
 
 @nb.njit("(float64[:, ::1])"
          "(float64[::1], float64[:, ::1], float64[::1], float64, float64)",
-         cache=True, nogil=True)
+         cache=True,
+         nogil=True)
 def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
                     dfx: np.ndarray, dfy: np.ndarray) -> np.ndarray:
     result = np.zeros(f2.shape)
@@ -150,7 +151,8 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
 
 @nb.njit("(float64[:, ::1])"
          "(float64[:, ::1], float64[::1], float64[::1], float64, float64)",
-         cache=True, nogil=True)
+         cache=True,
+         nogil=True)
 def _calculate_signal(rectangle, x, y, xgmax, ygmax):
     result = np.zeros((len(y), len(x)))
     xn = (x.max() - x[0]) // xgmax
@@ -163,16 +165,16 @@ def _calculate_signal(rectangle, x, y, xgmax, ygmax):
         for iy_n in range(int(yn + 1)):
             iy0 = np.where((dy >= (iy_n * ygmax))
                            & (dy < ((iy_n + 1) * ygmax)))[0]
-            result[iy0[0]:iy0[-1] + 1, ix0[0]:ix0[-1] +
-                   1] = rectangle[:len(iy0), :len(ix0)]
+            result[iy0[0]:iy0[-1] + 1,
+                   ix0[0]:ix0[-1] + 1] = rectangle[:len(iy0), :len(ix0)]
     return result
 
 
 def gen_ps2d(fi: np.ndarray,
              psi: np.ndarray,
-             fminx: Optional[float] = None,
-             fminy: Optional[float] = None,
-             fmax: Optional[float] = None,
+             fminx: float,
+             fminy: float,
+             fmax: float,
              alpha: int = 10,
              lf_extpl: bool = False,
              hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
@@ -221,9 +223,9 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
                             f: np.ndarray,
                             x: np.ndarray,
                             y: np.ndarray,
-                            fminx: Optional[float] = None,
-                            fminy: Optional[float] = None,
-                            fmax: Optional[float] = None,
+                            fminx: float,
+                            fminy: float,
+                            fmax: float,
                             alpha: int = 10,
                             nseed: int = 0) -> np.ndarray:
     """TODO(lgaultier)"""
