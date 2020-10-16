@@ -3,12 +3,13 @@
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 """
-Interpolation of the SSH AVISO
+Interpolation of the SSH HYCOM
 ==============================
 """
 import os
 import re
 import numpy as np
+import pyinterp
 import pyinterp.backends.xarray
 import xarray as xr
 
@@ -22,7 +23,8 @@ class HYCOM(detail.CartesianGridHandler):
 
     #: Decode the product date encoded from the file name.
     #hycom_GLBu0.08_191_2012031900_t012.nc
-    PATTERN = re.compile(r"hycom_GLBu0.08_191_(\d{4})(\d{2})(\d{2})(\d{2})_t\d{3}.nc").search
+    PATTERN = re.compile(
+        r"hycom_GLBu0.08_191_(\d{4})(\d{2})(\d{2})(\d{2})_t\d{3}.nc").search
 
     def load_ts(self):
         """Loading in memory the time axis of the time series"""
@@ -55,14 +57,14 @@ class HYCOM(detail.CartesianGridHandler):
                 "Time series does not have a constant step between two "
                 f"grids: {frequency} seconds")
         elif len(frequency) != 1:
-           raise RuntimeError(
-                 "Check that your list of data is not empty")
+            raise RuntimeError("Check that your list of data is not empty")
         # The frequency is stored in order to load the grids required to
         # interpolate the SSH.
         self.dt = np.timedelta64(frequency.pop(), 's')
 
-    def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64
-                     ) -> pyinterp.backends.xarray.Grid3D:
+    def load_dataset(
+            self, first_date: np.datetime64,
+            last_date: np.datetime64) -> pyinterp.backends.xarray.Grid3D:
         """Loads the 3D cube describing the SSH in time and space."""
         if first_date < self.ts["date"][0] or last_date > self.ts["date"][-1]:
             raise IndexError(
@@ -71,16 +73,18 @@ class HYCOM(detail.CartesianGridHandler):
         first_date -= self.dt
         last_date += self.dt
 
-        selected = self.ts["path"][:] # [(self.ts["date"] >= first_date)
-          #                         & (self.ts["date"] < last_date)]
+        selected = self.ts["path"][:]
 
-        ds = xr.open_mfdataset(selected, concat_dim="time", combine="nested",
+        ds = xr.open_mfdataset(selected,
+                               concat_dim="time",
+                               combine="nested",
                                decode_times=False)
         ds = ds.sel(depth=0)
 
         x_axis = pyinterp.Axis(ds.variables["lon"][:], is_circle=True)
         y_axis = pyinterp.Axis(ds.variables["lat"][:])
-        hours = (ds.variables['time'][:].data*3600000000).astype('timedelta64[us]')
+        hours = (ds.variables['time'][:].data *
+                 3600000000).astype('timedelta64[us]')
         time = np.datetime64('2000') + hours
         z_axis = pyinterp.TemporalAxis(time)
         var = ds.surf_el[:].T
@@ -90,7 +94,10 @@ class HYCOM(detail.CartesianGridHandler):
                     time: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
-        ssh = pyinterp.trivariate(interpolator, lon.flatten(), lat.flatten(),
-                                  time, bounds_error=True,
+        ssh = pyinterp.trivariate(interpolator,
+                                  lon.flatten(),
+                                  lat.flatten(),
+                                  time,
+                                  bounds_error=True,
                                   interpolator='bilinear').reshape(lon.shape)
         return ssh
