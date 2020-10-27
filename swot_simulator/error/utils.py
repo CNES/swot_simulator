@@ -67,7 +67,7 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
             threshold = swh_in[i, j]
             indices = np.argmin(np.abs(swh - threshold))
             if swh[indices] > threshold:
-                indices += 1
+                indices -= 1
             if swh.max() <= threshold:
                 hsdt[i, j] = height_sdt[-1, indice_ac]
                 warning = True
@@ -76,8 +76,8 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
                 hsdt[i, j] = height_sdt[indices, indice_ac] * (
                     1 - rswh) + rswh * height_sdt[indices + 1, indice_ac]
     if warning is True:
-        warnings.warn(f'swh={threshold} is greater than the maximum value '
-                      f'in {path!r}, therefore swh is set to the file maximum '
+        warnings.warn(f'swh={threshold} is greater than the maximum value, '
+                      f'therefore swh is set to the file maximum '
                       'value', RuntimeWarning)
     return hsdt
 
