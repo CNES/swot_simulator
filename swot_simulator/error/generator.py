@@ -64,7 +64,7 @@ class Generator:
 
     def generate(self, cycle_number: int, curvilinear_distance: float,
                  time: np.ndarray, x_al: np.ndarray,
-                 x_ac: np.ndarray) -> Dict[str, np.ndarray]:
+                 x_ac: np.ndarray, swh:np.ndarray) -> Dict[str, np.ndarray]:
         """Generate errors
 
         Args:
@@ -95,7 +95,7 @@ class Generator:
                 elif isinstance(item, Karin):
                     futures.append(
                         client.submit(item.generate, x_al, x_ac,
-                                      curvilinear_distance, cycle_number))
+                                      curvilinear_distance, cycle_number, swh))
                 elif isinstance(item, RollPhase):
                     futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, Timing):

@@ -23,8 +23,8 @@ class Karin:
         assert parameters.karin_noise is not None
 
         # Store the generation parameters of the random signal.
-        self.x_ac, self.hsdt = utils.read_file_karin(parameters.karin_noise,
-                                                     parameters.swh)
+        self.hsdt, self.x_ac, self.swh = utils.read_file_karin(
+                                                     parameters.karin_noise)
 
         self.delta_ac = parameters.delta_ac
         self.delta_al = parameters.delta_al
@@ -33,7 +33,7 @@ class Karin:
 
     def generate(self, x_al: np.array, x_ac: np.array,
                  curvilinear_distance: float,
-                 cycle: int) -> Dict[str, np.ndarray]:
+                 cycle: int, swh:np.array) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
         Args:
@@ -53,7 +53,8 @@ class Karin:
         a_karin = np.random.normal(0, 1, (self.nrand_karin, num_pixels))
 
         # Formula of karin noise as a function of x_ac (smile shape)
-        sigma_karin = np.interp(np.abs(x_ac), self.x_ac, self.hsdt)
+        sigma_karin =  utils.interpolate_file_karin(swh, x_ac, self.hsdt,
+                                                    self.x_ac, self.swh)
         size_grid = np.sqrt(self.delta_al * self.delta_ac)
         sigma_karin = sigma_karin / size_grid
 

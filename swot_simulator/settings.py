@@ -18,6 +18,7 @@ import numpy as np
 from . import math
 from . import PRODUCT_TYPE
 from .plugins import ssh
+from .plugins import swh
 
 #: Default working directory
 DEFAULT_WORKING_DIRECTORY = os.path.join(os.path.expanduser('~'),
@@ -137,6 +138,7 @@ class Parameters:
         shift_time=(None, TimeDelta()),
         sigma=(6, float),
         ssh_plugin=(None, ssh.Interface),
+        swh_plugin=(None, swh.Interface),
         swath=(True, bool),
         swh=(2, int),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
@@ -202,6 +204,8 @@ class Parameters:
                 mro = expected_type.__mro__[-2]
                 if mro == ssh.Interface:
                     value = ssh.Plugin.register(value)
+                elif mro == swh.Interface:
+                    value = swh.Plugin.register(value)
                 else:
                     value = expected_type(value)
         except ValueError:

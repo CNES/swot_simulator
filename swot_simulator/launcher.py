@@ -267,11 +267,26 @@ def simulate(args: Tuple[int, int, np.datetime64],
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
     mask = track.mask()
+    # Interpolation of the SWH if the user wishes.
+    if parameters.swh_plugin is not None:
+        # The nadir and swath data are concatenated to process the
+        # interpolation of the SSH in one time (swath and nadir).
+        lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]
+        lat = np.c_[track.lat, track.lat_nadir[:, np.newaxis]]
+        swath_time = np.repeat(track.time, lon.shape[1]).reshape(lon.shape)
+        swh = parameters.swh_plugin.interpolate(lon.flatten(), lat.flatten(),
+                                                swath_time.flatten())
+        swh_all = swh.reshape(lon.shape)
+        swh = + swh_all[:, :-1]
+    else:
+        swh_all = None
+        swh = [parameters.swh,]*len(track.x_ac)
 
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
                                             orbit.curvilinear_distance,
-                                            track.time, track.x_al, track.x_ac)
+                                            track.time, track.x_al, track.x_ac,
+                                            swh)
     for error in noise_errors.values():
         # Only the swaths must be masked
         if len(error.shape) == 2:
@@ -302,6 +317,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
             if noise_errors:
                 product.ssh_error(ssh[:, :-1])
+        if swh_all is not None:
+            product.swh((swh * mask))
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
@@ -320,7 +337,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
             product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))
             if noise_errors:
                 product.ssh_error(ssh[:, -1])
-
+        if swh_all is not None:
+            product.swh(swh_all[:, -1])
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, nadir_path,
                           parameters.complete_product)

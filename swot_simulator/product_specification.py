@@ -425,7 +425,7 @@ class ProductSpecification:
             dims=self.variables["time"]["shape"],
             name="ssh_nadir_true",
             attrs={
-                'coordinates': 'longitude latitude',
+                'coordinates': 'time',
                 'long_name': 'sea surface height',
                 'scale_factor': 0.0001,
                 'standard_name':
@@ -436,6 +436,27 @@ class ProductSpecification:
                 'comment':
                 'Height of the sea surface free of measurement errors.'
             })
+
+    def swh_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the SSH to nadir
+        free of measurement errors."""
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32'
+        }, xr.DataArray(
+            data=array,
+            dims=self.variables["time"]["shape"],
+            name="swh_nadir",
+            attrs={
+                'coordinates': 'time',
+                'long_name': 'Significant Wave Height',
+                'scale_factor': 0.0001,
+                'standard_name': 'Sigificant Wave Height',
+                'units': 'm',
+                'valid_min': np.int32(-15000000),
+                'valid_max': np.int32(150000000),
+            })
+
 
     def ssh_karin_error(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the SSH KaRIn free
@@ -459,6 +480,23 @@ class ProductSpecification:
                 'comment':
                 'Height of the sea surface free of measurement errors.'
             })
+
+    def swh(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+        """Returns the properties of the variable describing the error due to
+        baseline mast dilation"""
+        return {
+            '_FillValue': 2147483647,
+            'dtype': 'int32'
+        }, xr.DataArray(data=array,
+                        dims=self.variables["ssh_karin"]["shape"],
+                        name="swh",
+                        attrs={
+                            'long_name': 'Significant Wave Height',
+                            'scale_factor': 0.0001,
+                            '_FillValue': 2147483647,
+                            'units': 'm',
+                            'coordinates': 'longitude latitude'
+                        })
 
     def baseline_dilation(self,
                           array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
@@ -687,6 +725,14 @@ class Nadir:
         """
         self._data_array("ssh_nadir", array)
 
+    def swh(self, array: np.ndarray) -> None:
+        """Sets the variable describing the SSH to nadir.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
+        self._data_array("swh_nadir", array)
+
     def ssh_error(self, array: np.ndarray) -> None:
         """Sets the variable describing the SSH to nadir free of measurement
         errors.
@@ -802,6 +848,14 @@ class Swath(Nadir):
             array (np.ndarray): Data to be recorded
         """
         self._data_array("ssh_karin", array)
+
+    def swh(self, array: np.ndarray) -> None:
+        """Sets the variable describing the KaRIn SSH.
+
+        Args:
+            array (np.ndarray): Data to be recorded
+        """
+        self._data_array("swh", array)
 
     def ssh_error(self, array: np.ndarray) -> None:
         """Sets the variable describing the KaRIn SSH free of measurement

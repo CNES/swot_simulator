@@ -40,21 +40,7 @@ def read_file_instr(file_instr: str, delta_al: float,
                                                0.000001))
 
 
-# def read_swh(swh_file):
-#     ds = xr.open_dataset(swh_file)
-
-#     lon = ds.longitude[:]
-#     lat = ds.latitude[:]
-#     swh = ds.hs[0, :, :]
-#     swh = np.ma.masked_invalid(swh)
-#     swh[swh.mask] = numpy.nan
-
-#     fid.close()
-#     return lon, lat, swh
-
-
-def read_file_karin(path: str,
-                    threshold: float) -> Tuple[np.ndarray, np.ndarray]:
+def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Retrieve power spectrum from instrumental noise file provided by
     """
     with xr.open_dataset(path) as dataset:
@@ -62,20 +48,38 @@ def read_file_karin(path: str,
         cross_track = dataset['cross_track'].data
         swh = dataset['SWH'].data
 
-    indices = np.argmin(np.abs(swh - threshold))
-    if swh[indices] > threshold:
-        indices += 1
-    if swh.max() <= threshold:
-        hsdt = np.full((len(cross_track), ), np.nan)
-        warnings.warn(
-            f'swh={threshold} is greater than the maximum value '
-            f'in {path!r}, therefore swh is set to the file maximum '
-            'value', RuntimeWarning)
-    else:
-        rswh = threshold - swh[indices]
-        hsdt = height_sdt[indices, :] * (
-            1 - rswh) + rswh * height_sdt[indices + 1, :]
-    return cross_track, hsdt
+    return height_sdt, cross_track, swh
+
+
+def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
+                           height_sdt:np.array, cross_track: np.array,
+                           swh: np.array) -> np.ndarray:
+    warning = False
+    size_swh = np.shape(swh_in)
+    if len(size_swh) == 1:
+        swh_in = swh_in.reshape((1, size_swh[0]))
+        size_swh = np.shape(swh_in)
+    hsdt = np.zeros(size_swh)
+    for j in range(size_swh[1]):
+        xacj = x_ac_in[j]
+        indice_ac = np.argmin(np.abs(cross_track - xacj))
+        for i in range(size_swh[0]):
+            threshold = swh_in[i, j]
+            indices = np.argmin(np.abs(swh - threshold))
+            if swh[indices] > threshold:
+                indices += 1
+            if swh.max() <= threshold:
+                hsdt[i, j] = height_sdt[-1, indice_ac]
+                warning = True
+            else:
+                rswh = threshold - swh[indices]
+                hsdt[i, j] = height_sdt[indices, indice_ac] * (
+                    1 - rswh) + rswh * height_sdt[indices + 1, indice_ac]
+    if warning is True:
+        warnings.warn(f'swh={threshold} is greater than the maximum value '
+                      f'in {path!r}, therefore swh is set to the file maximum '
+                      'value', RuntimeWarning)
+    return hsdt
 
 
 def gen_signal_1d(fi: np.ndarray,
