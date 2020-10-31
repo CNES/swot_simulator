@@ -1,5 +1,5 @@
 """
-Plug-in to interpolate SSH
+Plug-in to interpolate SWH
 --------------------------
 """
 from .detail import Interface, Plugin
