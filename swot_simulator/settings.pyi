@@ -5,6 +5,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 from . import math
 from .plugins import ssh
+from .plugins import swh
 
 
 def eval_config_file(filename: str) -> Dict:
@@ -39,6 +40,7 @@ class Parameters:
     shift_time: Optional[float]
     sigma: float
     ssh_plugin: Optional[ssh.Interface]
+    swh_plugin: Optional[swh.Interface]
     swath: bool
     swh: int
     hierarchical_groups: bool

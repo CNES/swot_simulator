@@ -1,5 +1,6 @@
 import os
 import pickle
+import numpy as np
 import swot_simulator.settings
 import swot_simulator.error.altimeter
 import swot_simulator.error.baseline_dilation
@@ -37,9 +38,13 @@ def test_error_karin():
     (x_al, x_ac, curvilinear_distance, cycle_number,
      expected) = load_data('karin')
     error = swot_simulator.error.karin.Karin(parameters)
+    swh = np.array([
+        0,
+    ] * len(x_ac))
 
-    generated = error.generate(x_al, x_ac, curvilinear_distance, cycle_number)
-    assert abs(expected - generated['karin']).mean() < 1e-12
+    generated = error.generate(x_al, x_ac, curvilinear_distance, cycle_number,
+                               swh)
+    assert abs(expected - generated['simulated_error_karin']).mean() < 1e-2
 
 
 def test_baseline_dilation():
@@ -52,7 +57,8 @@ def test_baseline_dilation():
         parameters, error_spectrum['dilationPSD'].data,
         error_spectrum['spatial_frequency'].data)
     generated = error.generate(x_al, x_ac)
-    assert abs(expected - generated['baseline_dilation']).mean() < 1e-12
+    assert abs(expected -
+               generated['simulated_error_baseline_dilation']).mean() < 1e-12
 
 
 def test_roll_phase():
@@ -66,8 +72,10 @@ def test_roll_phase():
         error_spectrum['phasePSD'].data,
         error_spectrum['spatial_frequency'].data)
     generated = error.generate(x_al, x_ac)
-    assert abs(expected['phase'] - generated['phase']).mean() < 1e-12
-    assert abs(expected['roll'] - generated['roll']).mean() < 1e-12
+    assert abs(expected['phase'] -
+               generated['simulated_error_phase']).mean() < 1e-12
+    assert abs(expected['roll'] -
+               generated['simulated_error_roll']).mean() < 1e-12
 
 
 def test_timing():
@@ -80,7 +88,7 @@ def test_timing():
         parameters, error_spectrum['timingPSD'].data,
         error_spectrum['spatial_frequency'].data)
     generated = error.generate(x_al, x_ac)
-    assert abs(expected - generated['timing']).mean() < 1e-12
+    assert abs(expected - generated['simulated_error_timing']).mean() < 1e-12
 
 
 def test_wet_troposphere():
@@ -92,12 +100,12 @@ def test_wet_troposphere():
     generated = error.generate(x_al, x_ac)
 
     # assert abs(wt.data - expected['wt']['one']['wt']).mean() < 1e-12
-    assert abs(generated['wet_troposphere'] -
+    assert abs(generated['simulated_error_troposphere'] -
                expected['wt']['one']['wet_tropo']).mean() < 1e-12
 
     # assert abs(wt_nadir.data -
     #            expected['wt_nadir']['one']['wt']).mean() < 1e-12
-    assert abs(generated['wet_troposphere_nadir'] -
+    assert abs(generated['simulated_error_troposphere_nadir'] -
                expected['wt_nadir']['one']['wet_tropo']).mean() < 1e-12
 
     parameters.nbeam = 2
@@ -105,12 +113,12 @@ def test_wet_troposphere():
     generated = error.generate(x_al, x_ac)
 
     # assert abs(wt.data - expected['wt']['two']['wt']).mean() < 1e-12
-    assert abs(generated['wet_troposphere'] -
+    assert abs(generated['simulated_error_troposphere'] -
                expected['wt']['two']['wet_tropo']).mean() < 1e-12
 
     # assert abs(wt_nadir.data -
     #            expected['wt_nadir']['two']['wt']).mean() < 1e-12
-    assert abs(generated['wet_troposphere_nadir'].data -
+    assert abs(generated['simulated_error_troposphere_nadir'].data -
                expected['wt_nadir']['two']['wet_tropo']).mean() < 1e-12
 
 
@@ -120,4 +128,5 @@ def test_altimeter():
 
     error = swot_simulator.error.altimeter.Altimeter(parameters)
     generated = error.generate(x_al)
-    assert abs(generated['altimeter'] - expected).mean() < 1e-12
+    assert abs(generated['simulated_error_altimeter'] -
+               expected).mean() < 1e-12

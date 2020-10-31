@@ -829,7 +829,7 @@ class Swath(Nadir):
         self._data_array("ssh_karin", array)
 
     def swh(self, array: np.ndarray) -> None:
-        """Sets the variable describing the KaRIn SSH.
+        """Sets the variable describing the KaRIn SWH.
 
         Args:
             array (np.ndarray): Data to be recorded

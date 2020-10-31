@@ -277,7 +277,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         swh = parameters.swh_plugin.interpolate(lon.flatten(), lat.flatten(),
                                                 swath_time.flatten())
         swh_all = swh.reshape(lon.shape)
-        swh = +swh_all[:, :-1]
+        swh = swh_all[:, :-1]
     else:
         swh_all = None
         swh = np.array([

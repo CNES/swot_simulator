@@ -3,8 +3,8 @@
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 """
-Interpolation of the SSH FROM MITGCM interpolated model for WW3
-==============================
+Interpolation of the SSH from MITGCM interpolated model for WW3
+===============================================================
 """
 import os
 import re
@@ -18,7 +18,7 @@ from . import detail
 
 class MITGCM_WW3(detail.CartesianGridHandler):
     """
-    Interpolation of the SSH AVISO (CMEMS L4 products).
+    Interpolation of the SSH from MITGCM interpolated for WWW3.
     """
 
     #: Decode the product date encoded from the file name.

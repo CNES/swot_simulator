@@ -4,7 +4,7 @@
 # BSD-style license that can be found in the LICENSE file.
 """
 Interpolation of the SWH from WW3
-==============================
+=================================
 """
 import os
 import re

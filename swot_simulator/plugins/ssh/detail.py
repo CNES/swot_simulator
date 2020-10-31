@@ -3,8 +3,8 @@
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 """
-Details of the implementation of a plug-in
-------------------------------------------
+Details of the implementation of a SSH plug-in
+----------------------------------------------
 """
 import os
 import numpy as np

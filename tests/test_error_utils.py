@@ -32,13 +32,8 @@ def test_gen_signal_2d_rectangle():
 
 
 def test_read_file_karin():
-    cross_track, swh = utils.read_file_karin(
-        os.path.join(ROOT, "..", "data", "karin_noise_v2.nc"), 2)
-    assert cross_track.shape == swh.shape
-
-    with pytest.warns(RuntimeWarning):
-        cross_track, swh = utils.read_file_karin(
-            os.path.join(ROOT, "..", "data", "karin_noise_v2.nc"), 200)
+    height_sdt, cross_track, swh = utils.read_file_karin(
+        os.path.join(ROOT, "..", "data", "karin_noise_v2.nc"))
 
 
 def test_read_file_instr():

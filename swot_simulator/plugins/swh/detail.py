@@ -3,8 +3,8 @@
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 """
-Details of the implementation of a plug-in
-------------------------------------------
+Details of the implementation of a SWH plug-in
+----------------------------------------------
 """
 import os
 import numpy as np
@@ -12,22 +12,22 @@ import pyinterp.backends.xarray
 
 
 class Interface:
-    """Interface of an SSH plugin"""
+    """Interface of an SWH plugin"""
     @classmethod
     def interpolate(cls, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH for the given coordinates"""
+        """Interpolate the SWH for the given coordinates"""
         raise RuntimeError("You must register a SWH plugin")
 
 
 class Plugin:
-    """SSH Plug-in"""
+    """SWH Plug-in"""
     def __init__(self):
         self.plugin = Interface()
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH for the given coordinates"""
+        """Interpolate the SWH for the given coordinates"""
         return self.plugin.interpolate(lon, lat, time)
 
     @classmethod

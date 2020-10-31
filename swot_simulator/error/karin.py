@@ -32,8 +32,8 @@ class Karin:
         self.nseed = parameters.nseed
 
     def generate(self, x_al: np.array, x_ac: np.array,
-                 curvilinear_distance: float,
-                 cycle: int, swh:np.array) -> Dict[str, np.ndarray]:
+                 curvilinear_distance: float, cycle: int,
+                 swh: np.array) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
         Args:
