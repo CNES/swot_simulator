@@ -66,28 +66,12 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
             date.astype("datetime64[us]").astype("int64") *
             1e-6).isoformat() + "Z"
 
-    def _iso_duration(timedelta: np.timedelta64) -> str:
-        """Return the time delta formatted according to ISO."""
-        seconds = timedelta.astype("timedelta64[s]").astype("int64")
-        hours = seconds // 3600
-        seconds -= hours * 3600
-        minutes = seconds // 60
-        seconds -= minutes * 60
-
-        result = ""
-        if hours:
-            result += f"{hours}H"
-        if minutes or result:
-            result += f"{minutes}M"
-        result += f"{seconds}S"
-        return "P" + result
-
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
 
     ellipsoid_semi_major_axis = _cast_to_dtype(
-        1, attributes["ellipsoid_semi_major_axis"])
-    ellipsoid_flattening = _cast_to_dtype(
-        0, attributes["ellipsoid_semi_major_axis"])
+        6378137, attributes["ellipsoid_semi_major_axis"])
+    ellipsoid_flattening = _cast_to_dtype(1 / 298.25722356,
+                                          attributes["ellipsoid_flattening"])
 
     result = collections.OrderedDict({
         "Conventions":
@@ -116,10 +100,6 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         _iso_date(date[0]),
         "time_coverage_end":
         _iso_date(date[-1]),
-        "time_coverage_duration":
-        _iso_duration(date[-1] - date[0]),
-        "time_coverage_resolution":
-        "P1S",
         "geospatial_lon_min":
         lng.min(),
         "geospatial_lon_max":
@@ -366,8 +346,9 @@ class ProductSpecification:
         assert result is not None
         return result
 
-    def lon_nadir(self, lon_nadir: np.ndarray
-                  ) -> Optional[Tuple[Dict, xr.DataArray]]:
+    def lon_nadir(
+            self,
+            lon_nadir: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the longitudes of
         the reference ground track"""
         # Longitude must be in [0, 360.0[
@@ -381,8 +362,9 @@ class ProductSpecification:
         assert result is not None
         return result
 
-    def lat_nadir(self, lat_nadir: np.ndarray
-                  ) -> Optional[Tuple[Dict, xr.DataArray]]:
+    def lat_nadir(
+            self,
+            lat_nadir: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the latitudes of
         the reference ground track"""
         return self._data_array("latitude_nadir", lat_nadir)
@@ -414,7 +396,8 @@ class ProductSpecification:
                             'valid_max': np.int32(150000000)
                         })
 
-    def ssh_nadir_error(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_true_ssh_nadir(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the SSH to nadir
         free of measurement errors."""
         return {
@@ -423,7 +406,7 @@ class ProductSpecification:
         }, xr.DataArray(
             data=array,
             dims=self.variables["time"]["shape"],
-            name="ssh_nadir_true",
+            name="simulated_true_ssh_nadir",
             attrs={
                 'coordinates': 'time',
                 'long_name': 'sea surface height',
@@ -450,22 +433,21 @@ class ProductSpecification:
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
-        }, xr.DataArray(
-            data=array,
-            dims=self.variables["time"]["shape"],
-            name="swh_nadir",
-            attrs={
-                'coordinates': 'time',
-                'long_name': 'Significant Wave Height',
-                'scale_factor': 0.0001,
-                'standard_name': 'Sigificant Wave Height',
-                'units': 'm',
-                'valid_min': np.int32(-15000000),
-                'valid_max': np.int32(150000000),
-            })
+        }, xr.DataArray(data=array,
+                        dims=self.variables["time"]["shape"],
+                        name="swh_nadir",
+                        attrs={
+                            'coordinates': 'time',
+                            'long_name': 'Significant Wave Height',
+                            'scale_factor': 0.0001,
+                            'standard_name': 'Sigificant Wave Height',
+                            'units': 'm',
+                            'valid_min': np.int32(-15000000),
+                            'valid_max': np.int32(150000000),
+                        })
 
-
-    def ssh_karin_error(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_true_ssh_karin(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the SSH KaRIn free
         of measurement errors."""
         return {
@@ -474,7 +456,7 @@ class ProductSpecification:
         }, xr.DataArray(
             data=array,
             dims=self.variables["ssh_karin"]["shape"],
-            name="ssh_karin_true",
+            name="simulated_true_ssh_karin",
             attrs={
                 'coordinates': 'longitude latitude',
                 'long_name': 'sea surface height',
@@ -487,8 +469,9 @@ class ProductSpecification:
                 'comment':
                 'Height of the sea surface free of measurement errors.'
             })
-    def baseline_dilation(self,
-                          array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+
+    def simulated_error_baseline_dilation(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the error due to
         baseline mast dilation"""
         return {
@@ -496,7 +479,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_baseline_dilation",
+                        name="simulated_error_baseline_dilation",
                         attrs={
                             'long_name': 'Error due to baseline mast dilation',
                             'scale_factor': 0.0001,
@@ -505,7 +488,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def roll(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_roll(self,
+                             array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the error due to
         roll"""
         return {
@@ -513,7 +497,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_roll",
+                        name="simulated_error_roll",
                         attrs={
                             'long_name': 'Error due to roll',
                             'units': 'm',
@@ -521,7 +505,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def phase(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_phase(self,
+                              array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the error due to
         phase"""
         return {
@@ -529,7 +514,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_phase",
+                        name="simulated_error_phase",
                         attrs={
                             'long_name': 'Error due to phase',
                             'units': 'm',
@@ -537,7 +522,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def roll_phase_est(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_roll(self,
+                             array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the roll phase
         correction estimated"""
         return {
@@ -545,7 +531,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="roll_phase_est",
+                        name="simulated_error_roll",
                         attrs={
                             'long_name':
                             'Error after estimation of roll phase',
@@ -554,14 +540,15 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def karin(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_karin(self,
+                              array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the KaRIn error"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_karin",
+                        name="simulated_error_karin",
                         attrs={
                             'long_name': 'KaRIn error',
                             'units': 'm',
@@ -569,14 +556,15 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def timing(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_timing(self,
+                               array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the timing error"""
         return {
             '_FillValue': 2147483647,
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_timing",
+                        name="simulated_error_timing",
                         attrs={
                             'long_name': 'Timing error',
                             'units': 'm',
@@ -584,7 +572,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def wet_troposphere(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_troposphere(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the error due to
         wet troposphere path delay"""
         return {
@@ -593,7 +582,7 @@ class ProductSpecification:
             'scale_factor': 0.0001
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="err_wet_troposphere",
+                        name="simulated_error_troposphere",
                         attrs={
                             'long_name':
                             'Error due to wet troposphere path delay',
@@ -602,8 +591,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def wet_troposphere_nadir(self,
-                              array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_troposphere_nadir(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the error due to
         wet troposphere path delay to nadir."""
         return {
@@ -611,7 +600,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["time"]["shape"],
-                        name="err_wet_troposphere_nadir",
+                        name="simulated_error_troposphere_nadir",
                         attrs={
                             'long_name':
                             'Error due to wet troposphere path delay',
@@ -620,7 +609,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def altimeter(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
+    def simulated_error_altimeter(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the altimeter
         error"""
         return {
@@ -628,7 +618,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["time"]["shape"],
-                        name="err_altimeter",
+                        name="simulated_error_altimeter",
                         attrs={
                             'long_name': 'Altimeter error',
                             'standard_name': '',
@@ -722,14 +712,14 @@ class Nadir:
         """
         self._data_array("swh_nadir", array)
 
-    def ssh_error(self, array: np.ndarray) -> None:
+    def simulated_true_ssh(self, array: np.ndarray) -> None:
         """Sets the variable describing the SSH to nadir free of measurement
         errors.
 
         Args:
             array (np.ndarray): Data to be recorded
         """
-        self._data_array("ssh_nadir_error", array)
+        self._data_array("simulated_true_ssh_nadir", array)
 
     def update_noise_errors(self, noise_errors: Dict[str, np.ndarray]) -> None:
         """Sets the values of the simulated errors.
@@ -846,14 +836,14 @@ class Swath(Nadir):
         """
         self._data_array("swh_karin", array)
 
-    def ssh_error(self, array: np.ndarray) -> None:
+    def simulated_true_ssh(self, array: np.ndarray) -> None:
         """Sets the variable describing the KaRIn SSH free of measurement
         errors.
 
         Args:
             array (np.ndarray): Data to be recorded
         """
-        self._data_array("ssh_karin_error", array)
+        self._data_array("simulated_true_ssh_karin", array)
 
     def update_noise_errors(self, noise_errors: Dict[str, np.ndarray]) -> None:
         """Sets the values of the simulated errors.

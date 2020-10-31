@@ -85,7 +85,7 @@ class CorrectedRollPhase:
         rollphase_est[:, swath_center:] = np.mat(
             rollphase_est_1d[:, 1]).T * ac_r
         return {
-            "roll": x_ac * roll_1d[:, np.newaxis],
-            "phase": phase,
-            "roll_phase_est": rollphase_est
+            "simulated_error_roll": x_ac * roll_1d[:, np.newaxis],
+            "simulated_error_phase": phase,
+            "roll_phase_estimate": rollphase_est
         }

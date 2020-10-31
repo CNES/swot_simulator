@@ -79,9 +79,9 @@ class RollPhase:
         return roll, phase.T
 
     def generate(
-            self,
-            x_al: np.ndarray,
-            x_ac: np.ndarray,
+        self,
+        x_al: np.ndarray,
+        x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
         """Generate roll and phase errors
 
@@ -106,4 +106,7 @@ class RollPhase:
         # rollphase_est = np.full((np.shape(rollphase_est_1d)[0], nac), np.nan)
         # rollphase_est[:, :mid_swath] = np.mat(rollphase_est_1d[:, 0]).T * ac_l
         # rollphase_est[:, mid_swath:] = np.mat(rollphase_est_1d[:, 1]).T * ac_r
-        return {"roll": x_ac * roll_1d[:, np.newaxis], "phase": phase}
+        return {
+            "simulated_error_roll": x_ac * roll_1d[:, np.newaxis],
+            "simulated_error_phase": phase
+        }

@@ -61,4 +61,4 @@ class Karin:
         # Compute random karin error
         ai = (((x_al + cycle * curvilinear_distance) / self.delta_al) %
               self.nrand_karin).astype(np.uint64)
-        return {"karin": sigma_karin * a_karin[ai, :]}
+        return {"simulated_error_karin": sigma_karin * a_karin[ai, :]}

@@ -67,5 +67,6 @@ class BaselineDilation:
         """
         baseline_dilation_1d = self._generate_1d(x_al)
         return {
-            "baseline_dilation": x_ac**2 * baseline_dilation_1d[:, np.newaxis]
+            "simulated_error_baseline_dilation":
+            x_ac**2 * baseline_dilation_1d[:, np.newaxis]
         }

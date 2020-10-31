@@ -16,7 +16,7 @@ from .. import settings
 from .. import F_KA, VOLUMETRIC_MEAN_RADIUS, CELERITY, BASELINE
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, nogil=True)
 def _meshgrid(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     nx = x.size
     ny = y.size
@@ -29,7 +29,7 @@ def _meshgrid(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return mx, my
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, nogil=True)
 def _calculate_path_delay_lr(beam_positions: List[float], sigma: float,
                              radio_r: np.ndarray, radio_l: np.ndarray,
                              x_al: np.ndarray, x_ac_large: np.ndarray,
@@ -66,7 +66,7 @@ def _calculate_path_delay_lr(beam_positions: List[float], sigma: float,
     return beam_r, beam_l
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, nogil=True)
 def _calculate_path_delay(sigma: float, radio: np.ndarray, x_al: np.ndarray,
                           x_ac_large: np.ndarray, wt_large: np.ndarray):
     beam = np.empty((x_al.shape[0], ))
@@ -256,6 +256,6 @@ class WetTroposphere:
         # wt_nadir = wt_large[:, naclarge // 2]
 
         return {
-            "wet_troposphere": wet_tropo,
-            "wet_troposphere_nadir": wet_tropo_nadir
+            "simulated_error_troposphere": wet_tropo,
+            "simulated_error_troposphere_nadir": wet_tropo_nadir
         }

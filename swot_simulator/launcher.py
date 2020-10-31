@@ -277,10 +277,12 @@ def simulate(args: Tuple[int, int, np.datetime64],
         swh = parameters.swh_plugin.interpolate(lon.flatten(), lat.flatten(),
                                                 swath_time.flatten())
         swh_all = swh.reshape(lon.shape)
-        swh = + swh_all[:, :-1]
+        swh = +swh_all[:, :-1]
     else:
         swh_all = None
-        swh = np.array([parameters.swh,]*len(track.x_ac))
+        swh = np.array([
+            parameters.swh,
+        ] * len(track.x_ac))
 
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
@@ -316,7 +318,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         if ssh is not None:
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
             if noise_errors:
-                product.ssh_error(ssh[:, :-1])
+                product.simulated_true_ssh(ssh[:, :-1])
         if swh_all is not None:
             product.swh((swh * mask))
 
@@ -336,7 +338,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         if ssh is not None:
             product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))
             if noise_errors:
-                product.ssh_error(ssh[:, -1])
+                product.simulated_true_ssh(ssh[:, -1])
         if swh_all is not None:
             product.swh(swh_all[:, -1])
         product.update_noise_errors(noise_errors)

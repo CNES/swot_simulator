@@ -15,7 +15,7 @@ from .. import settings
 
 class Altimeter:
     """Altimeter instrument error.
-    
+
     Args:
         parameters (settings.Parameters): Simulation settings
     """
@@ -51,4 +51,4 @@ class Altimeter:
                                     fmin=1 / self.len_repeat,
                                     fmax=1 / self.delta_al,
                                     alpha=10)
-        return {"altimeter": error}
+        return {"simulated_error_altimeter": error}

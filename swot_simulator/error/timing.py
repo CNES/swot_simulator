@@ -78,4 +78,4 @@ class Timing:
         timing[:, :swath_center] = ones_ac * timing_1d[:, 0, np.newaxis]
         timing[:, swath_center:] = ones_ac * timing_1d[:, 1, np.newaxis]
 
-        return {"timing": timing}
+        return {"simulated_error_timing": timing}
