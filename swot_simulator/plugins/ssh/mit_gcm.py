@@ -18,7 +18,9 @@ from . import detail
 LOGGER = logging.getLogger(__name__)
 
 
-@nb.njit('(float32[::1])(int64[::1], float32[:, ::1], int64[::1])', cache=True)
+@nb.njit('(float32[::1])(int64[::1], float32[:, ::1], int64[::1])',
+         cache=True,
+         nogil=True)
 def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
     """Time interpolation for the different spatial grids interpolated on the
     SWOT data"""
@@ -99,12 +101,13 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     del coordinates, z
 
     start_time = time.time()
-    z, _ = mesh.inverse_distance_weighting(np.vstack(
+    z, _ = mesh.radial_basis_function(np.vstack(
         (x_sat, y_sat)).T.astype("float32"),
-                                           within=True,
-                                           k=11,
-                                           radius=55000,
-                                           num_threads=1)
+                                      within=True,
+                                      k=11,
+                                      radius=55000,
+                                      rbf="thin_plate",
+                                      num_threads=1)
     LOGGER.debug("interpolation done in %.2fs", time.time() - start_time)
     del mesh
     return z.astype("float32")
