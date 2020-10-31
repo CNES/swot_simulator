@@ -280,9 +280,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         swh = swh_all[:, :-1]
     else:
         swh_all = None
-        swh = np.array([
-            parameters.swh,
-        ] * len(track.x_ac))
+        swh = np.full((track.x_ac.size, ), parameters.swh, dtype="f8")
 
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(cycle_number,
