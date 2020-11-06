@@ -522,7 +522,7 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def simulated_error_roll(self,
+    def roll_phase_estimate(self,
                              array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the roll phase
         correction estimated"""
@@ -531,7 +531,7 @@ class ProductSpecification:
             'dtype': 'int32'
         }, xr.DataArray(data=array,
                         dims=self.variables["ssh_karin"]["shape"],
-                        name="simulated_error_roll",
+                        name="roll_phase_estimate",
                         attrs={
                             'long_name':
                             'Error after estimation of roll phase',
