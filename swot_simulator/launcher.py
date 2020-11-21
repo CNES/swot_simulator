@@ -17,9 +17,9 @@ import os
 import sys
 import traceback
 import dask.distributed
-import dask.bag
 import dateutil.parser
 import numpy as np
+from . import dispatch
 from . import exception
 from . import logbook
 from . import product_specification
@@ -377,14 +377,13 @@ def launch(client: dask.distributed.Client,
     _parameters = client.scatter(parameters)
     _orbit = client.scatter(orbit)
 
-    bag = dask.bag.from_sequence(orbit.iterate(first_date, last_date),
-                                 npartitions=len(
-                                     client.scheduler_info()['workers']))
-    bag.map(simulate,
-            error_generator=_error_generator,
-            orbit=_orbit,
-            parameters=_parameters,
-            logging_server=logging_server).compute()
+    dispatch.compute(client,
+                     simulate,
+                     orbit.iterate(first_date, last_date),
+                     error_generator=_error_generator,
+                     orbit=_orbit,
+                     parameters=_parameters,
+                     logging_server=logging_server)
 
 
 def main():
