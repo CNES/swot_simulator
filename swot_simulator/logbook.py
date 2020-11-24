@@ -151,8 +151,8 @@ def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
     logger = logging.getLogger(name)
     logger.propagate = True
     formatter = LogFormatter(
-        '%(color)s[%(levelname)1.1s - %(ip)s - %(asctime)s - %(module)s] '
-        '%(message)s',
+        '%(color)s[%(levelname)1.1s - %(ip)s - %(asctime)s - %(module)s]'
+        '%(end_color)s %(message)s',
         datefmt='%b %d %H:%M:%S')
     handler = logging.StreamHandler(stream) if not isinstance(
         stream, logging.Handler) else stream
