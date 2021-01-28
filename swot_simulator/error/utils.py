@@ -61,7 +61,7 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
         size_swh = np.shape(swh_in)
     hsdt = np.zeros(size_swh)
     for j in range(size_swh[1]):
-        xacj = x_ac_in[j]
+        xacj = abs(x_ac_in[j])
         indice_ac = np.argmin(np.abs(cross_track - xacj))
         for i in range(size_swh[0]):
             threshold = swh_in[i, j]
