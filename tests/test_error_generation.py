@@ -42,8 +42,8 @@ def test_error_karin():
         0,
     ] * len(x_ac))
 
-    generated = error.generate(x_al, x_ac, curvilinear_distance, cycle_number,
-                               swh)
+    generated = error.generate(x_al + curvilinear_distance * cycle_number,
+                               x_ac, swh)
     assert abs(expected - generated['simulated_error_karin']).mean() < 1e-2
 
 
