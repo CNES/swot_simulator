@@ -87,5 +87,5 @@ class CorrectedRollPhase:
         return {
             "simulated_error_roll": x_ac * roll_1d[:, np.newaxis],
             "simulated_error_phase": phase,
-            "roll_phase_estimate": rollphase_est
+            "simulated_roll_phase_estimate": rollphase_est
         }
