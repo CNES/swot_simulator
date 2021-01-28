@@ -18,7 +18,7 @@ sys.path.insert(
 # -- Project information -----------------------------------------------------
 
 project = 'SWOT simulator'
-copyright = '(2020, CNES/JPL)'
+copyright = '(2021, CNES/JPL)'
 author = 'CNES/JPL'
 
 # The short X.Y version
