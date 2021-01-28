@@ -522,8 +522,8 @@ class ProductSpecification:
                             'coordinates': 'longitude latitude'
                         })
 
-    def simulated_roll_phase_estimate(self, array: np.ndarray
-                                     ) -> Tuple[Dict, xr.DataArray]:
+    def simulated_roll_phase_estimate(
+            self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the roll phase
         correction estimated"""
         return {

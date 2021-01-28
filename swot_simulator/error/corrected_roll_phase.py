@@ -37,8 +37,9 @@ class CorrectedRollPhase:
             self.slope1_err = ds.slope1_err
             self.slope2_err = ds.slope2_err
 
-    def _generate_1d(self, time: np.ndarray
-                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _generate_1d(
+            self,
+            time: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         time = time.astype('datetime64[us]').astype('float64')
         phase_l = np.interp(time, self.time_date, self.p1phase_err)
         phase_r = np.interp(time, self.time_date, self.p2phase_err)
@@ -56,9 +57,9 @@ class CorrectedRollPhase:
         return roll * 1e-3, phase1d.T * 1e-3, theta2.T * 1e-3
 
     def generate(
-            self,
-            time: np.ndarray,
-            x_ac: np.ndarray,
+        self,
+        time: np.ndarray,
+        x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
         """Interpolate roll and phase and errors
 
@@ -80,10 +81,10 @@ class CorrectedRollPhase:
         phase[:, swath_center:] = ac_r * phase_1d[:, 1, np.newaxis]
 
         rollphase_est = np.full((phase_1d.shape[0], num_pixels), np.nan)
-        rollphase_est[:, :swath_center] = np.mat(
-            rollphase_est_1d[:, 0]).T * ac_l
-        rollphase_est[:, swath_center:] = np.mat(
-            rollphase_est_1d[:, 1]).T * ac_r
+        rollphase_est[:, :swath_center] = np.mat(rollphase_est_1d[:,
+                                                                  0]).T * ac_l
+        rollphase_est[:,
+                      swath_center:] = np.mat(rollphase_est_1d[:, 1]).T * ac_r
         return {
             "simulated_error_roll": x_ac * roll_1d[:, np.newaxis],
             "simulated_error_phase": phase,

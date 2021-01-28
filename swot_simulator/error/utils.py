@@ -52,7 +52,7 @@ def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
-                           height_sdt:np.array, cross_track: np.array,
+                           height_sdt: np.array, cross_track: np.array,
                            swh: np.array) -> np.ndarray:
     warning = False
     size_swh = np.shape(swh_in)
@@ -76,9 +76,10 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
                 hsdt[i, j] = height_sdt[indices, indice_ac] * (
                     1 - rswh) + rswh * height_sdt[indices + 1, indice_ac]
     if warning is True:
-        warnings.warn(f'swh={threshold} is greater than the maximum value, '
-                      f'therefore swh is set to the file maximum '
-                      'value', RuntimeWarning)
+        warnings.warn(
+            f'swh={threshold} is greater than the maximum value, '
+            f'therefore swh is set to the file maximum '
+            'value', RuntimeWarning)
     return hsdt
 
 
