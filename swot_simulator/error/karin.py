@@ -32,7 +32,6 @@ class Karin:
         self.nseed = parameters.nseed
 
     def generate(self, x_al: np.array, x_ac: np.array,
-                 curvilinear_distance: float, cycle: int,
                  swh: np.array) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
@@ -59,6 +58,5 @@ class Karin:
         sigma_karin = sigma_karin / size_grid
 
         # Compute random karin error
-        ai = (((x_al + cycle * curvilinear_distance) / self.delta_al) %
-              self.nrand_karin).astype(np.uint64)
+        ai = ((x_al / self.delta_al) % self.nrand_karin).astype(np.uint64)
         return {"simulated_error_karin": sigma_karin * a_karin[ai, :]}

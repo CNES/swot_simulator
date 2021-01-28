@@ -267,8 +267,10 @@ def simulate(args: Tuple[int, int, np.datetime64],
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
     mask = track.mask()
+
     # Interpolation of the SWH if the user wishes.
     if parameters.swh_plugin is not None:
+
         # The nadir and swath data are concatenated to process the
         # interpolation of the SSH in one time (swath and nadir).
         lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]

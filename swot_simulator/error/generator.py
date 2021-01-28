@@ -79,6 +79,12 @@ class Generator:
             dict: Associative array between error variables and simulated
             values.
         """
+        # The variable "x_al" contains the distance a along track from the
+        # beginning of the cycle. In order not to reproduce the same error from
+        # one cycle to another, we transform it into the distance covered since
+        # the first cycle.
+        x_al += curvilinear_distance * (cycle_number - 1)
+
         result = {}
         if not self.generators or x_al.shape[0] == 0:
             return result
@@ -94,8 +100,7 @@ class Generator:
                     futures.append(client.submit(item.generate, time, x_ac))
                 elif isinstance(item, Karin):
                     futures.append(
-                        client.submit(item.generate, x_al, x_ac,
-                                      curvilinear_distance, cycle_number, swh))
+                        client.submit(item.generate, x_al, x_ac, swh))
                 elif isinstance(item, RollPhase):
                     futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, Timing):
