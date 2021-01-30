@@ -38,9 +38,8 @@ class Karin:
         Args:
             x_al (numpy.ndarray): Along track distance
             x_ac (numpy.ndarray): Across track distance
-            curvilinear_distance (float): Curvilinear distance covered by the
-                satellite during a complete cycle.
-            cycle (int): Cycle number
+            swh (numpy.ndarray): Significant wave height. Used to modulate
+                instrumental noise as a function of sea state.
 
         Returns:
             dict: variable name and errors simulated.
