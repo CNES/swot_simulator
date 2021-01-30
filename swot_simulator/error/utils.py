@@ -23,7 +23,7 @@ except ImportError:
 
 def read_file_instr(file_instr: str, delta_al: float,
                     lambda_max: float) -> xr.Dataset:
-    """ Retrieve power spectrum from instrumental noise file provided by
+    """Retrieve power spectrum from instrumental noise file provided by
     """
     dataset = xr.load_dataset(file_instr)
 
@@ -51,31 +51,42 @@ def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     return height_sdt, cross_track, swh
 
 
-def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
-                           height_sdt: np.array, cross_track: np.array,
-                           swh: np.array) -> np.ndarray:
-    warning = None
-    size_swh = np.shape(swh_in)
-    if len(size_swh) == 1:
-        swh_in = swh_in.reshape((1, size_swh[0]))
-        size_swh = np.shape(swh_in)
-    hsdt = np.zeros(size_swh)
-    for j in range(size_swh[1]):
-        xacj = abs(x_ac_in[j])
+@nb.njit(cache=True, nogil=True)
+def _interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
+                            height_sdt: np.array, cross_track: np.array,
+                            swh: np.array) -> Tuple[float, np.ndarray]:
+    """Interpolates the standard deviation of KaRIN instrumental noise as a
+    function of SWH and across track distance."""
+    warning = 0
+    hsdt = np.zeros_like(swh_in)
+    for jx in range(swh_in.shape[1]):
+        xacj = abs(x_ac_in[jx])
         indice_ac = np.argmin(np.abs(cross_track - xacj))
-        for i in range(size_swh[0]):
-            threshold = swh_in[i, j]
+        for ix in range(swh_in.shape[0]):
+            threshold = swh_in[ix, jx]
             indices = np.argmin(np.abs(swh - threshold))
             if swh[indices] > threshold:
                 indices -= 1
             if swh.max() <= threshold:
-                hsdt[i, j] = height_sdt[-1, indice_ac]
+                hsdt[ix, jx] = height_sdt[-1, indice_ac]
                 warning = threshold
             else:
                 rswh = threshold - swh[indices]
-                hsdt[i, j] = height_sdt[indices, indice_ac] * (
+                hsdt[ix, jx] = height_sdt[indices, indice_ac] * (
                     1 - rswh) + rswh * height_sdt[indices + 1, indice_ac]
-    if warning is not None:
+    return warning, hsdt
+
+
+def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
+                           height_sdt: np.array, cross_track: np.array,
+                           swh: np.array) -> np.ndarray:
+    """Interpolates the standard deviation of KaRIN instrumental noise as a
+    function of SWH and across track distance."""
+    if len(swh_in.shape) == 1:
+        swh_in = np.expand_dims(swh_in, axis=0)
+    warning, hsdt = _interpolate_file_karin(swh_in, x_ac_in, height_sdt,
+                                            cross_track, swh)
+    if warning:
         warnings.warn(
             f'swh={warning} is greater than the maximum value, '
             f'therefore swh is set to the file maximum '
