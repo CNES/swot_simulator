@@ -7,11 +7,11 @@ Dispatch task on free workers
 =============================
 """
 from typing import Any, Callable, Iterator, List
-import asyncio
+import time
 import dask.distributed
 
 
-async def _available_workers(client: dask.distributed.Client) -> List[str]:
+def _available_workers(client: dask.distributed.Client) -> List[str]:
     """Get the list of available workers.
 
     Args:
@@ -22,14 +22,14 @@ async def _available_workers(client: dask.distributed.Client) -> List[str]:
         list: The list of available workers.
     """
     while True:
-        info = await client.scheduler.identity()
+        info = client.scheduler_info()
         result = [
             k for k, v in info['workers'].items()
             if v['metrics']['executing'] == 0
         ]
         if result:
             return result
-        await asyncio.sleep(0.1)
+        time.sleep(0.1)
 
 
 def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
@@ -58,7 +58,7 @@ def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
         while completed.count() < len(client.scheduler_info()['workers']):
             try:
                 if not workers:
-                    workers = client.sync(_available_workers, client)
+                    workers = _available_workers(client)
                 item = next(seq)
                 completed.add(
                     client.submit(func,
