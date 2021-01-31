@@ -58,7 +58,7 @@ def _interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
     """Interpolates the standard deviation of KaRIN instrumental noise as a
     function of SWH and across track distance."""
     warning = 0
-    hsdt = np.zeros_like(swh_in)
+    hsdt = np.zeros(swh_in.shape, dtype=np.float64)
     for jx in range(swh_in.shape[1]):
         xacj = abs(x_ac_in[jx])
         indice_ac = np.argmin(np.abs(cross_track - xacj))
