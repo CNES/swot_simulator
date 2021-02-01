@@ -130,7 +130,6 @@ class Parameters:
         nadir=(False, bool),
         nbeam=(2, NumberOfBeams),
         noise=(None, [str, -1]),
-        nrand_karin=(1000, int),
         nseed=(0, int),
         product_type=("expert", str),
         requirement_bounds=(None, [float, 2]),

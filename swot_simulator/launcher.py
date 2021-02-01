@@ -285,7 +285,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         swh = np.full((track.x_ac.size, ), parameters.swh, dtype="f8")
 
     # Calculation of instrumental errors
-    noise_errors = error_generator.generate(cycle_number,
+    noise_errors = error_generator.generate(cycle_number, pass_number,
                                             orbit.curvilinear_distance,
                                             track.time, track.x_al, track.x_ac,
                                             swh)

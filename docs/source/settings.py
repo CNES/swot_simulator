@@ -112,10 +112,6 @@ karin_noise = os.path.join("..", "..", "data", "karin_noise_v2.nc")
 # SWH for the region
 swh = 2.0
 
-#  Number of km of random coefficients for KaRIN noise (recommended
-# nrand_karin=1000)
-nrand_karin = 1000
-
 # Number of beam used to correct wet troposphere signal (1, 2 or 'both')
 nbeam = 2
 

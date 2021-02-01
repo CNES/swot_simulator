@@ -28,10 +28,9 @@ class Karin:
 
         self.delta_ac = parameters.delta_ac
         self.delta_al = parameters.delta_al
-        self.nrand_karin = parameters.nrand_karin
         self.nseed = parameters.nseed
 
-    def generate(self, x_al: np.array, x_ac: np.array,
+    def generate(self, seed: int, x_al: np.array, x_ac: np.array,
                  swh: np.array) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
@@ -45,10 +44,11 @@ class Karin:
             dict: variable name and errors simulated.
         """
         num_pixels = x_ac.shape[0]
+        num_lines = x_al.shape[0]
 
         # Generate random noise for left and right part of the mast
-        np.random.seed(self.nseed + 1)
-        a_karin = np.random.normal(0, 1, (self.nrand_karin, num_pixels))
+        np.random.seed(self.nseed + seed)
+        a_karin = np.random.normal(0, 1, (num_lines, num_pixels))
 
         # Formula of karin noise as a function of x_ac (smile shape)
         sigma_karin =  utils.interpolate_file_karin(swh, x_ac, self.hsdt,
@@ -57,5 +57,4 @@ class Karin:
         sigma_karin = sigma_karin / size_grid
 
         # Compute random karin error
-        ai = ((x_al / self.delta_al) % self.nrand_karin).astype(np.uint64)
-        return {"simulated_error_karin": sigma_karin * a_karin[ai, :]}
+        return {"simulated_error_karin": sigma_karin * a_karin}
