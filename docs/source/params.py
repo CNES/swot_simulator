@@ -1,6 +1,6 @@
 import os
 import swot_simulator.plugins.ssh
-import xarray as xr
+import swot_simulator.plugins.swh
 
 
 # Geographical area to simulate defined by the minimum and maximum corner

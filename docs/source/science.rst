@@ -5,10 +5,6 @@ SWOT Simulator for Ocean Science
 Clement Ubelmann, Lucile Gaultier and Lee-Lueng Fu
 
 Jet Propulsion Laboratory, California Institute of Technology, CNES
-.. role:: red
-.. toctree::
-   :maxdepth: 2
-   :numbered:
 
 Abstract:
 =========
@@ -21,7 +17,7 @@ From a global or regional OGCM configuration, the software generates SSH on a 12
 
 .. _Fig1:
 
-.. figure:: ../images/Fig1.png 
+.. figure:: ./images/Fig1.png 
    :alt: Science SWOT orbit
 
    FIG. 1: 5-day worth of SWOT simulated data in a global configuration with the science orbit.
@@ -58,7 +54,7 @@ The SWOT grid is stored by pass (e.g. 292 ascending passes and 292 descending pa
 
 .. _Fig2:
 
-.. figure:: ../images/Fig2.png
+.. figure:: ./images/Fig2.png
    :alt: SWOT grid
 
    FIG. 2: scheme of the SWOT grid at 2~km resolution.
@@ -73,10 +69,10 @@ The SSH is interpolated on the SWOT grid and nadir track for each pass and succe
 
 .. _Fig3:
 
-.. figure:: ../images/Fig3.png
+.. figure:: ./images/Fig3.png
    :alt: Model SSH interpolated on SWOT grid
 
-   FIG. 3: (a) SSH (in meters) produced by the Regional Ocean Modeling System (ROMS) off the Oregon coast developed by Dr. Yi Chao and his team. (b) SSH_model simulator output interpolated on the SWOT grid. (c) “Observed” SSH, which is the sum of SSH_model and a random realization of the total SWOT noise with the default parameters of the software. 
+   FIG. 3: SSH (in meters) produced by the MITGCM high resolution model and filtered at 1/12º. (a) SSH_model simulator output interpolated on the SWOT grid. (b) “Observed” SSH, which is the sum of SSH_model and a random realization of the total SWOT noise with the default parameters of the software. 
 
 Simulation of errors
 ====================
@@ -84,7 +80,7 @@ The software generates random realizations of instrument errors and noise over t
 
 .. _Fig4:
 
-.. figure:: ../images/Fig4.png
+.. figure:: ./images/Fig4.png
    :alt: Random realization of an error field
 
    FIG. 4: Random realization of the error field (in meters). Swath coordinates are in km. 
@@ -103,7 +99,7 @@ The KaRIN noise is random from cell to cell, defined by a Gaussian zero-centered
 
 .. _Fig5:
 
-.. figure:: ../images/Fig5.png
+.. figure:: ./images/Fig5.png
    :scale: 60%
    :alt: Standard deviation of KaRIN noise
 
@@ -111,10 +107,10 @@ The KaRIN noise is random from cell to cell, defined by a Gaussian zero-centered
 
 .. _Fig6:
 
-.. figure:: ../images/Fig6.png
+.. figure:: ./images/Fig6.png
    :alt: Random realization of the KaRIN noise
 
-   FIG. 6: Random realization of the KaRIN noise (m) following the standard deviation shown Fig. 5, with 2~km by 2~km grid cells and a 2~m SWH.
+   FIG. 6: Random realization of the KaRIN noise (m) following the standard deviation shown Fig. 5, with 2~km by 2~km grid cells and a varying SWH.
 
 The user can define a constant value for the swh or use swh varying in time and space.
 In the second scenario, a plugin is necessary to read the swh and interpolate it on the SWOT grid. The plugin is similar to the one used for the SSH.
@@ -125,7 +121,7 @@ As detailed in :ref:`Esteban-Fernandez et al., 2014 <Esteban-Fernandez2014>`, th
 
 .. _Fig7:
 
-.. figure:: ../images/Fig7.png
+.. figure:: ./images/Fig7.png
    :scale: 60%
    :alt: Power spectral density of the roll error
 
@@ -140,10 +136,15 @@ where H is the altitude of the satellite and Re the earth radius. An example of 
 
 .. _Fig8:
 
-.. figure:: ../images/Fig8.png
+.. figure:: ./images/Fig8.png
    :alt: Random realization of the roll error
 
-   FIG. 8: Random realization of the roll error following the power spectra of the roll angle shown Fig. 7 (with filtering of long wavelengths).
+   FIG. 8a: Random realization of the roll error (in m) following the power spectra of the roll angle shown Fig. 7.
+
+.. figure:: ./images/Fig8b.png
+   :alt: Roll and phase error after cross-calibration
+
+   FIG. 8b: Remaining roll and phase error after cross-calibration (in m).
 
 As the roll error is large, a cross-calibration has been performed for two cycles and for one year. A file is available and contains roll, phase and the correction of roll and phase usin cross-calibration algorithms.
 The user can use this file to simulate the roll and phase after cross-calibration.
@@ -154,7 +155,7 @@ An estimation of the along-track power spectrum of phase error is also given in 
 
 .. _Fig9:
 
-.. figure:: ../images/Fig9.png
+.. figure:: ./images/Fig9.png
    :scale: 60%
    :alt: Power spectral density of the phase error
 
@@ -169,10 +170,10 @@ An independent realization of :math:`\theta` is chosen for the left (ac<0) and r
 
 .. _Fig10:
 
-.. figure:: ../images/Fig10.png
+.. figure:: ./images/Fig10.png
    :alt: Random realization of the phase error
 
-   FIG. 10: Random realization of the phase error on height following the power spectra of the phase error shown Fig. 9 (with filtering of long wavelengths).
+   FIG. 10: Random realization of the phase error on height (in m) following the power spectra of the phase error shown Fig. 9 (with filtering of long wavelengths).
 
 Like mentioned in the section regarding the roll error, the phase error is corrected using cross-calibration algorithm and available in a file that contains either two cycles or one year of data. Note that only the roll-phase-correction is available as it is not possible to correct them individually.
 
@@ -183,7 +184,7 @@ The baseline dilation and its resulting height measurement error is also impleme
 
 .. _Fig11:
 
-.. figure:: ../images/Fig11.png
+.. figure:: ./images/Fig11.png
    :scale: 60%
    :alt: Power spectral density of the baseline dilation
 
@@ -194,10 +195,10 @@ Following this power spectrum, random realizations of an along-track baseline di
 .. math::
    h_{\delta B} (al, ac) = -(1+\frac{H}{Re})\frac{\delta B(al)}{HB}ac^2
 
-.. figure:: ../images/Fig12.png
-   :alt: Random realization of the baseline dilation error
+.. figure:: ./images/Fig12.png
+   :alt: Random realization of the baseline dilation error.
 
-   FIG. 12: Random realization of the baseline dilation error on height following the power spectra of the baseline dilation shown Fig. 11 (with filtering of long wavelengths).
+   FIG. 12: Random realization of the baseline dilation error on height (in m) following the power spectra of the baseline dilation shown Fig. 11 (with filtering of long wavelengths).
 
 Timing errors
 `````````````
@@ -205,7 +206,7 @@ The timing errors are also minor compared to roll and phase errors, but are impl
 
 .. _Fig13:
 
-.. figure:: ../images/Fig13.png
+.. figure:: ./images/Fig13.png
    :scale: 60%
    :alt: Power spectral density of the timing error
 
@@ -220,10 +221,10 @@ Where c is the speed of light in m/s. The timing errors are constant in the acro
 
 .. _Fig14:
 
-.. figure:: ../images/Fig14.png
+.. figure:: ./images/Fig14.png
    :alt: Random realization of timing error
 
-   FIG. 14: Random realization of timing error on height (in meters) following the power spectra of the timing error shown Fig. 13 (with filtering of long wavelengths).
+   FIG. 14: Random realization of timing error on height (in m) following the power spectra of the timing error shown Fig. 13 (with filtering of long wavelengths).
 
 Geophysical errors
 -------------------
@@ -244,7 +245,7 @@ The software simulates errors in the water vapor path delay retrieval with the o
 
 .. _Fig15:
 
-.. figure:: ../images/Fig15.png
+.. figure:: ./images/Fig15.png
    :alt: Random realization of wet-tropospheric path delay
 
    FIG. 15: Random realization of wet-tropospheric path delay without correction (in meters).
@@ -263,14 +264,14 @@ The scheme on :ref:`Fig. 16 <Fig16>` shows how the residual error with a 1-beam 
 
 .. _Fig16:
 
-.. figure:: ../images/Fig16.png
+.. figure:: ./images/Fig16.png
    :alt: Simulation of path delay estimation and the residual error
 
    FIG. 16: Scheme showing the simulation of the path delay estimation and the residual error for a 1-beam (left) and 2-beam (right) radiometer configuration.
 
 .. _Fig17:
 
-.. figure:: ../images/Fig17.png
+.. figure:: ./images/Fig17.png
    :alt: Residual error after wet-tropospheric correction using a 2-beam or 1-beam radiometer
 
    FIG. 17: (a) Residual error after wet-tropospheric correction with the simulation of a 2-beam radiometer at 35~km away from nadir, from the simulated path delay on Fig. 15. (b) Residual error with the simulation of a 1-beam radiometer at nadir. 
@@ -297,7 +298,7 @@ Note that the along-track power spectrum of the KaRIN noise (dark pink thick cur
 
 .. _Fig18:
 
-.. figure:: ../images/Fig18.png
+.. figure:: ./images/Fig18.png
    :alt: Error budget in the spectral domain 
 
    FIG. 18: Error budget in the spectral domain, computed from a random realization of the simulator. The spectral densities have been averaged across-swath between 10~km and 60~km off nadir, consistenly with the definition of the requirements. 
@@ -312,7 +313,7 @@ Two main components of the nadir altimetry error budget are simulated : the alti
 
 The software
 =============
-The software is written in Python3, and is mainly tested on python3.8 and 3.9. All the parameters that can be modified by the user are read in a params file (e.g. params.py) specified by the user. These parameters are written in :ref:`yellow <params>` later on and are linked to their location in the params file example. 
+The software is written in Python3, and is mainly tested on python3.8 and 3.9. All the parameters that can be modified by the user are read in a params file (e.g. params.py) specified by the user. These parameters are written in `yellow` later on.
 
 The software is divided in 6 main modules: 
 
@@ -348,7 +349,7 @@ One reader is available in the  `plugins/swh` directory for the SWH:
 
 The plugin for the ssh is specified in the :ref:`ssh_plugin <params-file>` key, and the one for the swh in the :ref:`swh_plugin <params-file>` key.
 
-It is possible to generate the noise alone, without using any SSH model as an input. To generate the noise alone, set the :ref:`ssh_plugin` key to None.
+It is possible to generate the noise alone, without using any SSH model as an input. To generate the noise alone, set the :ref:`ssh_plugin <params-file>` key to None.
 
 A specific area can be specified in the :ref:`area <params-file>` key, which will contain a list:
 `(min_lon, min_lat, max_lon, max_lat)`. Default value is `None` and equivalent to the extend of the model.
@@ -356,7 +357,7 @@ A specific area can be specified in the :ref:`area <params-file>` key, which wil
  
 Generation of the SWOT grid
 ----------------------------
-The SWOT grid is generated in the :mod:`orbit_propagator.py` module. The path to the orbit file is mentioned here: :ref:`ephemeris <params-file>`) and contains longitude, latitude and the corresponding time for each point of the orbit (see section :ref:`ProposedSWOTorbits` for more details on the provided orbit). If different, the order of columns can be specified in `ephemeris_col <params-file>`, default is [1, 2, 0]. The orbit is interpolated at the along track resolution specified by the user (in :ref:`delta_al <params-swotswath>`) and the swath is computed at each points of the orbit with an across track resolution specified by the user (in :ref:`delta_ac <params-swotswath>`). The width of the swath (:ref:`half_swath <params-swotswath>`) and the gap between the nadir and the swath (:ref:`half_gap <params-swotswath>`) can also be defined according to :ref:`Fig. 2 <Fig2>`. The generation of the SWOT grid can be made on the whole region of the model (:ref:`area <params-swotswath>` =None) or on a subdomain (:ref:`area <params-swotswath>` =(lon_min, lat_min, lon_max, lat_max]).
+The SWOT grid is generated in the :mod:`orbit_propagator.py` module. The path to the orbit file is mentioned here: :ref:`ephemeris <params-file>`) and contains longitude, latitude and the corresponding time for each point of the orbit (see section :ref:`ProposedSWOTorbits` for more details on the provided orbit). If different, the order of columns can be specified in `ephemeris_col <params-file>`, default is [1, 2, 0]. The orbit is interpolated at the along track resolution specified by the user (in :ref:`delta_al <params-file>`) and the swath is computed at each points of the orbit with an across track resolution specified by the user (in :ref:`delta_ac <params-file>`). The width of the swath (:ref:`half_swath <params-file>`) and the gap between the nadir and the swath (:ref:`half_gap <params-file>`) can also be defined according to :ref:`Fig. 2 <Fig2>`. The generation of the SWOT grid can be made on the whole region of the model (:ref:`area <params-file>` =None) or on a subdomain (:ref:`area <params-file>` =(lon_min, lat_min, lon_max, lat_max]).
 
 
 Sampled SSH and error fields
