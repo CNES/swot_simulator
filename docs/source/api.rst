@@ -9,6 +9,7 @@ Handle simulator runtime
 .. autosummary::
   :toctree: generated/
 
+    swot_simulator.dispatch
     swot_simulator.exception
     swot_simulator.launcher
     swot_simulator.logbook
@@ -26,7 +27,17 @@ SSH plugins
 
     swot_simulator.plugins.ssh.aviso
     swot_simulator.plugins.ssh.detail
-    swot_simulator.plugins.ssh.mit_gcm
+    swot_simulator.plugins.ssh.hycom
+    swot_simulator.plugins.ssh.mitgcm
+    swot_simulator.plugins.ssh.mitgcm_ww3
+
+SWH plugins
+===========
+
+.. autosummary::
+  :toctree: generated/
+
+    swot_simulator.plugins.swh.ww3
 
 Measurement Errors
 ===================
@@ -42,4 +53,3 @@ Measurement Errors
     swot_simulator.error.timing
     swot_simulator.error.utils
     swot_simulator.error.wet_troposphere
-    

@@ -42,7 +42,7 @@ def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
             cluster.
         func (callable): Function to execute
         seq (iterable): The sequence of arguments handled by ``func``.
-        *args, **kwargs : any
+        *args, **kwargs: any
             Extra arguments and keyword arguments to pass to ``func``.
 
     Returns:

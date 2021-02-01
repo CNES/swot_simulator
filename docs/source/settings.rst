@@ -1,0 +1,2 @@
+.. automodule:: settings
+    :members:
