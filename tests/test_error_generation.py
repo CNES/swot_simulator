@@ -35,16 +35,20 @@ def load_data(error=None):
 
 def test_error_karin():
     parameters = load_parameters()
-    (x_al, x_ac, curvilinear_distance, cycle_number,
-     expected) = load_data('karin')
+    (x_al, x_ac, _curvilinear_distance, _cycle_number,
+     _signal) = load_data('karin')
     error = swot_simulator.error.karin.Karin(parameters)
     swh = np.array([
         0,
     ] * len(x_ac))
 
-    generated = error.generate(x_al + curvilinear_distance * cycle_number,
-                               x_ac, swh)
-    assert abs(expected - generated['simulated_error_karin']).mean() < 1e-2
+    generated1 = error.generate(0, x_al, x_ac, swh)
+    generated2 = error.generate(0, x_al, x_ac, swh)
+    assert np.all(generated1['simulated_error_karin'] ==
+                  generated2['simulated_error_karin'])
+    generated2 = error.generate(1, x_al, x_ac, swh)
+    assert np.all(generated1['simulated_error_karin'] !=
+                  generated2['simulated_error_karin'])
 
 
 def test_baseline_dilation():
