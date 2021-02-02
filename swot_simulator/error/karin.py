@@ -26,8 +26,7 @@ class Karin:
         self.hsdt, self.x_ac, self.swh = utils.read_file_karin(
                                                      parameters.karin_noise)
 
-        self.delta_ac = parameters.delta_ac
-        self.delta_al = parameters.delta_al
+        self.size_grid = (parameters.delta_ac * parameters.delta_al)**0.5
         self.nseed = parameters.nseed
 
     def generate(self, seed: int, x_al: np.array, x_ac: np.array,
@@ -35,6 +34,8 @@ class Karin:
         """Generate the karin noise
 
         Args:
+            nseed (int): Random seed used to initialize the pseudo-random
+                number generator.
             x_al (numpy.ndarray): Along track distance
             x_ac (numpy.ndarray): Across track distance
             swh (numpy.ndarray): Significant wave height. Used to modulate
@@ -51,10 +52,8 @@ class Karin:
         a_karin = np.random.normal(0, 1, (num_lines, num_pixels))
 
         # Formula of karin noise as a function of x_ac (smile shape)
-        sigma_karin =  utils.interpolate_file_karin(swh, x_ac, self.hsdt,
-                                                    self.x_ac, self.swh)
-        size_grid = np.sqrt(self.delta_al * self.delta_ac)
-        sigma_karin = sigma_karin / size_grid
+        sigma_karin = utils.interpolate_file_karin(
+            swh, x_ac, self.hsdt, self.x_ac, self.swh) / self.size_grid
 
         # Compute random karin error
         return {"simulated_error_karin": sigma_karin * a_karin}
