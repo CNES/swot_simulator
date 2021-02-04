@@ -6,12 +6,12 @@
 Dispatch task on free workers
 =============================
 """
-from typing import Any, Callable, Iterator, List
+from typing import Any, Callable, Iterator, List, Tuple
 import time
 import dask.distributed
 
 
-def _available_workers(client: dask.distributed.Client) -> List[str]:
+def _available_workers(client: dask.distributed.Client) -> Tuple[int, List]:
     """Get the list of available workers.
 
     Args:
@@ -19,16 +19,17 @@ def _available_workers(client: dask.distributed.Client) -> List[str]:
         cluster.
 
     Returns:
-        list: The list of available workers.
+        tuple: The number of workers and the list of available workers.
     """
     while True:
         info = client.scheduler_info()
-        result = [
+        executing = [
             k for k, v in info['workers'].items()
             if v['metrics']['executing'] == 0
         ]
-        if result:
-            return result
+        if executing:
+            workers = len(info['workers'])
+            return workers, executing
         time.sleep(0.1)
 
 
@@ -49,22 +50,22 @@ def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
         list: The result of the execution of the functions.
     """
     completed = dask.distributed.as_completed()
-    workers = []
     result = []
     iterate = True
+    workers, free_workers = _available_workers(client)
     # As long as there is data to traverse in the iterator.
     while iterate:
         # As long as there are free workers
-        while completed.count() < len(client.scheduler_info()['workers']):
+        while completed.count() < workers:
             try:
-                if not workers:
-                    workers = _available_workers(client)
+                if not free_workers:
+                    workers, free_workers = _available_workers(client)
                 item = next(seq)
                 completed.add(
                     client.submit(func,
                                   item,
                                   *args,
-                                  workers=workers.pop(),
+                                  workers=free_workers.pop(),
                                   allow_other_workers=False,
                                   **kwargs))
             except StopIteration:
