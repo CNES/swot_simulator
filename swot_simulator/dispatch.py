@@ -6,12 +6,13 @@
 Dispatch task on free workers
 =============================
 """
-from typing import Any, Callable, Iterator, List, Tuple
+from typing import Any, Callable, Iterator, Set
 import time
 import dask.distributed
+from distributed import worker
 
 
-def _available_workers(client: dask.distributed.Client) -> Tuple[int, List]:
+def _available_workers(client: dask.distributed.Client) -> Set[str]:
     """Get the list of available workers.
 
     Args:
@@ -19,17 +20,14 @@ def _available_workers(client: dask.distributed.Client) -> Tuple[int, List]:
         cluster.
 
     Returns:
-        tuple: The number of workers and the list of available workers.
+        list: The list of available workers.
     """
     while True:
         info = client.scheduler_info()
-        executing = [
-            k for k, v in info['workers'].items()
-            if v['metrics']['executing'] == 0
-        ]
-        if executing:
-            workers = len(info['workers'])
-            return workers, executing
+        result = set(info['workers']) - set(
+            [k for k, v in client.processing().items() if v])
+        if result:
+            return result
         time.sleep(0.1)
 
 
@@ -50,22 +48,22 @@ def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
         list: The result of the execution of the functions.
     """
     completed = dask.distributed.as_completed()
+    workers = set()
     result = []
     iterate = True
-    workers, free_workers = _available_workers(client)
     # As long as there is data to traverse in the iterator.
     while iterate:
         # As long as there are free workers
-        while completed.count() < workers:
+        while completed.count() < len(client.scheduler_info()['workers']):
             try:
-                if not free_workers:
-                    workers, free_workers = _available_workers(client)
+                if not workers:
+                    workers = _available_workers(client)
                 item = next(seq)
                 completed.add(
                     client.submit(func,
                                   item,
                                   *args,
-                                  workers=free_workers.pop(),
+                                  workers=workers.pop(),
                                   allow_other_workers=False,
                                   **kwargs))
             except StopIteration:
