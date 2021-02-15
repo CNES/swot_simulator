@@ -11,7 +11,7 @@ import numba as nb
 import numpy as np
 import scipy.ndimage.filters
 
-from . import utils
+from .. import random_signal
 from .. import settings
 from .. import F_KA, VOLUMETRIC_MEAN_RADIUS, CELERITY, BASELINE
 
@@ -123,14 +123,14 @@ class WetTroposphere:
         self.pswt = pswt
         self.freq = freq
         self.fminx = 1 / self.len_repeat
-        self.ps2d, self.f = utils.gen_ps2d(freq,
-                                           pswt,
-                                           fminx=self.fminx,
-                                           fminy=1 / self.LC_MAX,
-                                           fmax=self.F_MAX,
-                                           alpha=self.ALPHA,
-                                           lf_extpl=True,
-                                           hf_extpl=True)
+        self.ps2d, self.f = random_signal.gen_ps2d(freq,
+                                                   pswt,
+                                                   fminx=self.fminx,
+                                                   fminy=1 / self.LC_MAX,
+                                                   fmax=self.F_MAX,
+                                                   alpha=self.ALPHA,
+                                                   lf_extpl=True,
+                                                   hf_extpl=True)
 
     def _radiometer_error(self,
                           x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -144,25 +144,25 @@ class WetTroposphere:
         psradio[self.freq > 0.0683] = 0.32
         # Compute random coefficients (1D) for the radiometer error
         # power spectrum for right and left beams
-        hrad = utils.gen_signal_1d(self.freq,
-                                   psradio,
-                                   x_al,
-                                   fmin=1 / self.len_repeat,
-                                   fmax=1 / (2 * self.delta_al),
-                                   alpha=10,
-                                   nseed=self.nseed + 100,
-                                   hf_extpl=True,
-                                   lf_extpl=True)
+        hrad = random_signal.gen_signal_1d(self.freq,
+                                           psradio,
+                                           x_al,
+                                           fmin=1 / self.len_repeat,
+                                           fmax=1 / (2 * self.delta_al),
+                                           alpha=10,
+                                           nseed=self.nseed + 100,
+                                           hf_extpl=True,
+                                           lf_extpl=True)
         radio_r = hrad * 1e-2
-        hrad = utils.gen_signal_1d(self.freq,
-                                   psradio,
-                                   x_al,
-                                   fmin=1 / self.len_repeat,
-                                   fmax=1 / (2 * self.delta_al),
-                                   alpha=10,
-                                   nseed=self.nseed + 200,
-                                   hf_extpl=True,
-                                   lf_extpl=True)
+        hrad = random_signal.gen_signal_1d(self.freq,
+                                           psradio,
+                                           x_al,
+                                           fmin=1 / self.len_repeat,
+                                           fmax=1 / (2 * self.delta_al),
+                                           alpha=10,
+                                           nseed=self.nseed + 200,
+                                           hf_extpl=True,
+                                           lf_extpl=True)
         radio_l = hrad * 1e-2
 
         return radio_r, radio_l
@@ -194,25 +194,25 @@ class WetTroposphere:
         naclarge = np.shape(x_ac_large)[0]
         # Compute path delay error due to wet tropo and radiometer error
         # using random coefficient initialized with power spectrums
-        wt = utils.gen_signal_2d_rectangle(self.ps2d,
-                                           self.f,
-                                           x_al,
-                                           x_ac,
-                                           fminx=self.fminx,
-                                           fminy=1 / self.LC_MAX,
-                                           fmax=self.F_MAX,
-                                           alpha=self.ALPHA,
-                                           nseed=self.nseed)
+        wt = random_signal.gen_signal_2d_rectangle(self.ps2d,
+                                                   self.f,
+                                                   x_al,
+                                                   x_ac,
+                                                   fminx=self.fminx,
+                                                   fminy=1 / self.LC_MAX,
+                                                   fmax=self.F_MAX,
+                                                   alpha=self.ALPHA,
+                                                   nseed=self.nseed)
         wt = wt.T * 1e-2
-        wt_large = utils.gen_signal_2d_rectangle(self.ps2d,
-                                                 self.f,
-                                                 x_al,
-                                                 x_ac_large,
-                                                 fminx=self.fminx,
-                                                 fminy=1 / self.LC_MAX,
-                                                 fmax=self.F_MAX,
-                                                 alpha=self.ALPHA,
-                                                 nseed=self.nseed)
+        wt_large = random_signal.gen_signal_2d_rectangle(self.ps2d,
+                                                         self.f,
+                                                         x_al,
+                                                         x_ac_large,
+                                                         fminx=self.fminx,
+                                                         fminy=1 / self.LC_MAX,
+                                                         fmax=self.F_MAX,
+                                                         alpha=self.ALPHA,
+                                                         nseed=self.nseed)
         wt_large = wt_large.T * 1e-2
 
         # Compute Residual path delay error after a 1-beam radiometer

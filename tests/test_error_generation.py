@@ -1,14 +1,14 @@
 import os
 import pickle
 import numpy as np
-import swot_simulator.settings
 import swot_simulator.error.altimeter
 import swot_simulator.error.baseline_dilation
 import swot_simulator.error.karin
 import swot_simulator.error.roll_phase
 import swot_simulator.error.timing
-import swot_simulator.error.utils
 import swot_simulator.error.wet_troposphere
+import swot_simulator.random_signal
+import swot_simulator.settings
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -53,7 +53,7 @@ def test_error_karin():
 
 def test_baseline_dilation():
     parameters = load_parameters()
-    error_spectrum = swot_simulator.error.utils.read_file_instr(
+    error_spectrum = swot_simulator.error.random_signal.read_file_instr(
         os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0, 20000)
 
     (x_al, x_ac, _, _, expected) = load_data('baseline_dilation')
@@ -68,7 +68,7 @@ def test_baseline_dilation():
 def test_roll_phase():
     parameters = load_parameters()
     (x_al, x_ac, _, _, expected) = load_data()
-    error_spectrum = swot_simulator.error.utils.read_file_instr(
+    error_spectrum = swot_simulator.error.random_signal.read_file_instr(
         os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0, 20000)
 
     error = swot_simulator.error.roll_phase.RollPhase(
@@ -84,7 +84,7 @@ def test_roll_phase():
 
 def test_timing():
     parameters = load_parameters()
-    error_spectrum = swot_simulator.error.utils.read_file_instr(
+    error_spectrum = swot_simulator.error.random_signal.read_file_instr(
         os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0, 20000)
 
     (x_al, x_ac, _, _, expected) = load_data('timing')

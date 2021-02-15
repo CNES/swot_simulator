@@ -9,7 +9,7 @@ Karin noise
 from typing import Dict
 import numpy as np
 
-from . import utils
+from .. import random_signal
 from .. import settings
 
 
@@ -23,8 +23,8 @@ class Karin:
         assert parameters.karin_noise is not None
 
         # Store the generation parameters of the random signal.
-        self.hsdt, self.x_ac, self.swh = utils.read_file_karin(
-                                                     parameters.karin_noise)
+        self.hsdt, self.x_ac, self.swh = random_signal.read_file_karin(
+            parameters.karin_noise)
 
         self.size_grid = (parameters.delta_ac * parameters.delta_al)**0.5
         self.nseed = parameters.nseed
@@ -52,7 +52,7 @@ class Karin:
         a_karin = np.random.normal(0, 1, (num_lines, num_pixels))
 
         # Formula of karin noise as a function of x_ac (smile shape)
-        sigma_karin = utils.interpolate_file_karin(
+        sigma_karin = random_signal.interpolate_file_karin(
             swh, x_ac, self.hsdt, self.x_ac, self.swh) / self.size_grid
 
         # Compute random karin error

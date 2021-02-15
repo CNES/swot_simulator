@@ -9,7 +9,7 @@ Altimeter instrument error
 from typing import Dict
 import numpy as np
 
-from . import utils
+from .. import random_signal
 from .. import settings
 
 
@@ -44,11 +44,11 @@ class Altimeter:
         """
         # Compute random noise of 10**2 cm**2/(km/cycle)
         # Compute the correspond error on the nadir in m
-        error = utils.gen_signal_1d(self.freq,
-                                    self.psd,
-                                    x_al,
-                                    nseed=self.nseed,
-                                    fmin=1 / self.len_repeat,
-                                    fmax=1 / self.delta_al,
-                                    alpha=10)
+        error = random_signal.gen_signal_1d(self.freq,
+                                            self.psd,
+                                            x_al,
+                                            nseed=self.nseed,
+                                            fmin=1 / self.len_repeat,
+                                            fmax=1 / self.delta_al,
+                                            alpha=10)
         return {"simulated_error_altimeter": error}

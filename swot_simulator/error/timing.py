@@ -8,7 +8,7 @@ Timing errors
 """
 from typing import Dict
 import numpy as np
-from . import utils
+from .. import random_signal
 
 from .. import CELERITY
 from .. import settings
@@ -38,20 +38,20 @@ class Timing:
 
     def _generate_1d(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d timing using the power spectrum:
-        timing_l = utils.gen_signal_1d(self.spatial_frequency,
-                                       self.timing_psd,
-                                       x_al,
-                                       nseed=self.nseed,
-                                       fmin=1 / self.len_repeat,
-                                       fmax=1 / (2 * self.delta_al),
-                                       alpha=10)
-        timing_r = utils.gen_signal_1d(self.spatial_frequency,
-                                       self.timing_psd,
-                                       x_al,
-                                       nseed=self.nseed + 100,
-                                       fmin=1 / self.len_repeat,
-                                       fmax=1 / (2 * self.delta_al),
-                                       alpha=10)
+        timing_l = random_signal.gen_signal_1d(self.spatial_frequency,
+                                               self.timing_psd,
+                                               x_al,
+                                               nseed=self.nseed,
+                                               fmin=1 / self.len_repeat,
+                                               fmax=1 / (2 * self.delta_al),
+                                               alpha=10)
+        timing_r = random_signal.gen_signal_1d(self.spatial_frequency,
+                                               self.timing_psd,
+                                               x_al,
+                                               nseed=self.nseed + 100,
+                                               fmin=1 / self.len_repeat,
+                                               fmax=1 / (2 * self.delta_al),
+                                               alpha=10)
         # Compute the corresponding timing error on the swath in m
         return np.array([
             self.CONVERSION_FACTOR * timing_l,

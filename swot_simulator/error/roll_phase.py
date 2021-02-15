@@ -9,7 +9,7 @@ Roll errors
 from typing import Dict, Tuple
 import numpy as np
 
-from . import utils
+from .. import random_signal
 from .. import settings
 from .. import VOLUMETRIC_MEAN_RADIUS, CELERITY, F_KA, BASELINE
 
@@ -48,27 +48,27 @@ class RollPhase:
 
         # Compute roll angle using the power spectrum
         # Compute left and right phase angles the power spectrum
-        theta = utils.gen_signal_1d(self.spatial_frequency,
-                                    self.roll_psd,
-                                    x_al,
-                                    nseed=self.nseed,
-                                    fmin=1 / self.len_repeat,
-                                    fmax=1 / (2 * self.delta_al),
-                                    alpha=10)
-        theta_l = utils.gen_signal_1d(self.spatial_frequency,
-                                      self.phase_psd,
-                                      x_al,
-                                      nseed=self.nseed + 100,
-                                      fmin=1 / self.len_repeat,
-                                      fmax=1 / (2 * self.delta_al),
-                                      alpha=10)
-        theta_r = utils.gen_signal_1d(self.spatial_frequency,
-                                      self.phase_psd,
-                                      x_al,
-                                      nseed=self.nseed + 200,
-                                      fmin=1 / self.len_repeat,
-                                      fmax=1 / (2 * self.delta_al),
-                                      alpha=10)
+        theta = random_signal.gen_signal_1d(self.spatial_frequency,
+                                            self.roll_psd,
+                                            x_al,
+                                            nseed=self.nseed,
+                                            fmin=1 / self.len_repeat,
+                                            fmax=1 / (2 * self.delta_al),
+                                            alpha=10)
+        theta_l = random_signal.gen_signal_1d(self.spatial_frequency,
+                                              self.phase_psd,
+                                              x_al,
+                                              nseed=self.nseed + 100,
+                                              fmin=1 / self.len_repeat,
+                                              fmax=1 / (2 * self.delta_al),
+                                              alpha=10)
+        theta_r = random_signal.gen_signal_1d(self.spatial_frequency,
+                                              self.phase_psd,
+                                              x_al,
+                                              nseed=self.nseed + 200,
+                                              fmin=1 / self.len_repeat,
+                                              fmax=1 / (2 * self.delta_al),
+                                              alpha=10)
         # Compute the associated roll  error on the swath in m
         roll = self.roll_conversion_factor * theta
         # Compute the associated phase error on the swath in m

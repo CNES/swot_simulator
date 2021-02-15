@@ -9,10 +9,10 @@ Generate instrumental errors
 from typing import Dict
 import dask.distributed
 import numpy as np
-from .. import settings
 from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
                RollPhase, Timing, WetTroposphere)
-from . import utils
+from .. import random_signal
+from .. import settings
 
 
 class Generator:
@@ -29,7 +29,7 @@ class Generator:
         self.generators = []
 
         assert parameters.error_spectrum is not None
-        error_spectrum = utils.read_file_instr(parameters.error_spectrum,
+        error_spectrum = random_signal.read_file_instr(parameters.error_spectrum,
                                                parameters.delta_al,
                                                parameters.len_repeat)
 
