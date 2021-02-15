@@ -1,6 +1,5 @@
 import os
 import pickle
-import pytest
 import xarray as xr
 
 import swot_simulator.random_signal as random_signal
