@@ -6,7 +6,7 @@
 Dispatch task on free workers
 =============================
 """
-from typing import Any, Callable, Iterator, Set
+from typing import Any, Callable, Iterator, List, Set
 import time
 import dask.distributed
 from distributed import worker
