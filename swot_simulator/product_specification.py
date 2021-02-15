@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import datetime
 import copy
 import collections
+import functools
 import logging
 import os
 import pathlib
@@ -181,6 +182,12 @@ def _parser(tree: xt.ElementTree):
     return variables, attributes
 
 
+@functools.lru_cache(maxsize=5)
+def _parse_specification_file(path: str) -> Tuple:
+    """Parse the XML specification file"""
+    return _parser(xt.parse(path))
+
+
 def _create_variable_args(encoding: Dict[str, Dict], name: str,
                           variable: xr.Variable) -> Tuple[str, Dict[str, Any]]:
     """Initiation of netCDF4.Dataset.createVariable method parameters from
@@ -273,7 +280,8 @@ class ProductSpecification:
         self.specification = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             PRODUCT_TYPE[product_type])
-        self.variables, self.attributes = _parser(xt.parse(self.specification))
+        self.variables, self.attributes = _parse_specification_file(
+            self.specification)
 
     def __contains__(self, item):
         return item in self.variables
