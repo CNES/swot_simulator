@@ -6,12 +6,13 @@
 Dispatch task on free workers
 =============================
 """
-from typing import Any, Callable, Iterator, List
+from typing import Any, Callable, Iterator, List, Set
 import time
 import dask.distributed
+from distributed import worker
 
 
-def _available_workers(client: dask.distributed.Client) -> List[str]:
+def _available_workers(client: dask.distributed.Client) -> Set[str]:
     """Get the list of available workers.
 
     Args:
@@ -23,10 +24,8 @@ def _available_workers(client: dask.distributed.Client) -> List[str]:
     """
     while True:
         info = client.scheduler_info()
-        result = [
-            k for k, v in info['workers'].items()
-            if v['metrics']['executing'] == 0
-        ]
+        result = set(info['workers']) - set(
+            [k for k, v in client.processing().items() if v])
         if result:
             return result
         time.sleep(0.1)
@@ -49,7 +48,7 @@ def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
         list: The result of the execution of the functions.
     """
     completed = dask.distributed.as_completed()
-    workers = []
+    workers = set()
     result = []
     iterate = True
     # As long as there is data to traverse in the iterator.

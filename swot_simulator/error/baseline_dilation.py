@@ -9,7 +9,7 @@ Baseling dilation errors
 from typing import Dict
 import numpy as np
 
-from . import utils
+from .. import random_signal
 from .. import settings
 from .. import VOLUMETRIC_MEAN_RADIUS, BASELINE
 
@@ -43,7 +43,7 @@ class BaselineDilation:
 
     def _generate_1d(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d baseline dilation using the power spectrum:
-        dil = utils.gen_signal_1d(self.freq,
+        dil = random_signal.gen_signal_1d(self.freq,
                                   self.psbd,
                                   x_al,
                                   nseed=self.nseed,

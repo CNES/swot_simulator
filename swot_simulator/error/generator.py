@@ -9,10 +9,10 @@ Generate instrumental errors
 from typing import Dict
 import dask.distributed
 import numpy as np
-from .. import settings
 from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
                RollPhase, Timing, WetTroposphere)
-from . import utils
+from .. import random_signal
+from .. import settings
 
 
 class Generator:
@@ -29,7 +29,7 @@ class Generator:
         self.generators = []
 
         assert parameters.error_spectrum is not None
-        error_spectrum = utils.read_file_instr(parameters.error_spectrum,
+        error_spectrum = random_signal.read_file_instr(parameters.error_spectrum,
                                                parameters.delta_al,
                                                parameters.len_repeat)
 
@@ -62,13 +62,15 @@ class Generator:
                 # not handled by this object.
                 raise ValueError(f"unknown error generation class: {item}")
 
-    def generate(self, cycle_number: int, curvilinear_distance: float,
-                 time: np.ndarray, x_al: np.ndarray,
-                 x_ac: np.ndarray, swh:np.ndarray) -> Dict[str, np.ndarray]:
+    def generate(self, cycle_number: int, pass_number: int,
+                 curvilinear_distance: float, time: np.ndarray,
+                 x_al: np.ndarray, x_ac: np.ndarray,
+                 swh: np.ndarray) -> Dict[str, np.ndarray]:
         """Generate errors
 
         Args:
             cycle_number (int): Cycle number.
+            pass_number (int): Pass number.
             curvilinear_distance (float): Curvilinear distance covered by the
                 satellite during a complete cycle.
             time (numpy.ndarray): Date of measurements.
@@ -100,7 +102,9 @@ class Generator:
                     futures.append(client.submit(item.generate, time, x_ac))
                 elif isinstance(item, Karin):
                     futures.append(
-                        client.submit(item.generate, x_al, x_ac, swh))
+                        client.submit(item.generate,
+                                      cycle_number * 10000 + pass_number, x_al,
+                                      x_ac, swh))
                 elif isinstance(item, RollPhase):
                     futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, Timing):
