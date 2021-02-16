@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -76,7 +76,8 @@ class MITGCM_WW3(detail.CartesianGridHandler):
 
         ds = xr.open_mfdataset(selected,
                                concat_dim="time",
-                               combine="nested", decode_times=True)
+                               combine="nested",
+                               decode_times=True)
 
         x_axis = pyinterp.Axis(ds.variables["longitude"][:], is_circle=True)
         y_axis = pyinterp.Axis(ds.variables["latitude"][:])

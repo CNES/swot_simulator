@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -44,12 +44,12 @@ class BaselineDilation:
     def _generate_1d(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d baseline dilation using the power spectrum:
         dil = random_signal.gen_signal_1d(self.freq,
-                                  self.psbd,
-                                  x_al,
-                                  nseed=self.nseed,
-                                  fmin=1 / self.len_repeat,
-                                  fmax=1 / (2 * self.delta_al),
-                                  alpha=10)
+                                          self.psbd,
+                                          x_al,
+                                          nseed=self.nseed,
+                                          fmin=1 / self.len_repeat,
+                                          fmax=1 / (2 * self.delta_al),
+                                          alpha=10)
 
         # Compute the associated baseline dilation error on the swath in m
         return self.conversion_factor * dil

@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -29,9 +29,9 @@ class Generator:
         self.generators = []
 
         assert parameters.error_spectrum is not None
-        error_spectrum = random_signal.read_file_instr(parameters.error_spectrum,
-                                               parameters.delta_al,
-                                               parameters.len_repeat)
+        error_spectrum = random_signal.read_file_instr(
+            parameters.error_spectrum, parameters.delta_al,
+            parameters.len_repeat)
 
         for item in parameters.noise:
             if item == Altimeter.__name__:

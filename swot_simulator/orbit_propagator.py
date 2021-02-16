@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -18,8 +18,10 @@ from . import VOLUMETRIC_MEAN_RADIUS
 LOGGER = logging.getLogger(__name__)
 
 
-def load_ephemeris(stream: TextIO, cols: Optional[Tuple[int, int, int]] = None
-                   ) -> Tuple[Dict[str, float], Tuple]:
+def load_ephemeris(
+    stream: TextIO,
+    cols: Optional[Tuple[int, int,
+                         int]] = None) -> Tuple[Dict[str, float], Tuple]:
     """Loads a tabular file describing a satellite orbit.
 
     Args:
@@ -80,9 +82,9 @@ def interpolate(lon: np.ndarray, lat: np.ndarray, time: np.ndarray) -> Tuple:
     return lon, lat, time_hr
 
 
-def rearrange_orbit(cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
-                    time: np.ndarray
-                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def rearrange_orbit(
+        cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
+        time: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Rearrange orbit starting from pass 1
 
     Detect the beginning of pass 1 in the ephemeris. By definition, it is
@@ -132,9 +134,9 @@ def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
     return time[indexes]
 
 
-def select_box(box: math.Box, lon: np.ndarray, lat: np.ndarray,
-               time: np.ndarray
-               ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def select_box(
+        box: math.Box, lon: np.ndarray, lat: np.ndarray, time: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Selects the orbit in the defined box.
 
     Args:
@@ -261,11 +263,12 @@ class Orbit:
         """
         return np.diff(self.time).mean()
 
-    def iterate(self,
-                first_date: Optional[np.datetime64] = None,
-                last_date: Optional[np.datetime64] = None,
-                absolute_pass_number: int = 1
-                ) -> Iterator[Tuple[int, int, np.datetime64]]:
+    def iterate(
+        self,
+        first_date: Optional[np.datetime64] = None,
+        last_date: Optional[np.datetime64] = None,
+        absolute_pass_number: int = 1
+    ) -> Iterator[Tuple[int, int, np.datetime64]]:
         """Obtain all half-orbits within the defined time interval.
 
         Args:

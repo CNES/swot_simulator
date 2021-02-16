@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -58,8 +58,9 @@ class AVISO(detail.CartesianGridHandler):
         # interpolate the SSH.
         self.dt = np.timedelta64(frequency.pop(), 's')
 
-    def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64
-                     ) -> pyinterp.backends.xarray.Grid3D:
+    def load_dataset(
+            self, first_date: np.datetime64,
+            last_date: np.datetime64) -> pyinterp.backends.xarray.Grid3D:
         """Loads the 3D cube describing the SSH in time and space."""
         if first_date < self.ts["date"][0] or last_date > self.ts["date"][-1]:
             raise IndexError(

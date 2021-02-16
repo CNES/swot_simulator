@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -9,7 +9,6 @@ Dispatch task on free workers
 from typing import Any, Callable, Iterator, List, Set
 import time
 import dask.distributed
-from distributed import worker
 
 
 def _available_workers(client: dask.distributed.Client) -> Set[str]:

@@ -16,6 +16,7 @@ Handle simulator runtime
     swot_simulator.math
     swot_simulator.orbit_propagator
     swot_simulator.product_specification
+    swot_simulator.random_signal
     swot_simulator.settings
     swot_simulator.version
 
@@ -51,5 +52,4 @@ Measurement Errors
     swot_simulator.error.karin
     swot_simulator.error.roll_phase
     swot_simulator.error.timing
-    swot_simulator.error.utils
     swot_simulator.error.wet_troposphere

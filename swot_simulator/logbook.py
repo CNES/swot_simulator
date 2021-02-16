@@ -1,4 +1,4 @@
-# Copyright (c) 2020 CNES/JPL
+# Copyright (c) 2021 CNES/JPL
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
@@ -89,10 +89,10 @@ class LogServer:
             to.
         port (int, optional): Specifies the port we want to listen to.
     """
-    def __init__(self,
-                 hostname: Optional[str] = None,
-                 port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT
-                 ) -> None:
+    def __init__(
+            self,
+            hostname: Optional[str] = None,
+            port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT) -> None:
         hostname = hostname or socket.gethostname()
         self.ip = socket.gethostbyname(hostname)
         self.port = port
