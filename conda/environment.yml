@@ -1,4 +1,4 @@
-name: RTD
+name: swot_simulator
 dependencies:
   - dask
   - distributed
@@ -8,7 +8,7 @@ dependencies:
   - numpy
   - pyinterp>=0.3.2
   - python-dateutil
-  - python=3.7
+  - python>=3.6
   - scipy
   - xarray
 channels:
