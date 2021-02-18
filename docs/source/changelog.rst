@@ -1,8 +1,6 @@
 Changelog
 #########
 
-
-
 0.3 - 2021/02/10
 ----------------
 * Simulated errors are renamed at the request of JPL.

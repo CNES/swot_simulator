@@ -10,13 +10,10 @@
 
 import os
 import sys
-sys.path.insert(
-    0,
-    os.path.normpath(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")))
-sys.path.insert(
-    1,
-    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)))))
+HERE = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..")))
+sys.path.insert(1, HERE)
 
 # -- Project information -----------------------------------------------------
 
@@ -193,3 +190,12 @@ intersphinx_mapping = {
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'xarray': ('http://xarray.pydata.org/en/stable/', None),
 }
+
+README = os.path.join(HERE, "readme.rst")
+
+if not os.path.exists(README):
+    with open(os.path.join(HERE, "..", "..", "README.rst")) as stream:
+        contents = stream.read()
+
+    with open(README, "w") as stream:
+        stream.write(contents)

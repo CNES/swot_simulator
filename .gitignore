@@ -112,3 +112,4 @@ swot_simulator/version.py
 
 # Downloaded test datasets
 tests/data
+docs/source/readme.rst

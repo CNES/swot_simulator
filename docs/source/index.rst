@@ -1,5 +1,7 @@
-Welcome to SWOT simulator's documentation!
-==========================================
+.. include:: readme.rst
+
+Contents
+--------
 
 .. only: not latex
 
@@ -8,9 +10,12 @@ Welcome to SWOT simulator's documentation!
 .. toctree::
    :maxdepth: 1
 
-   about
    changelog
    install
-   science
+   sampling
+   errors
+   nadir_errors
+   software
+   reference
    api
 
