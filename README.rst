@@ -1,13 +1,8 @@
-[![Build Status](https://dev.azure.com/fbriol/swot_simulator/_apis/build/status/CNES.swot_simulator?branchName=master)](https://dev.azure.com/fbriol/swot_simulator/_build/latest?definitionId=2&branchName=master)
-[![conda](https://anaconda.org/conda-forge/swot_simulator/badges/installer/conda.svg?service=github)](https://www.anaconda.com/distribution/)
-[![downloads](https://anaconda.org/conda-forge/swot_simulator/badges/downloads.svg?service=github)](https://www.anaconda.com/distribution/)
-[![platforms](https://anaconda.org/conda-forge/swot_simulator/badges/platforms.svg?service=github)](https://anaconda.org/conda-forge/swot_simulator)
-[![latest-release-date](https://anaconda.org/conda-forge/swot_simulator/badges/latest_release_date.svg?service=github)](https://github.com/CNES/swot_simulator/commits/master)
-[![license](https://anaconda.org/conda-forge/swot_simulator/badges/license.svg?service=github)](https://opensource.org/licenses/BSD-3-Clause)
-[![Binder](https://binder.pangeo.io/badge_logo.svg)](https://binder.pangeo.io/v2/gh/CNES/swot_simulator/master?filepath=notebooks)
+SWOT Simulator for Ocean Science
+================================
 
-# SWOT Simulator for Ocean Science
-## Description
+|Latest Documentation Status| |Conda| |Downloads statistics| |Platforms|
+|Latest Release Date| |License| |Binder|
 
 This software simulates SWOT observations of sea surface height (SSH) that can
 be applied to an ocean general circulation model (OGCM), allowing the
@@ -22,6 +17,35 @@ open source in Python. The software is scalable and designed to support future
 evolution of orbital parameters, error budget estimates from the project team
 and suggestions from the science community.
 
-## Documentation
+Tutorial and reference documentation is provided at
+`swot-simulator.readthedocs.io <https://swot-simulator.readthedocs.io>`_.
 
-Learn more about swot_simulator in its official documentation at https://swot-simulator.readthedocs.io/
+About
+-----
+
+This project was created by Clement Ubelmann, Lucile Gaultier and Lee-Lueng Fu.
+
+Jet Propulsion Laboratory, California Institute of Technology, CNES
+
+License
+-------
+
+``swot_simulator`` is provided under a BSD-style license that can be found in
+the `LICENSE <https://github.com/CNES/swot_simulator/blob/master/LICENSE>`_
+file. By using, distributing, or contributing to this project, you agree to the
+terms and conditions of this license.
+
+.. |Latest Documentation Status| image:: https://dev.azure.com/fbriol/swot_simulator/_apis/build/status/CNES.swot_simulator?branchName=master
+    :target: https://dev.azure.com/fbriol/swot_simulator/_build/latest?definitionId=2&branchName=master
+.. |Conda| image:: https://anaconda.org/conda-forge/swot_simulator/badges/installer/conda.svg?service=github
+    :target: https://www.anaconda.com/distribution/
+.. |Downloads statistics| image:: https://anaconda.org/conda-forge/swot_simulator/badges/downloads.svg?service=github
+    :target: https://www.anaconda.com/distribution/
+.. |Platforms| image:: https://anaconda.org/conda-forge/swot_simulator/badges/platforms.svg?service=github
+    :target: https://anaconda.org/conda-forge/swot_simulator
+.. |Latest Release Date| image:: https://anaconda.org/conda-forge/swot_simulator/badges/latest_release_date.svg?service=github
+    :target: https://github.com/CNES/swot_simulator/commits/master
+.. |License| image:: https://anaconda.org/conda-forge/swot_simulator/badges/license.svg?service=github
+    :target: https://opensource.org/licenses/BSD-3-Clause
+.. |Binder| image:: https://binder.pangeo.io/badge_logo.svg
+    :target: https://binder.pangeo.io/v2/gh/CNES/swot_simulator/master?filepath=notebooks
