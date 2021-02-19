@@ -126,7 +126,7 @@ def main():
     """Main function"""
     os.chdir(pathlib.Path(__file__).parent.absolute())
 
-    with open("README.md", "r") as fh:
+    with open("README.rst", "r") as fh:
         long_description = fh.read()
 
     setuptools.setup(
@@ -137,7 +137,7 @@ def main():
         description="Simulate SWOT measurements on sea surface height with "
         "simulated errors",
         long_description=long_description,
-        long_description_content_type="text/markdown",
+        long_description_content_type="text/x-rst",
         url="https://github.com/fbriol/swot_simulator",
         packages=setuptools.find_packages(),
         package_data={'': ['*.xml']},

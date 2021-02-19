@@ -36,5 +36,5 @@ Testing
 -------
 
 To run the test suite after installing swot_simulator, install (via pypi or
-conda) `py.test <https://pytest.org>`__ and run ``pytest`` in the root
+conda) `pytest <https://pytest.org>`__ and run ``pytest`` in the root
 directory of the swot_simulator repository.

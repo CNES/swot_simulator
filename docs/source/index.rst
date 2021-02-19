@@ -1,14 +1,10 @@
 .. include:: readme.rst
 
-Contents
---------
-
 .. only: not latex
-
-    Contents:
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    changelog
    install

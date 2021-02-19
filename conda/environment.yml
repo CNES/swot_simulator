@@ -2,6 +2,7 @@ name: swot_simulator
 dependencies:
   - dask
   - distributed
+  - furo
   - netcdf4
   - numba
   - numpy

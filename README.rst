@@ -1,14 +1,15 @@
+################################
 SWOT Simulator for Ocean Science
-================================
+################################
 
 |Latest Documentation Status| |Conda| |Downloads statistics| |Platforms|
 |Latest Release Date| |License| |Binder|
 
-This software simulates SWOT observations of sea surface height (SSH) that can
-be applied to an ocean general circulation model (OGCM), allowing the
+This software simulates SWOT observations of the sea surface height (SSH) that
+can be applied to an ocean general circulation model (OGCM), allowing the
 exploration of ideas and methods to optimize information retrieval from the SWOT
 Mission in the future. From OGCM SSH inputs, the software generates SWOT-like
-outputs on a swath along the orbit ground track and adds measurement error and
+outputs on a swath along the orbit ground track and adds measurement errors and
 noise, which are generated according to technical characteristics published by
 the SWOT project team. Not designed to directly simulate the payload instrument
 performance, this SWOT simulator aims at providing statistically realistic
