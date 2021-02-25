@@ -12,10 +12,10 @@ import numpy as np
 import pyinterp.backends.xarray
 import xarray as xr
 
-from . import detail
+from .. import CartesianGridHandler
 
 
-class AVISO(detail.CartesianGridHandler):
+class AVISO(CartesianGridHandler):
     """
     Interpolation of the SSH AVISO (CMEMS L4 products).
     """
@@ -79,9 +79,8 @@ class AVISO(detail.CartesianGridHandler):
                     time: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
-        time2 = time.astype("datetime64[ns]")
         ssh = interpolator.trivariate(dict(longitude=lon,
                                            latitude=lat,
-                                           time=time2),
+                                           time=time.astype("datetime64[ns]")),
                                       interpolator='bilinear')
         return ssh

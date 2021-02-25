@@ -13,10 +13,10 @@ import pyinterp
 import pyinterp.backends.xarray
 import xarray as xr
 
-from . import detail
+from .. import CartesianGridHandler
 
 
-class HYCOM(detail.CartesianGridHandler):
+class HYCOM(CartesianGridHandler):
     """
     Interpolation of the SSH HYCOM
     """
@@ -80,24 +80,15 @@ class HYCOM(detail.CartesianGridHandler):
                                combine="nested",
                                decode_times=False)
         ds = ds.sel(depth=0)
-
-        x_axis = pyinterp.Axis(ds.variables["lon"][:], is_circle=True)
-        y_axis = pyinterp.Axis(ds.variables["lat"][:])
-        hours = (ds.variables['time'][:].data *
-                 3600000000).astype('timedelta64[us]')
-        time = np.datetime64('2000') + hours
-        z_axis = pyinterp.TemporalAxis(time)
-        var = ds.surf_el[:].T
-        return pyinterp.Grid3D(x_axis, y_axis, z_axis, var)
+        return pyinterp.backends.xarray.Grid3D(ds.surf_el)
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
-        ssh = pyinterp.trivariate(interpolator,
-                                  lon.flatten(),
-                                  lat.flatten(),
-                                  time,
-                                  bounds_error=True,
-                                  interpolator='bilinear').reshape(lon.shape)
+        ssh = interpolator.trivariate(dict(lon=lon,
+                                           lat=lat,
+                                           time=time.astype("datetime64[ns]")),
+                                      bounds_error=True,
+                                      interpolator='bilinear')
         return ssh

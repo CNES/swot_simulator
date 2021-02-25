@@ -13,10 +13,10 @@ import pyinterp
 import pyinterp.backends.xarray
 import xarray as xr
 
-from . import detail
+from .. import CartesianGridHandler
 
 
-class MITGCM_WW3(detail.CartesianGridHandler):
+class MITGCM_WW3(CartesianGridHandler):
     """
     Interpolation of the SSH from MITGCM interpolated for WWW3.
     """
@@ -78,22 +78,15 @@ class MITGCM_WW3(detail.CartesianGridHandler):
                                concat_dim="time",
                                combine="nested",
                                decode_times=True)
-
-        x_axis = pyinterp.Axis(ds.variables["longitude"][:], is_circle=True)
-        y_axis = pyinterp.Axis(ds.variables["latitude"][:])
-        z_axis = pyinterp.TemporalAxis(ds.time)
-        var = ds.wlv[:].T
-        return pyinterp.Grid3D(x_axis, y_axis, z_axis, var)
+        return pyinterp.backends.xarray.Grid3D(ds.wlv)
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
-        time2 = time.astype("datetime64[ns]")
-        ssh = pyinterp.trivariate(interpolator,
-                                  lon.flatten(),
-                                  lat.flatten(),
-                                  time2,
-                                  bounds_error=True,
-                                  interpolator='bilinear').reshape(lon.shape)
+        ssh = interpolator.trivariate(dict(longitude=lon,
+                                           latitude=lat,
+                                           time=time.astype("datetime64[ns]")),
+                                      bounds_error=True,
+                                      interpolator='bilinear')
         return ssh

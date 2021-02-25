@@ -6,7 +6,7 @@
 Generate instrumental errors
 ----------------------------
 """
-from typing import Dict
+from typing import Dict, Union
 import dask.distributed
 import numpy as np
 from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
@@ -65,7 +65,7 @@ class Generator:
     def generate(self, cycle_number: int, pass_number: int,
                  curvilinear_distance: float, time: np.ndarray,
                  x_al: np.ndarray, x_ac: np.ndarray,
-                 swh: np.ndarray) -> Dict[str, np.ndarray]:
+                 swh: Union[np.ndarray, float]) -> Dict[str, np.ndarray]:
         """Generate errors
 
         Args:
@@ -76,6 +76,8 @@ class Generator:
             time (numpy.ndarray): Date of measurements.
             x_al (numpy.ndarray): Along track distance.
             x_ac (numpy.ndarray): Across track distance.
+            swh (numpy.ndarray, float): Significant wave height. Used to
+                modulate instrumental noise as a function of sea state.
 
         Returns:
             dict: Associative array between error variables and simulated
@@ -101,6 +103,8 @@ class Generator:
                 elif isinstance(item, CorrectedRollPhase):
                     futures.append(client.submit(item.generate, time, x_ac))
                 elif isinstance(item, Karin):
+                    if isinstance(swh, float):
+                        swh = np.full((x_ac.size, ), swh)
                     futures.append(
                         client.submit(item.generate,
                                       cycle_number * 10000 + pass_number, x_al,

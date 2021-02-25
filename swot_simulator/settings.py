@@ -16,9 +16,8 @@ import traceback
 import types
 import numpy as np
 from . import math
+from . import plugins
 from . import PRODUCT_TYPE
-from .plugins import ssh
-from .plugins import swh
 
 #: Default working directory
 DEFAULT_WORKING_DIRECTORY = os.path.join(os.path.expanduser('~'),
@@ -124,9 +123,9 @@ class Parameters:
         corrected_roll_phase_dataset=(None, str),
         half_gap=(10.0, float),
         half_swath=(60.0, float),
-        height=(891000, float),
+        height=(891000.0, float),
         karin_noise=(None, str),
-        len_repeat=(20000, float),
+        len_repeat=(20000.0, float),
         nadir=(False, bool),
         nbeam=(2, NumberOfBeams),
         noise=(None, [str, -1]),
@@ -135,11 +134,11 @@ class Parameters:
         requirement_bounds=(None, [float, 2]),
         shift_lon=(None, float),
         shift_time=(None, TimeDelta()),
-        sigma=(6, float),
-        ssh_plugin=(None, ssh.Interface),
-        swh_plugin=(None, swh.Interface),
+        sigma=(6.0, float),
+        ssh_plugin=(None, plugins.Interface),
+        swh_plugin=(None, plugins.Interface),
         swath=(True, bool),
-        swh=(2, int),
+        swh=(2.0, float),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str),
     )
 
@@ -201,10 +200,8 @@ class Parameters:
                     value[idx] = expected_type(item)
             else:
                 mro = expected_type.__mro__[-2]
-                if mro == ssh.Interface:
-                    value = ssh.Plugin.register(value)
-                elif mro == swh.Interface:
-                    value = swh.Plugin.register(value)
+                if mro == plugins.Interface:
+                    value = plugins.Plugin.register(value)
                 else:
                     value = expected_type(value)
         except ValueError:

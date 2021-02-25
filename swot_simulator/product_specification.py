@@ -429,14 +429,14 @@ class ProductSpecification:
             })
 
     def swh_karin(self, swh: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        """Returns the properties of the variable describing the SSH measured
+        """Returns the properties of the variable describing the SWH measured
         by KaRIn"""
         result = self._data_array("swh_karin", swh)
         assert result is not None
         return result
 
     def swh_nadir(self, array: np.ndarray) -> Tuple[Dict, xr.DataArray]:
-        """Returns the properties of the variable describing the SSH to nadir
+        """Returns the properties of the variable describing the SWH to nadir
         free of measurement errors."""
         return {
             '_FillValue': 2147483647,
@@ -713,7 +713,7 @@ class Nadir:
         self._data_array("ssh_nadir", array)
 
     def swh(self, array: np.ndarray) -> None:
-        """Sets the variable describing the SSH to nadir.
+        """Sets the variable describing the SWH to nadir.
 
         Args:
             array (np.ndarray): Data to be recorded
@@ -803,7 +803,11 @@ class Nadir:
         """
         LOGGER.info("write %s", path)
         dataset = self.to_xarray(cycle_number, pass_number, complete_product)
-        to_netcdf(dataset, path, self.encoding, mode="w")
+        try:
+            to_netcdf(dataset, path, self.encoding, mode="w")
+        except:
+            os.unlink(path)
+            raise
 
 
 class Swath(Nadir):

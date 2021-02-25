@@ -41,7 +41,7 @@ class Parameters:
     ssh_plugin: Optional[ssh.Interface]
     swh_plugin: Optional[_swh.Interface]
     swath: bool
-    swh: int
+    swh: float
     hierarchical_groups: bool
     working_directory: str
 

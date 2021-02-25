@@ -13,7 +13,7 @@ import numba as nb
 import numpy as np
 import pyinterp
 import xarray as xr
-from . import detail
+from .. import Interface
 
 LOGGER = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
     return z.astype("float32")
 
 
-class MITGCM(detail.Interface):
+class MITGCM(Interface):
     def __init__(self, xc: xr.DataArray, yc: xr.DataArray, eta: xr.DataArray):
         self.lon = xc.data
         self.lat = yc.data

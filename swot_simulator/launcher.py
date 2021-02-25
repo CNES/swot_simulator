@@ -152,7 +152,7 @@ def file_path(first_date: np.datetime64,
               cycle_number: int,
               pass_number: int,
               parameters: settings.Parameters,
-              nadir: bool = False) -> str:
+              nadir: bool = False) -> Optional[str]:
     """Get the absolute path of the file to be created.
 
     Args:
@@ -166,7 +166,8 @@ def file_path(first_date: np.datetime64,
             measurements.
 
     Returns:
-        str: The path to the file to be created.
+        str, optional: The path to the file to be created or None if the file
+        already exists
     """
     first_date = first_date.astype(datetime.datetime)
     last_date = last_date.astype(datetime.datetime)
@@ -185,7 +186,14 @@ def file_path(first_date: np.datetime64,
                     f"{cycle_number:03d}_{pass_number:03d}_"
                     f"{first_date:%Y%m%dT%H%M%S}_{last_date:%Y%m%dT%H%M%S}_"
                     "DG10_01.nc")
-    return os.path.join(dirname, filename)
+    result = os.path.join(dirname, filename)
+    # If the product has already been produced, the generation of this
+    # half orbit is disabled.
+    if os.path.exists(result):
+        LOGGER.debug(("nadir" if nadir else "swath") +
+                     f" already generated: {cycle_number}/{pass_number}")
+        return None
+    return result
 
 
 def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
@@ -237,11 +245,6 @@ def simulate(args: Tuple[int, int, np.datetime64],
         swath_path = file_path(date, last_date, cycle_number, pass_number,
                                parameters)
 
-        # If the product has already been produced, the generation of this
-        # half orbit is disabled.
-        if os.path.exists(swath_path):
-            swath_path = None
-
     if parameters.nadir:
         nadir_path = file_path(date,
                                last_date,
@@ -249,8 +252,6 @@ def simulate(args: Tuple[int, int, np.datetime64],
                                pass_number,
                                parameters,
                                nadir=True)
-        if os.path.exists(nadir_path):
-            nadir_path = None
 
     # To continue, there must be at least one task left for this pass.
     if swath_path is None and nadir_path is None:
@@ -268,27 +269,24 @@ def simulate(args: Tuple[int, int, np.datetime64],
     # NaN.
     mask = track.mask()
 
+    # The nadir and swath data are concatenated to process the interpolation
+    # in one time (swath and nadir).
+    lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]
+    lat = np.c_[track.lat, track.lat_nadir[:, np.newaxis]]
+    swath_time = np.repeat(track.time, lon.shape[1]).reshape(lon.shape)
+
     # Interpolation of the SWH if the user wishes.
     if parameters.swh_plugin is not None:
-
-        # The nadir and swath data are concatenated to process the
-        # interpolation of the SSH in one time (swath and nadir).
-        lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]
-        lat = np.c_[track.lat, track.lat_nadir[:, np.newaxis]]
-        swath_time = np.repeat(track.time, lon.shape[1]).reshape(lon.shape)
         swh = parameters.swh_plugin.interpolate(lon.flatten(), lat.flatten(),
                                                 swath_time.flatten())
-        swh_all = swh.reshape(lon.shape)
-        swh = swh_all[:, :-1]
+        swh = swh.reshape(lon.shape)
     else:
-        swh_all = None
-        swh = np.full((track.x_ac.size, ), parameters.swh, dtype="f8")
+        swh = None
 
     # Calculation of instrumental errors
-    noise_errors = error_generator.generate(cycle_number, pass_number,
-                                            orbit.curvilinear_distance,
-                                            track.time, track.x_al, track.x_ac,
-                                            swh)
+    noise_errors = error_generator.generate(
+        cycle_number, pass_number, orbit.curvilinear_distance, track.time,
+        track.x_al, track.x_ac, swh if swh is not None else parameters.swh)
     for error in noise_errors.values():
         # Only the swaths must be masked
         if len(error.shape) == 2:
@@ -296,11 +294,6 @@ def simulate(args: Tuple[int, int, np.datetime64],
 
     # Interpolation of the SSH if the user wishes.
     if parameters.ssh_plugin is not None:
-        # The nadir and swath data are concatenated to process the
-        # interpolation of the SSH in one time (swath and nadir).
-        lon = np.c_[track.lon, track.lon_nadir[:, np.newaxis]]
-        lat = np.c_[track.lat, track.lat_nadir[:, np.newaxis]]
-        swath_time = np.repeat(track.time, lon.shape[1]).reshape(lon.shape)
         ssh = parameters.ssh_plugin.interpolate(lon.flatten(), lat.flatten(),
                                                 swath_time.flatten())
         ssh = ssh.reshape(lon.shape)
@@ -319,8 +312,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
             if noise_errors:
                 product.simulated_true_ssh(ssh[:, :-1])
-        if swh_all is not None:
-            product.swh((swh * mask))
+        if swh is not None:
+            product.swh((swh[:, :-1] * mask))
 
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, swath_path,
@@ -334,13 +327,12 @@ def simulate(args: Tuple[int, int, np.datetime64],
         product = product_specification.Nadir(track,
                                               standalone=not parameters.swath)
 
-        # Interpolation of the SSH if the user wishes.
         if ssh is not None:
             product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))
             if noise_errors:
                 product.simulated_true_ssh(ssh[:, -1])
-        if swh_all is not None:
-            product.swh(swh_all[:, -1])
+        if swh is not None:
+            product.swh(swh[:, -1])
         product.update_noise_errors(noise_errors)
         product.to_netcdf(cycle_number, pass_number, nadir_path,
                           parameters.complete_product)

@@ -12,10 +12,10 @@ import numpy as np
 import pyinterp.backends.xarray
 import xarray as xr
 
-from . import detail
+from .. import CartesianGridHandler
 
 
-class WW3(detail.CartesianGridHandler):
+class WW3(CartesianGridHandler):
     """
     Interpolation of the SWH from WW3.
     """
@@ -62,7 +62,7 @@ class WW3(detail.CartesianGridHandler):
     def load_dataset(
             self, first_date: np.datetime64,
             last_date: np.datetime64) -> pyinterp.backends.xarray.Grid3D:
-        """Loads the 3D cube describing the SSH in time and space."""
+        """Loads the 3D cube describing the SWH in time and space."""
         if first_date < self.ts["date"][0] or last_date > self.ts["date"][-1]:
             raise IndexError(
                 f"period [{first_date}, {last_date}] is out of range: "
@@ -77,22 +77,15 @@ class WW3(detail.CartesianGridHandler):
                                concat_dim="time",
                                combine="nested",
                                decode_times=True)
-
-        x_axis = pyinterp.Axis(ds.variables["longitude"][:], is_circle=True)
-        y_axis = pyinterp.Axis(ds.variables["latitude"][:])
-        z_axis = pyinterp.TemporalAxis(ds.time)
-        var = ds.hs[:].T
-        return pyinterp.Grid3D(x_axis, y_axis, z_axis, var)
+        return pyinterp.backends.xarray.Grid3D(ds.hs)
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     time: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SWH to the required coordinates"""
         interpolator = self.load_dataset(time.min(), time.max())
-        time2 = time.astype("datetime64[ns]")
-        swh = pyinterp.trivariate(interpolator,
-                                  lon.flatten(),
-                                  lat.flatten(),
-                                  time2,
-                                  bounds_error=True,
-                                  interpolator='bilinear').reshape(lon.shape)
+        swh = interpolator.trivariate(dict(longitude=lon,
+                                           latitude=lat,
+                                           time=time.astype("datetime64[ns]")),
+                                      bounds_error=True,
+                                      interpolator='bilinear')
         return swh
