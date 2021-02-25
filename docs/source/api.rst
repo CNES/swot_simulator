@@ -15,6 +15,7 @@ Handle simulator runtime
     swot_simulator.logbook
     swot_simulator.math
     swot_simulator.orbit_propagator
+    swot_simulator.plugins
     swot_simulator.product_specification
     swot_simulator.random_signal
     swot_simulator.settings
@@ -27,7 +28,6 @@ SSH plugins
   :toctree: generated/
 
     swot_simulator.plugins.ssh.aviso
-    swot_simulator.plugins.ssh.detail
     swot_simulator.plugins.ssh.hycom
     swot_simulator.plugins.ssh.mitgcm
     swot_simulator.plugins.ssh.mitgcm_ww3
