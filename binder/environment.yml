@@ -3,55 +3,22 @@ channels:
   - conda-forge
 
 dependencies:
-  - python=3.7*
-  - python-dateutil
-  - pangeo-notebook=2020.05.10
-  - pip=20
   - cartopy
-  - dask-ml
-  - datashader
-  - descartes
-  - fsspec
+  - dask
+  - distributed
+  - furo
   - gcsfs
-  - geopandas
-  - geoviews-core
-  - h5netcdf
-  - h5py
-  - holoviews
-  - hvplot
+  - git
   - intake
-  - intake-esm
-  - intake-geopandas
-  - intake-stac
   - intake-xarray
-  - ipywidgets
-  - ipyleaflet
-  - jupyter-panel-proxy
-  - lz4
-  - matplotlib-base
-  - metpy
-  - nomkl
-  - numpy
+  - jupyter
+  - netcdf4
   - numba
-  - numcodecs
+  - numpy
   - pandas
-  - panel
-  - prefect
-  - pydap
-  - python-blosc
-  - rasterio
-  - rio-cogeo
-  - s3fs
-  - sat-search
-  - sat-stac
-  - satpy
-  - scikit-image
-  - scikit-learn
+  - pyinterp
+  - python
+  - python-dateutil
   - scipy
-  - sparse
-  - tiledb-py
   - xarray
-  - xesmf
-  - xpublish
   - zarr
-  - pyinterp>=0.3.2
