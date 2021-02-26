@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-git clone https://github.com/CNES/swot_simulator.git
 cd swot_simulator
 python setup.py install
 cd ..
