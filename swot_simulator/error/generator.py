@@ -49,6 +49,7 @@ class Generator:
             elif item == RollPhase.__name__:
                 self.generators.append(
                     RollPhase(parameters, error_spectrum['rollPSD'].data,
+                              error_spectrum['gyroPSD'].data,
                               error_spectrum['phasePSD'].data,
                               error_spectrum['spatial_frequency'].data))
             elif item == Timing.__name__:

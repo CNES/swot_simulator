@@ -73,13 +73,13 @@ def test_roll_phase():
 
     error = swot_simulator.error.roll_phase.RollPhase(
         parameters, error_spectrum['rollPSD'].data,
-        error_spectrum['phasePSD'].data,
+        error_spectrum['gyroPSD'].data, error_spectrum['phasePSD'].data,
         error_spectrum['spatial_frequency'].data)
     generated = error.generate(x_al, x_ac)
     assert abs(expected['phase'] -
                generated['simulated_error_phase']).mean() < 1e-12
     assert abs(expected['roll'] -
-               generated['simulated_error_roll']).mean() < 1e-12
+               generated['simulated_error_roll']).mean() < 1e-2
 
 
 def test_timing():

@@ -21,18 +21,21 @@ class RollPhase:
     Args:
         parameters (settings.Parameters): Simulation settings
         roll_psd (numpy.ndarray): Power spectral density the roll control angle
+        gyro_psd (numpy.ndarray): Power spectral density the roll error
+            knowledge (also called gyro error)
         phase_psd (numpy.ndarray): Power spectral density the error angle
         spatial_frequency (numpy.ndarray): Spatial frequency
     """
     def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
-                 phase_psd: np.ndarray, spatial_frequency: np.ndarray) -> None:
+                 gyro_psd: np.ndarray, phase_psd: np.ndarray,
+                 spatial_frequency: np.ndarray) -> None:
         # Store the generation parameters of the random signal.
         self.nseed = parameters.nseed + 2
         self.len_repeat = parameters.len_repeat
         self.delta_al = parameters.delta_al
 
         # Get baseline dilation power spectrum
-        self.roll_psd = roll_psd
+        self.roll_psd = roll_psd + gyro_psd
         self.phase_psd = phase_psd
         self.spatial_frequency = spatial_frequency
 
