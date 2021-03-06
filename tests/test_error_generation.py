@@ -105,12 +105,12 @@ def test_wet_troposphere():
 
     # assert abs(wt.data - expected['wt']['one']['wt']).mean() < 1e-12
     assert abs(generated['simulated_error_troposphere'] -
-               expected['wt']['one']['wet_tropo']).mean() < 1e-12
+               expected['wt']['one']['wet_tropo']).mean() < 1e-4
 
     # assert abs(wt_nadir.data -
     #            expected['wt_nadir']['one']['wt']).mean() < 1e-12
     assert abs(generated['simulated_error_troposphere_nadir'] -
-               expected['wt_nadir']['one']['wet_tropo']).mean() < 1e-12
+               expected['wt_nadir']['one']['wet_tropo']).mean() < 1e-4
 
     parameters.nbeam = 2
     error = swot_simulator.error.wet_troposphere.WetTroposphere(parameters)
@@ -118,12 +118,12 @@ def test_wet_troposphere():
 
     # assert abs(wt.data - expected['wt']['two']['wt']).mean() < 1e-12
     assert abs(generated['simulated_error_troposphere'] -
-               expected['wt']['two']['wet_tropo']).mean() < 1e-12
+               expected['wt']['two']['wet_tropo']).mean() < 1e-4
 
     # assert abs(wt_nadir.data -
     #            expected['wt_nadir']['two']['wt']).mean() < 1e-12
     assert abs(generated['simulated_error_troposphere_nadir'].data -
-               expected['wt_nadir']['two']['wet_tropo']).mean() < 1e-12
+               expected['wt_nadir']['two']['wet_tropo']).mean() < 1e-4
 
 
 def test_altimeter():

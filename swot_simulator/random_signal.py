@@ -94,7 +94,7 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
     return hsdt
 
 
-def gen_signal_1d(fi: np.ndarray,
+def _gen_signal_1d(fi: np.ndarray,
                   psi: np.ndarray,
                   x: np.ndarray,
                   nseed: int = 0,
@@ -144,6 +144,22 @@ def gen_signal_1d(fi: np.ndarray,
     xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
 
     return np.interp(np.mod(x, xg.max()), xg, yg)
+
+def gen_signal_1d(fi: np.ndarray,
+                  psi: np.ndarray,
+                  x: np.ndarray,
+                  nseed: int = 0,
+                  fmin: Optional[float] = None,
+                  fmax: Optional[float] = None,
+                  alpha: int = 10,
+                  lf_extpl: bool = False,
+                  hf_extpl: bool = False) -> np.ndarray:
+    """Generate 1d random signal using Fourier coefficient"""
+    lf = _gen_signal_1d(fi, psi, x, nseed, 1 / 100000000, 1 / 1000000, alpha,
+                        lf_extpl, hf_extpl)
+    hf = _gen_signal_1d(fi, psi, x, nseed, fmin, fmax, alpha, lf_extpl,
+                        hf_extpl)
+    return  lf + hf
 
 
 @nb.njit("(float64[:, ::1])"
