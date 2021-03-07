@@ -168,7 +168,7 @@ def usage() -> argparse.Namespace:
 
     # Write the template configurayion file and ends the programm
     if "template" in namespace:
-        namespace.template.write(settings.text_template())
+        namespace.template.write(settings.template())
         sys.stdout.write(f"""
 The template has been written in the file: {namespace.template.name!r}.
 """)

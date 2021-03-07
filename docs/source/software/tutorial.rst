@@ -1,6 +1,8 @@
 Getting started 
 ===============
 
+.. _main_program:
+
 Main program
 ------------
 

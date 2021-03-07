@@ -6,7 +6,7 @@
 Settings handling
 -----------------
 """
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, Tuple, Union
 import contextlib
 import copy
 import importlib
@@ -299,7 +299,7 @@ class Parameters:
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
 
 
-def required_settings():
+def _required_settings():
     """Get the path to the simulator data."""
     data = pathlib.Path(__file__).parent.joinpath("..", "data")
     result = dict()
@@ -312,7 +312,7 @@ def required_settings():
     return result
 
 
-def text_template() -> str:
+def _text_template() -> str:
     """Get the string representing the default configuration template of the
     simulator."""
     def wrap(s: str) -> Iterator[str]:
@@ -330,7 +330,7 @@ def text_template() -> str:
         if words:
             yield line(words)
 
-    required = required_settings()
+    required = _required_settings()
 
     result = [
         "import swot_simulator.plugins.ssh",
@@ -360,10 +360,10 @@ def text_template() -> str:
     return "\n".join(result)
 
 
-def code_template() -> Dict[str, Any]:
+def _code_template() -> Dict[str, Any]:
     """Get the code representing the default configuration template of the
     simulator."""
-    required = required_settings()
+    required = _required_settings()
     result = dict()
     for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
         if key in required:
@@ -374,3 +374,20 @@ def code_template() -> Dict[str, Any]:
         else:
             result[key] = default
     return result
+
+
+def template(python: False) -> Union[str, Dict[str, Any]]:
+    """Get the template representing the default configuration of the
+    simulator
+    
+    Args:
+        python (bool): True, returns the dictionary that represents the default
+            configuration, otherwise returns the Python code of the default
+            configuration.
+
+    Returns:
+        str|dict: the default configuration of the simulation
+    """
+    if python:
+        return _code_template()
+    return _text_template()
