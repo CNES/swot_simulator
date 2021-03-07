@@ -124,13 +124,16 @@ def date() -> str:
 
 def main():
     """Main function"""
-    os.chdir(pathlib.Path(__file__).parent.absolute())
+    here = pathlib.Path(__file__).parent.absolute()
+    data = here.joinpath("data")
+    os.chdir(here)
 
     with open("README.rst", "r") as fh:
         long_description = fh.read()
 
     setuptools.setup(
         name="swot_simulator",
+        include_package_data=True,
         version=read_version(),
         author="Frederic Briol",
         author_email="fbriol@gmail.com",
@@ -140,7 +143,7 @@ def main():
         long_description_content_type="text/x-rst",
         url="https://github.com/fbriol/swot_simulator",
         packages=setuptools.find_packages(),
-        package_data={'': ['*.xml']},
+        package_data={'': ['*.xml', '*.nc']},
         classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: MIT License",
@@ -155,7 +158,10 @@ def main():
             "python-dateutil", "distributed", "netCDF4", "numba", "numpy",
             "pyinterp", "scipy", "xarray"
         ],
-    )
+        data_files=[
+            ("data",
+             [str(item.relative_to(data.parent)) for item in data.iterdir()])
+        ])
 
 
 if __name__ == "__main__":

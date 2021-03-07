@@ -89,10 +89,11 @@ def usage() -> argparse.Namespace:
     Returns:
         argparse.Namespace: The parameters provided on the command line.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("settings",
-                        type=argparse.FileType('r'),
-                        help="Path to the parameters file")
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-h',
+                        '--help',
+                        action='store_true',
+                        help='show this help message and exit')
     group = parser.add_argument_group("General", "Simulation general settings")
     group.add_argument("--first-date",
                        help="The first date to be processed. "
@@ -136,14 +137,47 @@ def usage() -> argparse.Namespace:
                        type=int,
                        metavar='N',
                        default=1)
+    group = parser.add_argument_group("Configuration")
+    group.add_argument("--template",
+                       help="Writes the default configuration of the "
+                       "simulator into the file and ends the program.",
+                       metavar="PATH",
+                       type=argparse.FileType("w"))
     namespace = argparse.Namespace()
     namespace, _ = parser._parse_known_args(sys.argv[1:], namespace)
+
+    def add_settings(parser):
+        """Added the argument defining the settings of the simulator."""
+        parser.add_argument("settings",
+                            type=argparse.FileType('r'),
+                            help="Path to the parameters file")
+
+    # Displays help and ends the program.
+    if "help" in namespace:
+        add_settings(parser)
+        parser.print_help()
+        parser.exit(0)
+
+    # Checking exclusive options.
     if "scheduler_file" in namespace:
         for item in ["n_workers", "processes", "threads_per_worker"]:
             if item in namespace:
                 item = item.replace("_", "-")
                 raise RuntimeError(
                     f"--{item}: not allowed with argument --scheduler-file")
+
+    # Write the template configurayion file and ends the programm
+    if "template" in namespace:
+        namespace.template.write(settings.text_template())
+        sys.stdout.write(f"""
+The template has been written in the file: {namespace.template.name!r}.
+""")
+        parser.exit(0)
+
+    # The partial analysis of the command line arguments is finished, the last
+    # argument is added and parsed one last time.
+    add_settings(parser)
+
     return parser.parse_args()
 
 

@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 def load_parameters():
     return swot_simulator.settings.Parameters(
         dict(ephemeris=os.path.join(ROOT, "..", "data",
-                                    "ephem_calval_june2015_ell.txt"),
+                                    "ephemeris_calval_june2015_ell.txt"),
              nadir=True,
              swath=True,
              error_spectrum=os.path.join(ROOT, "..", "data",

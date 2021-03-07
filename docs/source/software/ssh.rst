@@ -18,23 +18,36 @@ The output directory is defined in
 :py:const:`working_directory <settings.working_directory>` key, default is the
 user's root. The output file names are stored in the output directory in
 ``karin/<year>`` directory for SWOT and ``nadir/<year>`` directory for the
-nadir. The naming follows the pattern
-``SWOT_L2_LR_Expert_[cycle]_[pass]_[start_time]_[stop_time]_DG10_01.nc``
-for the Karin products and
-``SWOT_GPN_2P1P_[cycle]_[pass]_[start_time]_[stop_time].nc``
-for the nadir products. The interpolation method is specified in your SSH
-plugin. `pangeo-pyinterp <https://github.com/CNES/pangeo-pyinterp>`_ module is
-used in the examples.
+nadir. The naming follows the pattern :
 
-The :py:const:`nadir <settings.nadir>` and :py:const:`karin <settings.karin>`
+* ``SWOT_L2_LR_Expert_[cycle]_[pass]_[start_time]_[stop_time]_DG10_01.nc``
+  for the Karin products and
+* ``SWOT_GPN_2P1P_[cycle]_[pass]_[start_time]_[stop_time].nc``
+  for the nadir products.
+  
+The interpolation method is specified in your SSH plugin. `pangeo-pyinterp
+<https://github.com/CNES/pangeo-pyinterp>`_ module is used in the examples.
+
+The :py:const:`nadir <settings.nadir>` and :py:const:`swath <settings.swath>`
 parameters enable (parameter set to ``True``) or disable (parameter set to
 ``False``) the generation of these products.
 
 Computation of :py:const:`errors <settings.noise>` are specified as a list:
-``noise = ['altimeter', 'baseline_dilation', 'karin', 'corrected_roll_phase',
-'timing', 'wet_troposphere']`` ``corrected_roll_phase`` error will generate
-already cross-calibrated roll-phase error whereas ``roll_phase`` will generate
-errors before cross-calibration.
+
+.. code-block:: python
+
+  noise = ['altimeter',
+           'baseline_dilation',
+           'karin',
+           'corrected_roll_phase',
+           'timing',
+           'wet_troposphere']
+
+.. note::
+
+    ``corrected_roll_phase`` error will generate already cross-calibrated
+    roll-phase error whereas ``roll_phase`` will generate errors before
+    cross-calibration.
 
 A :py:const:`repeat length <settings.len_repeat>` ``len_repeat = 2000`` key
 defines the wavelength in km to repeat the noise and is used for all noises. The
@@ -48,15 +61,14 @@ following parameters are specific to each noise component:
   :py:const:`swh <settings.swh>` can be set ``swh=2`` or interpolated from a
   model SWH specified in the plugin
   :py:const:`swh_plugin <settings.swh_plugin>`.
-
 * Roll-phase: To use the already cross-calibrated roll phase, download the file
   from the FTP (https://ftp.odl.bzh/swot) and specify the path in the
   :py:const:`corrected_roll_phase_dataset <settings.corrected_roll_phase_dataset>`
   key. So far, the following files are available:
 
-     * ``data_sim_slope_v0.nc``: One year of cross-calibrated roll-phase
-     * ``data_sim_slope_2cycles_v0.nc``: Two cycles of cross-calibrated
-       roll-phase
+  * ``data_sim_slope_v0.nc``: One year of cross-calibrated roll-phase
+  * ``data_sim_slope_2cycles_v0.nc``: Two cycles of cross-calibrated
+    roll-phase
 
 * Wet troposphere: The number of beams used to correct the wet troposphere
   is set in :py:const:`nbeam <settings.nbeam>` variable. The beam position of

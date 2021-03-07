@@ -10,8 +10,10 @@ from typing import Any, Dict, Iterator, Tuple
 import contextlib
 import copy
 import importlib
-import os
 import logging
+import os
+import re
+import pathlib
 import traceback
 import types
 import numpy as np
@@ -81,6 +83,13 @@ def error_classes() -> Iterator[str]:
             yield item
 
 
+def error_keywords() -> Iterator[str]:
+    """Get the list of the error keywords"""
+    for item in error_classes():
+        item = item[:1].lower() + item[1:]
+        yield re.sub(r'([A-Z])', r'_\1', item).lower()
+
+
 class NumberOfBeams(int):
     """Handle the number of beams"""
     def __new__(cls, value, *args, **kwargs):
@@ -109,38 +118,91 @@ class Parameters:
             the default settings.
     """
     #: Known parameters.
-    CONFIG_VALUES: Dict[str, Tuple[Any, Any]] = dict(
-        area=(None, [float, 4]),
-        beam_position=((-20, 20), [float, 2]),
-        central_pixel=(False, bool),
-        complete_product=(False, bool),
-        cycle_duration=(20.86455, float),
-        delta_ac=(2.0, float),
-        delta_al=(2.0, float),
-        ephemeris_cols=(None, [int, 3]),
-        ephemeris=(None, str),
-        error_spectrum=(None, str),
-        corrected_roll_phase_dataset=(None, str),
-        half_gap=(10.0, float),
-        half_swath=(60.0, float),
-        height=(891000.0, float),
-        karin_noise=(None, str),
-        len_repeat=(20000.0, float),
-        nadir=(False, bool),
-        nbeam=(2, NumberOfBeams),
-        noise=(None, [str, -1]),
-        nseed=(0, int),
-        product_type=("expert", str),
-        requirement_bounds=(None, [float, 2]),
-        shift_lon=(None, float),
-        shift_time=(None, TimeDelta()),
-        sigma=(6.0, float),
-        ssh_plugin=(None, plugins.Interface),
-        swh_plugin=(None, plugins.Interface),
-        swath=(True, bool),
-        swh=(2.0, float),
-        working_directory=(DEFAULT_WORKING_DIRECTORY, str),
-    )
+    CONFIG_VALUES: Dict[str, Tuple[Any, Any, str]] = dict(
+        area=(None, [float, 4],
+              ("Geographical area to simulate defined by the minimum and "
+               "maximum corner point :lon_min, lat_min, lon_max, lat_max. "
+               "Default: -180, -90, 180, 90")),
+        beam_position=((-20, 20), [float, 2],
+                       ("Number of beam used to correct wet troposphere "
+                        "signal (1, 2 or 'both')")),
+        central_pixel=(False, bool,
+                       ("If true, the swath, in the final dataset, will "
+                        "contain a center pixel divided in half by the "
+                        "reference ground track")),
+        complete_product=(False, bool,
+                          ("If true, the generated netCDF file will be the "
+                           "complete product compliant with SWOT's Product "
+                           "Description Document (PDD), otherwise only the "
+                           "calculated variables will be written to the "
+                           "netCDF file")),
+        cycle_duration=(20.86455, float,
+                        "Duration of a cycle in number of fractional days"),
+        delta_ac=(2.0, float,
+                  ("Distance, in km, between two points across track "
+                   "direction")),
+        delta_al=(2.0, float,
+                  ("Distance, in km, between two points along track "
+                   "direction")),
+        ephemeris_cols=(None, [int, 3],
+                        ("Index of columns to read in the ephemeris file "
+                         "containing, respectively, longitude in degrees, "
+                         "latitude in degrees and the number of seconds "
+                         "elapsed since the start of the orbit. Default: "
+                         "[1, 2, 0]")),
+        ephemeris=(None, str,
+                   ("Ephemeris file to read containing the satellite's "
+                    "orbit.")),
+        error_spectrum=(None, str,
+                        "File containing spectrum of instrument error"),
+        corrected_roll_phase_dataset=(None, str,
+                                      ("Estimated roll phase dataset. "
+                                       "Default: None")),
+        half_gap=(10.0, float,
+                  ("Distance, in km, between the nadir and the center of the "
+                   "first pixel of the swath")),
+        half_swath=(60.0, float,
+                    ("Distance, in km, between the nadir and the center of "
+                     "the last pixel of the swath")),
+        height=(891000.0, float, "Satellite altitude (m)"),
+        karin_noise=(None, str,
+                     "KaRIN file containing spectrum for several SWH"),
+        len_repeat=(20000.0, float, "Repeat length"),
+        nadir=(False, bool, "True to generate Nadir products"),
+        nbeam=(2, NumberOfBeams,
+               ("Number of beam used to correct wet troposphere signal "
+                "(1, 2 or 'both')")),
+        noise=(None, [str, -1],
+               ("The calculation of roll errors can be simulated, option "
+                "\"roll_phase\", or interpolated, option "
+                "\"corrected_roll_phase\", from the dataset specified by the "
+                "option \"roll_phase_dataset\". Therefore, these two options "
+                "are mutually exclusive. In other words, if the "
+                "\"roll_phase\" option is present, the "
+                "\"corrected_roll_phase\" option must be omitted, and vice "
+                "versa")),
+        nseed=(0, int, ("Seed for RandomState. Must be convertible to 32 bit "
+                        "unsigned integers")),
+        product_type=("expert", str,
+                      ("Type of SWOT product to be generated. Possible "
+                       "products are \"expert\", \"basic\" and \"wind_wave\". "
+                       "Default to expert")),
+        requirement_bounds=(None, [float, 2],
+                            ("Limits of SWOT swath requirements. Measurements "
+                             "outside the span will be set with fill values")),
+        shift_lon=(None, float, "Orbit shift in longitude (degrees)"),
+        shift_time=(None, TimeDelta(), "Orbit shift in time (seconds)"),
+        sigma=(6.0, float, "Gaussian footprint of sigma (km)"),
+        ssh_plugin=(None, plugins.Interface,
+                    ("The plug-in handling the SSH interpolation under the "
+                     "satellite swath")),
+        swh_plugin=(None, plugins.Interface,
+                    "SWH plugin to interpolate model SWH on the SWOT grid"),
+        swath=(True, bool, "True to generate swath products"),
+        swh=(2.0, float, "SWH for the region"),
+        working_directory=(DEFAULT_WORKING_DIRECTORY, str,
+                           ("The working directory. By default, files are "
+                            "generated in the user's root directory")))
 
     #: Arguments that must be defined by the user.
     REQUIRED = ["ephemeris", "error_spectrum", "karin_noise"]
@@ -235,3 +297,80 @@ class Parameters:
         if area is None:
             return math.Box()
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
+
+
+def required_settings():
+    """Get the path to the simulator data."""
+    data = pathlib.Path(__file__).parent.joinpath("..", "data")
+    result = dict()
+    for item in Parameters.REQUIRED:
+        result[item] = list()
+    for item in os.listdir(data):
+        for data_type, values in result.items():
+            if item.startswith(data_type):
+                values.append(str(data.joinpath(item).resolve()))
+    return result
+
+
+def text_template() -> str:
+    """Get the string representing the default configuration template of the
+    simulator."""
+    def wrap(s: str) -> Iterator[str]:
+        """Cuts the line into several lines of 80 characters maximum"""
+        def line(items):
+            """Returns the line built"""
+            return "# " + " ".join(items)
+
+        words = []
+        for item in s.split():
+            if sum((len(item) for item in words)) + (len(words) - 1) * 2 > 78:
+                yield line(words)
+                words.clear()
+            words.append(item)
+        if words:
+            yield line(words)
+
+    required = required_settings()
+
+    result = [
+        "import swot_simulator.plugins.ssh",
+        "import swot_simulator.plugins.swh", ""
+    ]
+    for key, (default, _type, help) in Parameters.CONFIG_VALUES.items():
+        result += list(wrap(help))
+        if key in required:
+            # If there are several values for a parameter, only the first one is
+            # enabled, the others are disabled.
+            enable = True
+            for item in required[key]:
+                result += [("" if enable else "# ") + key + " = " + repr(item)]
+                enable = False
+            result.append("")
+        elif key == "noise":
+            result += [
+                key + " = " + repr(
+                    list(
+                        set(error_keywords()) -
+                        set(("corrected_roll_phase", )))), " "
+            ]
+        else:
+            result += [key + " = " + repr(default), ""]
+    # Remove the last carriage return
+    result.pop()
+    return "\n".join(result)
+
+
+def code_template() -> Dict[str, Any]:
+    """Get the code representing the default configuration template of the
+    simulator."""
+    required = required_settings()
+    result = dict()
+    for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
+        if key in required:
+            result[key] = required[key][0]
+        elif key == "noise":
+            result[key] = list(
+                set(error_keywords()) - set(("corrected_roll_phase", )))
+        else:
+            result[key] = default
+    return result

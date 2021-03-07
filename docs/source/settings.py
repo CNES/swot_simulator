@@ -19,7 +19,8 @@ delta_al = 2.0
 delta_ac = 2.0
 
 #: Ephemeris file to read containing the satellite's orbit.
-ephemeris = os.path.join("..", "..", "data", "ephem_science_sept2015_ell.txt")
+ephemeris = os.path.join("..", "..", "data",
+                         "ephemeris_science_sept2015_ell.txt")
 
 #: Index of columns to read in the ephemeris file containing, respectively,
 #: longitude in degrees, latitude in degrees and the number of seconds elapsed
@@ -69,7 +70,7 @@ swath = True
 product_type = "expert"
 
 #: The plug-in handling the SSH interpolation under the satellite swath.
-#: 
+#:
 #: .. code-block:: python
 #:
 #:     ssh_plugin = swot_simulator.plugins.ssh.AVISO("PATH to AVISO files")
@@ -118,7 +119,7 @@ corrected_roll_phase_dataset = "<PATH>"
 swh = 2.0
 
 #: SWH plugin to interpolate model SWH on the SWOT grid:
-#: 
+#:
 #: .. code-block:: python
 #:
 #:     swh_plugin = swot_simulator.plugins.ssh.WW3("PATH to WW3 files")

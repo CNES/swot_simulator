@@ -30,9 +30,9 @@ Orbit files have been updated with the one provided by AVISO_ in September 2015
 There are two additional orbit files available in the last version of the
 simulator. Input files are also ASCII with 3 columns (time, longitude,
 latitude). Orbits are provided at low resolution and are interpolated
-automatically by the simulator. `ephem_calval_june2015_ell.txt
+automatically by the simulator. `ephemeris_calval_june2015_ell.txt
 <https://github.com/CNES/swot_simulator/blob/master/data/ephem_calval_june2015_ell.txt>`_
-contains the updated fast sampling orbit and `ephem_science_sept2015_ell.txt
+contains the updated fast sampling orbit and `ephemeris_science_sept2015_ell.txt
 <https://github.com/CNES/swot_simulator/blob/master/data/ephem_science_sept2015_ell.txt>`_
 the updated science orbit.
 
