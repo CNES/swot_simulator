@@ -98,7 +98,7 @@ class NumberOfBeams(int):
         return super().__new__(cls, value, *args, **kwargs)  # type: ignore
 
 
-class TimeDelta:
+class TimeDelta(int):
     """Handle a time delta in seconds in the configuration file."""
     def __call__(self, value):
         return np.timedelta64(value, "s")
@@ -123,7 +123,7 @@ class Parameters:
               ("Geographical area to simulate defined by the minimum and "
                "maximum corner point :lon_min, lat_min, lon_max, lat_max. "
                "Default: -180, -90, 180, 90")),
-        beam_position=((-20, 20), [float, 2],
+        beam_position=([-20, 20], [float, 2],
                        ("Number of beam used to correct wet troposphere "
                         "signal (1, 2 or 'both')")),
         central_pixel=(False, bool,
@@ -190,8 +190,10 @@ class Parameters:
         requirement_bounds=(None, [float, 2],
                             ("Limits of SWOT swath requirements. Measurements "
                              "outside the span will be set with fill values")),
-        shift_lon=(None, float, "Orbit shift in longitude (degrees)"),
-        shift_time=(None, TimeDelta(), "Orbit shift in time (seconds)"),
+        shift_lon=(None, float,
+                   "Orbit shift in longitude (degrees). Default 0."),
+        shift_time=(None, TimeDelta,
+                    "Orbit shift in time (seconds). Default 0."),
         sigma=(6.0, float, "Gaussian footprint of sigma (km)"),
         ssh_plugin=(None, plugins.Interface,
                     ("The plug-in handling the SSH interpolation under the "
@@ -276,16 +278,18 @@ class Parameters:
         settings = dict((key, copy.copy(value[0]))
                         for key, value in self.CONFIG_VALUES.items())
         for name, value in overrides.items():
-            if name in ["__file__", "__builtins__"] or isinstance(
+            if name in ["__doc__", "__file__", "__builtins__"] or isinstance(
                     value, types.ModuleType) or isinstance(
                         value, types.FunctionType):
                 continue
             try:
                 if name not in settings:
-                    LOGGER.warning(
+                    LOGGER.info(
                         'unknown config value %r in override, ignoring', name)
                     continue
-                settings[name] = self._convert_overrides(name, value)
+                # None values are not processed.
+                if value is not None:
+                    settings[name] = self._convert_overrides(name, value)
             except ValueError as exc:
                 LOGGER.warning("%s", exc)
         self.__dict__.update((key, value) for key, value in settings.items())
@@ -299,20 +303,41 @@ class Parameters:
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
 
 
-def _required_settings():
-    """Get the path to the simulator data."""
-    data = pathlib.Path(__file__).parent.joinpath("..", "data")
-    result = dict()
-    for item in Parameters.REQUIRED:
-        result[item] = list()
-    for item in os.listdir(data):
-        for data_type, values in result.items():
-            if item.startswith(data_type):
-                values.append(str(data.joinpath(item).resolve()))
-    return result
+def _data_folder():
+    """Get the folder containing the simulator data"""
+    return pathlib.Path(__file__).parent.joinpath("..", "data")
 
 
-def _text_template() -> str:
+def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
+    """Get the code representing the default configuration template of the
+    simulator."""
+    def required_settings():
+        """Get the path to the simulator data."""
+        data = _data_folder()
+        result = dict()
+        for item in Parameters.REQUIRED:
+            result[item] = list()
+        for item in os.listdir(data):
+            for data_type, values in result.items():
+                if item.startswith(data_type):
+                    values.append(str(data.joinpath(item).resolve()))
+        return result
+
+    required = required_settings()
+    settings = dict()
+    for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
+        if key in required:
+            settings[key] = required[key][0]
+        elif key == "noise":
+            settings[key] = list(
+                set(error_keywords()) - set(("corrected_roll_phase", )))
+        else:
+            settings[key] = default
+    return required, settings
+
+
+def _template_to_string(required: Dict[str, str], template: Dict[str,
+                                                                 Any]) -> str:
     """Get the string representing the default configuration template of the
     simulator."""
     def wrap(s: str) -> Iterator[str]:
@@ -330,53 +355,39 @@ def _text_template() -> str:
         if words:
             yield line(words)
 
-    required = _required_settings()
-
+    data_folder = str(_data_folder().resolve())
     result = [
+        "import os",
         "import swot_simulator.plugins.ssh",
-        "import swot_simulator.plugins.swh", ""
+        "import swot_simulator.plugins.swh",
+        "",
+        "# Path to the data supplied with the simulator.",
+        f"DATA = {data_folder!r}",
+        "",
     ]
-    for key, (default, _type, help) in Parameters.CONFIG_VALUES.items():
-        result += list(wrap(help))
+    for key, value in template.items():
+        result += list(wrap(Parameters.CONFIG_VALUES[key][-1]))
+        # The required data is supplied with the simulator. They are all
+        # written in the template.
         if key in required:
             # If there are several values for a parameter, only the first one is
             # enabled, the others are disabled.
             enable = True
             for item in required[key]:
-                result += [("" if enable else "# ") + key + " = " + repr(item)]
+                result += [
+                    ("" if enable else "# ") + key + " = os.path.join(DATA, " +
+                    repr(pathlib.Path(item).name) + ")"
+                ]
                 enable = False
             result.append("")
-        elif key == "noise":
-            result += [
-                key + " = " + repr(
-                    list(
-                        set(error_keywords()) -
-                        set(("corrected_roll_phase", )))), " "
-            ]
         else:
-            result += [key + " = " + repr(default), ""]
+            result += [key + " = " + repr(value), ""]
     # Remove the last carriage return
     result.pop()
     return "\n".join(result)
 
 
-def _code_template() -> Dict[str, Any]:
-    """Get the code representing the default configuration template of the
-    simulator."""
-    required = _required_settings()
-    result = dict()
-    for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
-        if key in required:
-            result[key] = required[key][0]
-        elif key == "noise":
-            result[key] = list(
-                set(error_keywords()) - set(("corrected_roll_phase", )))
-        else:
-            result[key] = default
-    return result
-
-
-def template(python: False) -> Union[str, Dict[str, Any]]:
+def template(python: bool = False) -> Union[str, Dict[str, Any]]:
     """Get the template representing the default configuration of the
     simulator
     
@@ -386,8 +397,9 @@ def template(python: False) -> Union[str, Dict[str, Any]]:
             configuration.
 
     Returns:
-        str|dict: the default configuration of the simulation
+        str, dict: the default configuration of the simulation
     """
+    required, template = _template()
     if python:
-        return _code_template()
-    return _text_template()
+        return template
+    return _template_to_string(required, template)
