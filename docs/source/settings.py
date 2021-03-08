@@ -132,7 +132,7 @@ nbeam = 2
 sigma = 6.0
 
 #: Beam position if there are 2 beams (in km from nadir):
-beam_position = [-20, 20],
+beam_position = [-20, 20]
 
 #: Seed for RandomState. Must be convertible to 32 bit unsigned integers.
 nseed = 0
