@@ -2,7 +2,7 @@
 #
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from . import math
 from .plugins import ssh
 from .plugins import swh as _swh
@@ -51,3 +51,7 @@ class Parameters:
     @property
     def box(self) -> math.Box:
         ...
+
+
+def template(python: bool = False) -> Union[str, Dict[str, Any]]:
+    ...
