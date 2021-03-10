@@ -48,6 +48,10 @@ class Parameters:
     def __init__(self, override: Dict[str, Any]) -> None:
         ...
 
+    @staticmethod
+    def load_default() -> 'Parameters':
+        ...
+
     @property
     def box(self) -> math.Box:
         ...

@@ -90,6 +90,108 @@ def error_keywords() -> Iterator[str]:
         yield re.sub(r'([A-Z])', r'_\1', item).lower()
 
 
+def _data_folder():
+    """Get the folder containing the simulator data"""
+    return pathlib.Path(__file__).parent.joinpath("..", "data")
+
+
+def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
+    """Get the code representing the default configuration template of the
+    simulator."""
+    def required_settings():
+        """Get the path to the simulator data."""
+        data = _data_folder()
+        result = dict()
+        for item in Parameters.REQUIRED:
+            result[item] = list()
+        for item in os.listdir(data):
+            for data_type, values in result.items():
+                if item.startswith(data_type):
+                    values.append(str(data.joinpath(item).resolve()))
+        return result
+
+    required = required_settings()
+    settings = dict()
+    for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
+        if key in required:
+            settings[key] = required[key][0]
+        elif key == "noise":
+            settings[key] = list(
+                set(error_keywords()) - set(("corrected_roll_phase", )))
+        else:
+            settings[key] = default
+    return required, settings
+
+
+def _template_to_string(required: Dict[str, str], template: Dict[str,
+                                                                 Any]) -> str:
+    """Get the string representing the default configuration template of the
+    simulator."""
+    def wrap(s: str) -> Iterator[str]:
+        """Cuts the line into several lines of 80 characters maximum"""
+        def line(items):
+            """Returns the line built"""
+            return "# " + " ".join(items)
+
+        words = []
+        for item in s.split():
+            if sum((len(item) for item in words)) + (len(words) - 1) * 2 > 78:
+                yield line(words)
+                words.clear()
+            words.append(item)
+        if words:
+            yield line(words)
+
+    data_folder = str(_data_folder().resolve())
+    result = [
+        "import os",
+        "import swot_simulator.plugins.ssh",
+        "import swot_simulator.plugins.swh",
+        "",
+        "# Path to the data supplied with the simulator.",
+        f"DATA = {data_folder!r}",
+        "",
+    ]
+    for key, value in template.items():
+        result += list(wrap(Parameters.CONFIG_VALUES[key][-1]))
+        # The required data is supplied with the simulator. They are all
+        # written in the template.
+        if key in required:
+            # If there are several values for a parameter, only the first one is
+            # enabled, the others are disabled.
+            enable = True
+            for item in required[key]:
+                result += [
+                    ("" if enable else "# ") + key + " = os.path.join(DATA, " +
+                    repr(pathlib.Path(item).name) + ")"
+                ]
+                enable = False
+            result.append("")
+        else:
+            result += [key + " = " + repr(value), ""]
+    # Remove the last carriage return
+    result.pop()
+    return "\n".join(result)
+
+
+def template(python: bool = False) -> Union[str, Dict[str, Any]]:
+    """Get the template representing the default configuration of the
+    simulator
+    
+    Args:
+        python (bool): True, returns the dictionary that represents the default
+            configuration, otherwise returns the Python code of the default
+            configuration.
+
+    Returns:
+        str, dict: the default configuration of the simulation
+    """
+    required, template = _template()
+    if python:
+        return template
+    return _template_to_string(required, template)
+
+
 class NumberOfBeams(int):
     """Handle the number of beams"""
     def __new__(cls, value, *args, **kwargs):
@@ -248,6 +350,15 @@ class Parameters:
             noise = []
         setattr(self, "noise", noise)
 
+    @staticmethod
+    def load_default() -> 'Parameters':
+        """Load the default configuration
+        
+        Returns:
+            Parameters: the default settings
+        """
+        return Parameters(template(python=True))
+
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
         try:
@@ -301,105 +412,3 @@ class Parameters:
         if area is None:
             return math.Box()
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
-
-
-def _data_folder():
-    """Get the folder containing the simulator data"""
-    return pathlib.Path(__file__).parent.joinpath("..", "data")
-
-
-def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
-    """Get the code representing the default configuration template of the
-    simulator."""
-    def required_settings():
-        """Get the path to the simulator data."""
-        data = _data_folder()
-        result = dict()
-        for item in Parameters.REQUIRED:
-            result[item] = list()
-        for item in os.listdir(data):
-            for data_type, values in result.items():
-                if item.startswith(data_type):
-                    values.append(str(data.joinpath(item).resolve()))
-        return result
-
-    required = required_settings()
-    settings = dict()
-    for key, (default, _type, _help) in Parameters.CONFIG_VALUES.items():
-        if key in required:
-            settings[key] = required[key][0]
-        elif key == "noise":
-            settings[key] = list(
-                set(error_keywords()) - set(("corrected_roll_phase", )))
-        else:
-            settings[key] = default
-    return required, settings
-
-
-def _template_to_string(required: Dict[str, str], template: Dict[str,
-                                                                 Any]) -> str:
-    """Get the string representing the default configuration template of the
-    simulator."""
-    def wrap(s: str) -> Iterator[str]:
-        """Cuts the line into several lines of 80 characters maximum"""
-        def line(items):
-            """Returns the line built"""
-            return "# " + " ".join(items)
-
-        words = []
-        for item in s.split():
-            if sum((len(item) for item in words)) + (len(words) - 1) * 2 > 78:
-                yield line(words)
-                words.clear()
-            words.append(item)
-        if words:
-            yield line(words)
-
-    data_folder = str(_data_folder().resolve())
-    result = [
-        "import os",
-        "import swot_simulator.plugins.ssh",
-        "import swot_simulator.plugins.swh",
-        "",
-        "# Path to the data supplied with the simulator.",
-        f"DATA = {data_folder!r}",
-        "",
-    ]
-    for key, value in template.items():
-        result += list(wrap(Parameters.CONFIG_VALUES[key][-1]))
-        # The required data is supplied with the simulator. They are all
-        # written in the template.
-        if key in required:
-            # If there are several values for a parameter, only the first one is
-            # enabled, the others are disabled.
-            enable = True
-            for item in required[key]:
-                result += [
-                    ("" if enable else "# ") + key + " = os.path.join(DATA, " +
-                    repr(pathlib.Path(item).name) + ")"
-                ]
-                enable = False
-            result.append("")
-        else:
-            result += [key + " = " + repr(value), ""]
-    # Remove the last carriage return
-    result.pop()
-    return "\n".join(result)
-
-
-def template(python: bool = False) -> Union[str, Dict[str, Any]]:
-    """Get the template representing the default configuration of the
-    simulator
-    
-    Args:
-        python (bool): True, returns the dictionary that represents the default
-            configuration, otherwise returns the Python code of the default
-            configuration.
-
-    Returns:
-        str, dict: the default configuration of the simulation
-    """
-    required, template = _template()
-    if python:
-        return template
-    return _template_to_string(required, template)
