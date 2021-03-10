@@ -35,9 +35,9 @@ def read_file_instr(file_instr: str, delta_al: float,
     cut_min = 1 / (2 * delta_al)
     cut_max = max(0, 1 / lambda_max)
 
-    # TODO remove ugly trick from slice
-    return dataset.sel(spatial_frequency=slice(cut_max + 0.000001, cut_min -
-                                               0.000001))
+    return dataset.where((dataset.spatial_frequency >= cut_max) &
+                         (dataset.spatial_frequency <= cut_min),
+                         drop=True)
 
 
 def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -95,22 +95,23 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
 
 
 def _gen_signal_1d(fi: np.ndarray,
-                  psi: np.ndarray,
-                  x: np.ndarray,
-                  nseed: int = 0,
-                  fmin: Optional[float] = None,
-                  fmax: Optional[float] = None,
-                  alpha: int = 10,
-                  lf_extpl: bool = False,
-                  hf_extpl: bool = False) -> np.ndarray:
+                   psi: np.ndarray,
+                   x: np.ndarray,
+                   nseed: int = 0,
+                   fmin: Optional[float] = None,
+                   fmax: Optional[float] = None,
+                   alpha: int = 10,
+                   lf_extpl: bool = False,
+                   hf_extpl: bool = False) -> np.ndarray:
     """Generate 1d random signal using Fourier coefficient"""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
     fi = fi[fi > 0]
 
-    # Adjust fmin and fmax to fi bounds if not specified
-    fmin = fmin or fi[0]
-    fmax = fmax or fi[-1]
+    # Adjust fmin and fmax to fi bounds if not specified. Values are bounded
+    # with respect to the frequencies of the processed spectrum.
+    fmin = max(fmin, fi[0]) or fi[0]
+    fmax = min(fmax, fi[-1]) or fi[-1]
 
     # Go alpha times further in frequency to avoid interpolation aliasing.
     fmaxr = alpha * fmax
@@ -145,6 +146,7 @@ def _gen_signal_1d(fi: np.ndarray,
 
     return np.interp(np.mod(x, xg.max()), xg, yg)
 
+
 def gen_signal_1d(fi: np.ndarray,
                   psi: np.ndarray,
                   x: np.ndarray,
@@ -159,7 +161,7 @@ def gen_signal_1d(fi: np.ndarray,
                         lf_extpl, hf_extpl)
     hf = _gen_signal_1d(fi, psi, x, nseed, fmin, fmax, alpha, lf_extpl,
                         hf_extpl)
-    return  lf + hf
+    return lf + hf
 
 
 @nb.njit("(float64[:, ::1])"
