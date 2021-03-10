@@ -10,7 +10,7 @@ Sample configuration file
 
         import swot_simulator.settings
 
-        conf = swot_simulator.settings.template(python=True)
+        settings = swot_simulator.settings.Parameters.load_default()
 
 .. _params-file:
 
