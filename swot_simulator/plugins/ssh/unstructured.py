@@ -24,7 +24,7 @@ class unstructured(UnstructuredHandler):
     #: Decode the product date encoded from the file name.
     #hycom_GLBu0.08_191_2012031900_t012.nc
     PATTERN = re.compile(
-        r"schout_baltic_(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).nc").search
+        r"schout_baltic_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})_(\d{8})T(\d{6}).nc").search
 
     def load_ts(self):
         """Loading in memory the time axis of the time series"""
