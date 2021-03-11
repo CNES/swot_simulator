@@ -26,8 +26,8 @@ def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
     SWOT data"""
     xp_diff = np.diff(xp)
 
-    assert xp.shape[0] == yp.shape[0] and yp.shape[1] == xi.shape[0]
-    assert np.all(xp_diff == xp_diff[0])
+#    assert xp.shape[0] == yp.shape[0] and yp.shape[1] == xi.shape[0]
+#    assert np.all(xp_diff == xp_diff[0])
 
     result = np.empty(yp.shape[1:], dtype=yp.dtype)
 
@@ -36,7 +36,7 @@ def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
 
     for ix in range(yp.shape[0]):
         index = int(np.around((xi[ix] - xp[0]) * step))
-        assert index >= 0 or index <= size
+        #assert index >= 0 or index <= size
         if index == size - 1:
             i0 = index - 1
             i1 = index

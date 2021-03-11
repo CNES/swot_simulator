@@ -63,3 +63,26 @@ class CartesianGridHandler(Interface):
             last_date: np.datetime64) -> pyinterp.backends.xarray.Grid3D:
         """Loads the 3D cube describing the SSH in time and space."""
         ...
+
+
+class UnstructuredHandler(Interface):
+    """Abstract class of the interpolation of a series of grids."""
+    def __init__(self, path):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path!r}")
+        self.path = path
+        self.ts = None
+        self.dt = None
+        self.load_ts()
+
+    @abc.abstractmethod
+    def load_ts(self):
+        """Loading in memory the time axis of the time series"""
+        ...
+
+    @abc.abstractmethod
+    def load_dataset(
+            self, first_date: np.datetime64,
+            last_date: np.datetime64):
+        """Loads the 3D cube describing the SSH in time and space."""
+        ...
