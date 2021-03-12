@@ -21,8 +21,7 @@ except ImportError:
     IFFT2 = np.fft.ifft2
 
 
-def read_file_instr(file_instr: str, delta_al: float,
-                    lambda_max: float) -> xr.Dataset:
+def read_file_instr(file_instr: str, delta_al: float) -> xr.Dataset:
     """Retrieve power spectrum from instrumental noise file provided by
     """
     dataset = xr.load_dataset(file_instr)
@@ -31,13 +30,10 @@ def read_file_instr(file_instr: str, delta_al: float,
     dataset = dataset.swap_dims(dict(nfreq="spatial_frequency"))
 
     # Extract spatial frequency relevant to our sampling
-    # (Cut frequencies larger than Nyquist frequency and long wavelength)
+    # (Cut frequencies larger than Nyquist frequency)
     cut_min = 1 / (2 * delta_al)
-    cut_max = max(0, 1 / lambda_max)
 
-    return dataset.where((dataset.spatial_frequency >= cut_max) &
-                         (dataset.spatial_frequency <= cut_min),
-                         drop=True)
+    return dataset.where(dataset.spatial_frequency <= cut_min, drop=True)
 
 
 def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -97,7 +93,7 @@ def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
 def _gen_signal_1d(fi: np.ndarray,
                    psi: np.ndarray,
                    x: np.ndarray,
-                   nseed: int = 0,
+                   rng: np.random.Generator,
                    fmin: Optional[float] = None,
                    fmax: Optional[float] = None,
                    alpha: int = 10,
@@ -110,8 +106,8 @@ def _gen_signal_1d(fi: np.ndarray,
 
     # Adjust fmin and fmax to fi bounds if not specified. Values are bounded
     # with respect to the frequencies of the processed spectrum.
-    fmin = max(fmin, fi[0]) or fi[0]
-    fmax = min(fmax, fi[-1]) or fi[-1]
+    fmin = fmin or fi[0]
+    fmax = fmax or fi[-1]
 
     # Go alpha times further in frequency to avoid interpolation aliasing.
     fmaxr = alpha * fmax
@@ -133,13 +129,12 @@ def _gen_signal_1d(fi: np.ndarray,
 
     f_size = f.size
     phase = np.empty((2 * f_size + 1))
-    np.random.seed(nseed)
-    phase[1:(f_size + 1)] = np.random.random(f_size) * 2 * np.pi
+    phase[1:(f_size + 1)] = rng.random(f_size) * 2 * np.pi
     phase[0] = 0
     phase[-f_size:] = -phase[1:(f_size + 1)][::-1]
 
     fft1a = np.concatenate((np.array([0]), 0.5 * ps, 0.5 * ps[::-1]), axis=0)
-    fft1a = np.sqrt(fft1a) * np.exp(1j * phase) / fmin**0.5
+    fft1a = np.sqrt(fft1a) * np.exp(1j * phase) / np.sqrt(fmin)
 
     yg = 2 * fmaxr * np.real(IFFT(fft1a))
     xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
@@ -150,17 +145,16 @@ def _gen_signal_1d(fi: np.ndarray,
 def gen_signal_1d(fi: np.ndarray,
                   psi: np.ndarray,
                   x: np.ndarray,
-                  nseed: int = 0,
+                  rng: np.random.Generator,
                   fmin: Optional[float] = None,
                   fmax: Optional[float] = None,
                   alpha: int = 10,
                   lf_extpl: bool = False,
                   hf_extpl: bool = False) -> np.ndarray:
     """Generate 1d random signal using Fourier coefficient"""
-    lf = _gen_signal_1d(fi, psi, x, nseed, 1 / 100000000, 1 / 1000000, alpha,
-                        lf_extpl, hf_extpl)
-    hf = _gen_signal_1d(fi, psi, x, nseed, fmin, fmax, alpha, lf_extpl,
-                        hf_extpl)
+    lf = _gen_signal_1d(fi, psi, x, rng, 1 / 100000000, 1 / 1000000, alpha,
+                        True, hf_extpl)
+    hf = _gen_signal_1d(fi, psi, x, rng, fmin, fmax, alpha, lf_extpl, hf_extpl)
     return lf + hf
 
 
@@ -257,11 +251,11 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
                             f: np.ndarray,
                             x: np.ndarray,
                             y: np.ndarray,
+                            rng: np.random.Generator,
                             fminx: float,
                             fminy: float,
                             fmax: float,
-                            alpha: int = 10,
-                            nseed: int = 0) -> np.ndarray:
+                            alpha: int = 10) -> np.ndarray:
     """TODO(lgaultier)"""
     revert = fminy < fminx
     if revert:
@@ -278,8 +272,7 @@ def gen_signal_2d_rectangle(ps2d: np.ndarray,
     fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
     dfx, dfy = fmin, fminy
 
-    np.random.seed(nseed)
-    phase = np.random.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
+    phase = rng.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
     phase[0, 0] = 0.
     phase[-len(fy) + 1:, 0] = -phase[1:len(fy), 0][::-1]
 

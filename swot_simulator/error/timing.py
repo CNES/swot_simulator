@@ -28,7 +28,8 @@ class Timing:
     def __init__(self, parameters: settings.Parameters, timing_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
         # Store the generation parameters of the random signal.
-        self.nseed = parameters.nseed + 3
+        self.rng_l = parameters.rng()
+        self.rng_r = parameters.rng()
         self.len_repeat = parameters.len_repeat
         self.delta_al = parameters.delta_al
 
@@ -41,14 +42,14 @@ class Timing:
         timing_l = random_signal.gen_signal_1d(self.spatial_frequency,
                                                self.timing_psd,
                                                x_al,
-                                               nseed=self.nseed,
+                                               rng=self.rng_l,
                                                fmin=1 / self.len_repeat,
                                                fmax=1 / (2 * self.delta_al),
                                                alpha=10)
         timing_r = random_signal.gen_signal_1d(self.spatial_frequency,
                                                self.timing_psd,
                                                x_al,
-                                               nseed=self.nseed + 100,
+                                               rng=self.rng_r,
                                                fmin=1 / self.len_repeat,
                                                fmax=1 / (2 * self.delta_al),
                                                alpha=10)

@@ -28,7 +28,7 @@ class BaselineDilation:
                  dilation_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
         # Store the generation parameters of the random signal.
-        self.nseed = parameters.nseed + 1
+        self.rng = parameters.rng()
         self.len_repeat = parameters.len_repeat
         self.delta_al = parameters.delta_al
 
@@ -46,7 +46,7 @@ class BaselineDilation:
         dil = random_signal.gen_signal_1d(self.freq,
                                           self.psbd,
                                           x_al,
-                                          nseed=self.nseed,
+                                          rng=self.rng,
                                           fmin=1 / self.len_repeat,
                                           fmax=1 / (2 * self.delta_al),
                                           alpha=10)

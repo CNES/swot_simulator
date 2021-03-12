@@ -27,14 +27,13 @@ class Karin:
             parameters.karin_noise)
 
         self.size_grid = (parameters.delta_ac * parameters.delta_al)**0.5
-        self.nseed = parameters.nseed
 
     def generate(self, seed: int, x_al: np.array, x_ac: np.array,
                  swh: np.array) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
         Args:
-            nseed (int): Random seed used to initialize the pseudo-random
+            seed (int): Random seed used to initialize the pseudo-random
                 number generator.
             x_al (numpy.ndarray): Along track distance
             x_ac (numpy.ndarray): Across track distance
@@ -48,8 +47,8 @@ class Karin:
         num_lines = x_al.shape[0]
 
         # Generate random noise for left and right part of the mast
-        np.random.seed(self.nseed + seed)
-        a_karin = np.random.normal(0, 1, (num_lines, num_pixels))
+        rng = np.random.default_rng(seed=seed)
+        a_karin = rng.normal(0, 1, (num_lines, num_pixels))
 
         # Formula of karin noise as a function of x_ac (smile shape)
         sigma_karin = random_signal.interpolate_file_karin(

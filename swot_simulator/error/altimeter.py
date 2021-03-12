@@ -22,7 +22,7 @@ class Altimeter:
     def __init__(self, parameters: settings.Parameters) -> None:
         # Store the generation parameters of the random signal.
         self.delta_al = 2 * parameters.delta_al
-        self.nseed = parameters.nseed + 1
+        self.rng = parameters.rng()
         self.len_repeat = parameters.len_repeat
         # Define the sepctrum of the nadir instrument error
         freq = np.arange(1 / 3000, 1 / self.delta_al, 1 / 3000)
@@ -47,7 +47,7 @@ class Altimeter:
         error = random_signal.gen_signal_1d(self.freq,
                                             self.psd,
                                             x_al,
-                                            nseed=self.nseed,
+                                            rng=self.rng,
                                             fmin=1 / self.len_repeat,
                                             fmax=1 / self.delta_al,
                                             alpha=10)

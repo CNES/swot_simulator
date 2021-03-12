@@ -30,8 +30,7 @@ class Generator:
 
         assert parameters.error_spectrum is not None
         error_spectrum = random_signal.read_file_instr(
-            parameters.error_spectrum, parameters.delta_al,
-            parameters.len_repeat)
+            parameters.error_spectrum, parameters.delta_al)
 
         for item in parameters.noise:
             if item == Altimeter.__name__:

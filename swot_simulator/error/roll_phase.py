@@ -30,12 +30,16 @@ class RollPhase:
                  gyro_psd: np.ndarray, phase_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
         # Store the generation parameters of the random signal.
-        self.nseed = parameters.nseed + 2
+        self.rng_theta = parameters.rng()
+        self.rng_theta_l = parameters.rng()
+        self.rng_theta_r = parameters.rng()
         self.len_repeat = parameters.len_repeat
         self.delta_al = parameters.delta_al
 
         # Get baseline dilation power spectrum
         self.roll_psd = roll_psd + gyro_psd
+        indexes = np.where(spatial_frequency <= 1 / 40000)[0]
+        self.roll_psd[indexes] = self.roll_psd[indexes][-1]
         self.phase_psd = phase_psd
         self.spatial_frequency = spatial_frequency
 
@@ -54,21 +58,21 @@ class RollPhase:
         theta = random_signal.gen_signal_1d(self.spatial_frequency,
                                             self.roll_psd,
                                             x_al,
-                                            nseed=self.nseed,
+                                            rng=self.rng_theta,
                                             fmin=1 / self.len_repeat,
                                             fmax=1 / (2 * self.delta_al),
                                             alpha=10)
         theta_l = random_signal.gen_signal_1d(self.spatial_frequency,
                                               self.phase_psd,
                                               x_al,
-                                              nseed=self.nseed + 100,
+                                              rng=self.rng_theta_l,
                                               fmin=1 / self.len_repeat,
                                               fmax=1 / (2 * self.delta_al),
                                               alpha=10)
         theta_r = random_signal.gen_signal_1d(self.spatial_frequency,
                                               self.phase_psd,
                                               x_al,
-                                              nseed=self.nseed + 200,
+                                              rng=self.rng_theta_r,
                                               fmin=1 / self.len_repeat,
                                               fmax=1 / (2 * self.delta_al),
                                               alpha=10)

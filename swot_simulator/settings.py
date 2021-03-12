@@ -206,6 +206,16 @@ class TimeDelta(int):
         return np.timedelta64(value, "s")
 
 
+class Seed:
+    """Handle the seed for the random state"""
+    def __init__(self, seed: int):
+        self.seed = seed - 1
+
+    def __call__(self) -> np.random.Generator:
+        self.seed += 1
+        return np.random.default_rng(seed=self.seed)
+
+
 class Parameters:
     """
     Simulator parameter management.
@@ -349,6 +359,7 @@ class Parameters:
         else:
             noise = []
         setattr(self, "noise", noise)
+        self._rng = Seed(getattr(self, "nseed"))
 
     @staticmethod
     def load_default() -> 'Parameters':
@@ -412,3 +423,7 @@ class Parameters:
         if area is None:
             return math.Box()
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
+
+    def rng(self) -> np.random.Generator:
+        """Get a random state generator"""
+        return self._rng()

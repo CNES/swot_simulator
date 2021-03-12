@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from . import math
 from .plugins import ssh
 from .plugins import swh as _swh
+import numpy as np
 
 
 def eval_config_file(filename: str) -> Dict:
@@ -54,6 +55,9 @@ class Parameters:
 
     @property
     def box(self) -> math.Box:
+        ...
+
+    def rng(self) -> np.random.Generator:
         ...
 
 

@@ -8,6 +8,7 @@ Wet troposphere errors
 """
 from typing import Dict, List, Tuple
 import numba as nb
+import numba.typed
 import numpy as np
 import scipy.ndimage.filters
 
@@ -100,12 +101,14 @@ class WetTroposphere:
 
     def __init__(self, parameters: settings.Parameters) -> None:
         # Store the generation parameters of the random signal.
-        self.beam_positions = parameters.beam_position
+        self.beam_positions = numba.typed.List(parameters.beam_position)
         self.delta_ac = parameters.delta_ac
         self.delta_al = parameters.delta_al
         self.len_repeat = parameters.len_repeat
         self.nbeam = parameters.nbeam
-        self.nseed = parameters.nseed + 4
+        self.rng = parameters.rng()
+        self.rng_radio_l = parameters.rng()
+        self.rng_radio_r = parameters.rng()
         self.sigma = parameters.sigma
         # TODO
         self.conversion_factor = (
@@ -150,7 +153,7 @@ class WetTroposphere:
                                            fmin=1 / self.len_repeat,
                                            fmax=1 / (2 * self.delta_al),
                                            alpha=10,
-                                           nseed=self.nseed + 100,
+                                           rng=self.rng_radio_r,
                                            hf_extpl=True,
                                            lf_extpl=True)
         radio_r = hrad * 1e-2
@@ -160,7 +163,7 @@ class WetTroposphere:
                                            fmin=1 / self.len_repeat,
                                            fmax=1 / (2 * self.delta_al),
                                            alpha=10,
-                                           nseed=self.nseed + 200,
+                                           rng=self.rng_radio_l,
                                            hf_extpl=True,
                                            lf_extpl=True)
         radio_l = hrad * 1e-2
@@ -202,7 +205,7 @@ class WetTroposphere:
                                                    fminy=1 / self.LC_MAX,
                                                    fmax=self.F_MAX,
                                                    alpha=self.ALPHA,
-                                                   nseed=self.nseed)
+                                                   rng=self.rng)
         wt = wt.T * 1e-2
         wt_large = random_signal.gen_signal_2d_rectangle(self.ps2d,
                                                          self.f,
@@ -212,7 +215,7 @@ class WetTroposphere:
                                                          fminy=1 / self.LC_MAX,
                                                          fmax=self.F_MAX,
                                                          alpha=self.ALPHA,
-                                                         nseed=self.nseed)
+                                                         rng=self.rng)
         wt_large = wt_large.T * 1e-2
 
         # Compute Residual path delay error after a 1-beam radiometer
