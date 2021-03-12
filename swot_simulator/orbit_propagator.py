@@ -284,7 +284,7 @@ class Orbit:
             the cycle number, pass number and start date of the half-orbit.
         """
         date = first_date or np.datetime64(datetime.datetime.now())
-        last_date = last_date or first_date + self.cycle_duration()
+        last_date = last_date or date + self.cycle_duration()
         while date <= last_date:
             cycle_number, pass_number = self.decode_absolute_pass_number(
                 absolute_pass_number)
