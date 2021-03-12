@@ -1,0 +1,250 @@
+# Copyright (c) 2021 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+import logging
+import os
+import re
+from datetime import datetime, time
+from typing import Optional
+
+import dask.array as da
+import numba as nb
+import numpy as np
+import pyinterp
+import pyinterp.backends.xarray
+import xarray as xr
+
+from .. import Interface
+
+LOGGER = logging.getLogger(__name__)
+
+
+class DatasetLoader:
+    def load_dataset(
+        self, first_date: np.datetime64, last_date: np.datetime64
+    ) -> xr.Dataset:
+        raise RuntimeError("Not implemented")
+
+    def _shift_date(self, date: np.datetime64, shift: int) -> np.datetime64:
+        """
+        Shift the input date using the time_delta of original data. This is
+        useful to generate a time interval for which we need an original value.
+
+        Example: if we have data on [t0, t1, dt], and we want an interpolation over
+        [T0, T1], then we must make sure that t0 <= T0 - dt and t1 >= T1 + dt. If this
+        condition is satisfied, interpolation at T0 and T1 will be possible. If this
+        condition is not satisfied, interpolation becomes extrapolation.
+        """
+        if date.astype("int64") % self.time_delta.astype("int64") != 0:
+            return date + self.time_delta * shift
+        return date
+
+    @staticmethod
+    def _calculate_time_delta(dates: xr.DataArray):
+        """Calculation of the delta T between two consecutive grids."""
+        frequency = np.diff(dates)
+        if not np.all(frequency == frequency[0]):
+            raise RuntimeError(
+                "Time series does not have a constant step between two "
+                f"grids: {set(frequency)} seconds"
+            )
+        elif len(frequency) != 1:
+            raise RuntimeError("Check that your list of data is not empty")
+
+        return np.timedelta64(frequency.pop(), "s")
+
+
+@nb.njit(
+    "(float32[::1])(int64[::1], float32[:, ::1], int64[::1])", cache=True, nogil=True
+)
+def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
+    """Time interpolation for the different spatial grids interpolated on the
+    SWOT data"""
+    xp_diff = np.diff(xp)
+
+    assert xp.shape[0] == yp.shape[0] and yp.shape[1] == xi.shape[0]
+    assert np.all(xp_diff == xp_diff[0])
+
+    result = np.empty(yp.shape[1:], dtype=yp.dtype)
+
+    step = 1.0 / xp_diff[0]
+    size = xp.size
+
+    for ix in range(yp.shape[0]):
+        index = int(np.around((xi[ix] - xp[0]) * step))
+        assert index >= 0 or index <= size
+        if index == size - 1:
+            i0 = index - 1
+            i1 = index
+        else:
+            i0 = index
+            i1 = index + 1
+        t0 = xp[i0]
+        t1 = xp[i1]
+        dt = t1 - t0
+        w0 = (t1 - xi[ix]) / dt
+        w1 = (xi[ix] - t0) / dt
+
+        for jx in range(yp.shape[1]):
+            result[jx] = (w0 * yp[i0, jx] + w1 * yp[i1, jx]) / (w0 + w1)
+
+    return result
+
+
+class NetcdfLoader(DatasetLoader):
+    """
+    Plugin that implements a netcdf reader.
+    """
+
+    def __init__(
+        self,
+        path: str,
+        lon_name: str = "lon",
+        lat_name: str = "lat",
+        ssh_name: str = "ssh",
+        time_name: str = "time",
+        pattern: str = ".nc",
+        date_fmt: Optional[str] = None,
+    ):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"{path!r}")
+
+        self.lon_name = lon_name
+        self.lat_name = lat_name
+        self.ssh_name = ssh_name
+        self.time_name = time_name
+
+        self.regex = re.compile(pattern).search
+        self.date_fmt = date_fmt
+        self.ts = self._walk_netcdf(path)
+        self.time_delta = self._calculate_time_delta(self.ts["date"])
+
+    def _walk_netcdf(self, path: str) -> np.array:
+        """
+        Walks a netcdf folder and
+
+        :param path:
+        :return:
+        """
+        items = []
+        length = -1
+
+        for dir_path, _, filenames in os.walk(path):
+            for filename in filenames:
+                match = self.regex(filename)
+                if match:
+                    time_counter = np.datetime64(
+                        datetime.strptime(match.group("date"), self.date_fmt)
+                    )
+                    filepath = os.path.join(dir_path, filename)
+                    items.append((time_counter, filepath))
+                    length = max(length, len(filename))
+
+        # The time series is encoded in a structured Numpy array containing
+        # the date and path to the file.
+        ts = np.array(
+            items,
+            dtype={
+                "names": ("date", "path"),
+                "formats": ("datetime64[s]", f"U{length}"),
+            },
+        )
+        ts = ts[np.argsort(ts["date"])]
+        return ts
+
+    def select_netcdf_files(
+        self, first_date: np.datetime64, last_date: np.datetime64
+    ) -> np.array:
+        first_date = self._shift_date(first_date, -1)
+        last_date = self._shift_date(last_date, 1)
+        if first_date < self.ts["date"][0] or last_date > self.ts["date"][-1]:
+            raise IndexError(
+                f"period [{first_date}, {last_date}] is out of range: "
+                f"[{self.ts['date'][0]}, {self.ts['date'][-1]}]"
+            )
+
+        selected = self.ts["date"] >= first_date & (self.ts["date"] < last_date)
+        return selected
+
+    def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):
+        selected = self.select_netcdf_files(first_date, last_date)
+        ds = xr.open_mfdataset(
+            self.ts["path"][selected], concat_dim=self.time_name, combine="nested"
+        )
+        if self.time_name not in ds.coords:
+            return ds.assign_coords({self.time_name: self.ts["dates"][selected]})
+        return ds
+
+
+class IrregularGridHandler(Interface):
+    def __init__(self, dataset_loader: DatasetLoader):
+        self.dataset_loader = dataset_loader
+
+    def interpolate(self, lon, lat, times):
+        """Interpolate the SSH for the given coordinates"""
+        # Spatial interpolation of the SSH on the different selected grids.
+        LOGGER.debug("fetch data for %s, %s", times.min(), times.max())
+        ds = self.dataset_loader.load_dataset(times.min(), times.max())
+        dates_p = ds.time.load().data
+        lon_p = ds.lon.load().data
+        lat_p = ds.lat.load().data
+        ssh_p = ds.ssh
+
+        start_time = time.time()
+        layers = []
+        for index in range(len(ssh_p)):
+            layers.append(self._spatial_interp(ssh_p[index, :], lon_p, lat_p, lon, lat))
+        layers = np.stack(layers)
+        LOGGER.debug(
+            "interpolation completed in %.2fs for period %s, %s",
+            time.time() - start_time,
+            times.min(),
+            times.max(),
+        )
+
+        # Time interpolation of the SSH.
+        return _time_interp(
+            dates_p.astype("int64"),
+            layers,
+            times.astype("datetime64[us]").astype("int64"),
+        )
+
+    @staticmethod
+    def _spatial_interp(
+        z_model: da.array,
+        x_model: da.array,
+        y_model: da.array,
+        x_sat: np.ndarray,
+        y_sat: np.ndarray,
+    ) -> np.ndarray:
+        mesh = pyinterp.RTree()
+        mesh.packing(np.vstack((x_model, y_model)).T, z_model)
+
+        z, _ = mesh.radial_basis_function(
+            np.vstack((x_sat, y_sat)).T.astype("float32"),
+            within=True,
+            k=11,
+            rbf="linear",
+            num_threads=1,
+        )
+        return z.astype("float32")
+
+
+class CartesianGridHandler(Interface):
+    def __init__(self, dataset_loader: DatasetLoader):
+        self.dataset_loader = dataset_loader
+
+    def interpolate(
+        self, lon: np.ndarray, lat: np.ndarray, dates: np.ndarray
+    ) -> np.ndarray:
+        """Interpolate the SSH to the required coordinates"""
+        ds = self.dataset_loader.load_dataset(dates.min(), dates.max())
+
+        interpolator = pyinterp.backends.xarray.Grid3D(ds.ssh)
+        ssh = interpolator.trivariate(
+            dict(longitude=lon, latitude=lat, time=dates.astype("datetime64[ns]")),
+            bounds_error=True,
+            interpolator="bilinear",
+        )
+        return ssh
