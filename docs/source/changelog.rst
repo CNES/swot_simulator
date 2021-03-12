@@ -1,6 +1,16 @@
 Changelog
 =========
 
+1.0 - 2021/03/12
+----------------
+* Restructuring of the random number generation.
+* The long wavelengths are kept to simulate the low frequency signal.
+* Added a method to get default settings.
+* The signal is insufficient randomness at large wavelengths.
+* Bug fix: The gyroscope effect is not considered.
+* Adding the documentation.
+* Added generation tests under Windows
+
 0.3 - 2021/02/10
 ----------------
 
