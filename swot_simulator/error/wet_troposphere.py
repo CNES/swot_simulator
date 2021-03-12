@@ -101,7 +101,7 @@ class WetTroposphere:
 
     def __init__(self, parameters: settings.Parameters) -> None:
         # Store the generation parameters of the random signal.
-        self.beam_positions = numba.typed.List(parameters.beam_position)
+        self.beam_positions = parameters.beam_position
         self.delta_ac = parameters.delta_ac
         self.delta_al = parameters.delta_al
         self.len_repeat = parameters.len_repeat
@@ -233,10 +233,9 @@ class WetTroposphere:
         # Compute Residual path delay error after a 2-beams radiometer
         # correction
         elif self.nbeam == 2:
-            beam_r, beam_l = _calculate_path_delay_lr(self.beam_positions,
-                                                      self.sigma, radio_r,
-                                                      radio_l, x_al,
-                                                      x_ac_large, wt_large)
+            beam_r, beam_l = _calculate_path_delay_lr(
+                numba.typed.List(self.beam_positions), self.sigma, radio_r,
+                radio_l, x_al, x_ac_large, wt_large)
             # Filtering beam signal to cut frequencies higher than 125 km
             beam_r = scipy.ndimage.filters.gaussian_filter(
                 beam_r, 30 / self.delta_al)
