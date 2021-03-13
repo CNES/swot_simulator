@@ -5,6 +5,7 @@ repos:
       - id: check-ast
       - id: check-xml
       - id: check-yaml
+        exclude: conda/meta.yaml
       - id: trailing-whitespace
 -   repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.31.0
