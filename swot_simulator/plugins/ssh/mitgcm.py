@@ -114,6 +114,13 @@ def _spatial_interp(z_model: da.array, x_model: da.array, y_model: da.array,
 
 
 class MITGCM(Interface):
+    """Interpolation of LLC4320 grids
+
+    Args:
+        xc (xr.DataArray): longitude grid
+        yc (xr.DataArray): latitude grid
+        eta (xr.DataArray): SSH grid
+    """
     def __init__(self, xc: xr.DataArray, yc: xr.DataArray, eta: xr.DataArray):
         self.lon = xc.data
         self.lat = yc.data
