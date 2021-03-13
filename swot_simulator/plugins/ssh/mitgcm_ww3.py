@@ -54,7 +54,7 @@ class MITGCM_WW3(CartesianGridHandler):
             raise RuntimeError(
                 "Time series does not have a constant step between two "
                 f"grids: {frequency} seconds")
-        elif len(frequency) != 1:
+        if len(frequency) != 1:
             raise RuntimeError("Check that your list of data is not empty")
         # The frequency is stored in order to load the grids required to
         # interpolate the SSH.
