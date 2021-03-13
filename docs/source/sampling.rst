@@ -8,7 +8,7 @@ illustration of outputs for a global ECCO (MITgcm) configuration is shown on
 
 .. _Fig1:
 
-.. figure:: ./images/Fig1.png 
+.. figure:: ./images/Fig1.png
    :align: center
    :alt: Science SWOT orbit
    :figclass: align-center

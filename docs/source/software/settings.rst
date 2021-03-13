@@ -2,7 +2,7 @@ Sample configuration file
 -------------------------
 
 .. note::
-    
+
     The configuration file can be generated automatically using the
     :ref:`main program <main_program>`, or using the library:
 

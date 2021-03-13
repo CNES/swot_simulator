@@ -28,7 +28,7 @@ is expressed by the following formula (in cm2/(cy/km)):
 the above spectrum. By modifying the code, the user can change the power
 spectrum to match the water vapor characteristics of a particular region, by
 using for example the global climatology provided in :ref:`Ubelmann et al., 2013
-<Ubelmannetal2013>`. 
+<Ubelmannetal2013>`.
 
 .. _Fig15:
 
@@ -91,7 +91,7 @@ example of residual error after a 1-beam and a 2-beam correction.
    FIG. 17: (a) Residual error after wet-tropospheric correction with the
    simulation of a 2-beam radiometer at 35~km away from nadir, from the
    simulated path delay on Fig. 15. |br|
-   (b) Residual error with the simulation of a 1-beam radiometer at nadir. 
+   (b) Residual error with the simulation of a 1-beam radiometer at nadir.
 
 
 Sea state bias
@@ -107,7 +107,7 @@ Other geophysical errors
 
 The other geophysical errors (Dry-troposphere, ionosphere) are not implemented
 in the software since they have a minor impact on the meso-scales to be observed
-by SWOT. 
+by SWOT.
 
 
 .. |br| raw:: html

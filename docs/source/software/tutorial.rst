@@ -1,4 +1,4 @@
-Getting started 
+Getting started
 ===============
 
 .. _main_program:

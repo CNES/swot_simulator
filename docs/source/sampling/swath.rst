@@ -15,7 +15,7 @@ passes for science orbit). A pass is defined by an orbit starting at the lowest
 latitude for ascending track and at the highest latitude for descending track
 (+/-77.6 for the SWOT orbits considered). The first pass starts at the first
 lowest latitude crossing in the input file, meaning that ascending passes are
-odd numbers and descending passes are even numbers. 
+odd numbers and descending passes are even numbers.
 
 .. _Fig2:
 
