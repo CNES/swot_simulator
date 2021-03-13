@@ -24,7 +24,7 @@ def _available_workers(client: dask.distributed.Client) -> Set[str]:
     while True:
         info = client.scheduler_info()
         result = set(info['workers']) - set(
-            [k for k, v in client.processing().items() if v])
+            k for k, v in client.processing().items() if v)
         if result:
             return result
         time.sleep(0.1)
