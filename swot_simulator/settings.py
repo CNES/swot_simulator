@@ -62,15 +62,16 @@ def eval_config_file(filename: str) -> Dict:
             execfile_(filename, namespace)
         except SyntaxError as err:
             raise RuntimeError(
-                f"There is a syntax error in your configuration file: {err}\n")
+                "There is a syntax error in your configuration file: "
+                f"{err}\n") from err
         except SystemExit:
             raise RuntimeError(
                 "The configuration file (or one of the modules it imports) "
-                "called sys.exit()")
+                "called sys.exit()") from err
         except Exception:
             raise RuntimeError(
                 "There is a programmable error in your configuration "
-                f"file:\n\n{traceback.format_exc()}")
+                f"file:\n\n{traceback.format_exc()}") from err
 
     return namespace
 
@@ -177,7 +178,7 @@ def _template_to_string(required: Dict[str, str], template: Dict[str,
 def template(python: bool = False) -> Union[str, Dict[str, Any]]:
     """Get the template representing the default configuration of the
     simulator
-    
+
     Args:
         python (bool): True, returns the dictionary that represents the default
             configuration, otherwise returns the Python code of the default
@@ -186,10 +187,10 @@ def template(python: bool = False) -> Union[str, Dict[str, Any]]:
     Returns:
         str, dict: the default configuration of the simulation
     """
-    required, template = _template()
+    required, dictionary = _template()
     if python:
-        return template
-    return _template_to_string(required, template)
+        return dictionary
+    return _template_to_string(required, dictionary)
 
 
 class NumberOfBeams(int):
@@ -364,7 +365,7 @@ class Parameters:
     @staticmethod
     def load_default() -> 'Parameters':
         """Load the default configuration
-        
+
         Returns:
             Parameters: the default settings
         """
@@ -390,9 +391,9 @@ class Parameters:
                     value = plugins.Plugin.register(value)
                 else:
                     value = expected_type(value)
-        except ValueError:
+        except ValueError as exc:
             raise ValueError("invalid value %r for config value %r" %
-                             (value, name))
+                             (value, name)) from exc
         return value
 
     def _init_user_parameters(self, overrides: Dict[str, Any]):
@@ -401,8 +402,7 @@ class Parameters:
                         for key, value in self.CONFIG_VALUES.items())
         for name, value in overrides.items():
             if name in ["__doc__", "__file__", "__builtins__"] or isinstance(
-                    value, types.ModuleType) or isinstance(
-                        value, types.FunctionType):
+                    value, (types.ModuleType, types.FunctionType)):
                 continue
             try:
                 if name not in settings:
