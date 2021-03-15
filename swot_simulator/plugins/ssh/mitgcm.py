@@ -26,19 +26,16 @@ class MITGCM(IrregularGridHandler):
 
     class ZarrLoader(DatasetLoader):
         def __init__(self, grid_path: str, eta_path: str):
-            ds = xr.open_zarr(grid_path)
-            self.lon = ds.XC.data
-            self.lat = ds.YC.data
-            del ds
-
-            ds = xr.open_zarr(eta_path)
-            self.ssh = ds.Eta.data
-            self.ts = ds.Eta.time.data.astype("datetime64[us]")
-            self.dt = self._calculate_time_delta(self.ts)
+            ds = xr.merge([xr.open_zarr(grid_path), xr.open_zarr(eta_path)]).rename(
+                {"XC": "lon", "YC": "lat", "Eta": "ssh"}
+            )
+            self.ds = ds[["ssh"]]
+            self.ds.dtime.load()
+            self.time_delta = self._calculate_time_delta(self.ds.dtime)
 
         def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):
-            first_date = self._shift_date(first_date, -1)
-            last_date = self._shift_date(last_date, 1)
+            first_date = self._shift_date(first_date, -1, self.time_delta)
+            last_date = self._shift_date(last_date, 1, self.time_delta)
 
             if first_date < self.ts[0] or last_date > self.ts[-1]:
                 raise IndexError(
@@ -47,9 +44,10 @@ class MITGCM(IrregularGridHandler):
                 )
 
             # Mask for selecting data covering the time period provided.
-            mask = (self.ts >= first_date) & (self.ts <= last_date)
-            ds = self.ssh[mask]
-            return ds
+            mask = (self.ds.dtime.data >= first_date) & (
+                self.ds.dtime.data <= last_date
+            )
+            return self.ds.isel(time=np.argwhere(mask).squeeze())
 
     @staticmethod
     def _spatial_interp(

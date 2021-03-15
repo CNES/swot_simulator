@@ -5,7 +5,8 @@
 import logging
 import os
 import re
-from datetime import datetime, time
+from datetime import datetime
+import time
 from typing import Optional
 
 import dask.array as da
@@ -24,9 +25,28 @@ class DatasetLoader:
     def load_dataset(
         self, first_date: np.datetime64, last_date: np.datetime64
     ) -> xr.Dataset:
+        """
+        Loads the data under the form of a xarray.Dataset. The loaded dataset should
+        contain values that allow interpolating first_date and last_date. This means
+        its time interval is a little large than [first_date, last_date].
+
+        Moreover, the dataset should refer to the longitude, latitude, time and sea
+        surface height using canonical names: lon, lat, time, ssh
+
+        See also
+        --------
+        _shift_date
+
+        :param first_date: The first date that needs to be interpolated
+        :param last_date: The last date that needs to be interpolated
+        :return: An xr.Dataset containing lon, lat, time and ssh
+        """
         raise RuntimeError("Not implemented")
 
-    def _shift_date(self, date: np.datetime64, shift: int) -> np.datetime64:
+    @staticmethod
+    def _shift_date(
+        date: np.datetime64, shift: int, time_delta: np.datetime64
+    ) -> np.datetime64:
         """
         Shift the input date using the time_delta of original data. This is
         useful to generate a time interval for which we need an original value.
@@ -36,8 +56,8 @@ class DatasetLoader:
         condition is satisfied, interpolation at T0 and T1 will be possible. If this
         condition is not satisfied, interpolation becomes extrapolation.
         """
-        if date.astype("int64") % self.time_delta.astype("int64") != 0:
-            return date + self.time_delta * shift
+        if date.astype("int64") % time_delta.astype("int64") != 0:
+            return date + time_delta * shift
         return date
 
     @staticmethod
@@ -94,7 +114,14 @@ def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
 
 class NetcdfLoader(DatasetLoader):
     """
-    Plugin that implements a netcdf reader.
+    Plugin that implements a netcdf reader. The netcdf reader works on files whose
+    names have the date in it. A pattern (ex. P(?<date>.*).nc), associated with a
+    date formatter (ex. %Y%m%d) is used to get build the time series.
+
+    Netcdf files can be expensive to concatenate if there are a lot of files. This
+    loader avoid loading too much files by building a dictionary matching file paths
+    to their time. During the interpolation, where only a given time period is
+    needed, only the files that cover the time period are loaded in the dataset.
     """
 
     def __init__(
@@ -107,6 +134,25 @@ class NetcdfLoader(DatasetLoader):
         pattern: str = ".nc",
         date_fmt: Optional[str] = None,
     ):
+        """
+        Initialization of the netcdf loader.
+
+        Example
+        -------
+        If we have netcdf files whose names are
+        model_20120305_12h.nc, we must define the following to retrieve the time:
+        pattern='model_P(?<date>\w+).nc'
+        date_fmt='%Y%m%d_%Hh'
+
+        :param path: Folder containing the netcdf files
+        :param lon_name: longitude name in the netcdf files. Defaults to 'lon'
+        :param lat_name: latitude name in the netcdf files. Defaults to 'lat'
+        :param ssh_name: sea surface height name in the netcdf files. Defaults to 'ssh'
+        :param time_name: time name in the netcdf files. Defaults to 'time'
+        :param pattern: Pattern for the NetCDF file names. It should contain the
+        P(?<date>) group to retrieve the time
+        :param date_fmt: date formatter
+        """
         if not os.path.exists(path):
             raise FileNotFoundError(f"{path!r}")
 
@@ -121,12 +167,7 @@ class NetcdfLoader(DatasetLoader):
         self.time_delta = self._calculate_time_delta(self.ts["date"])
 
     def _walk_netcdf(self, path: str) -> np.array:
-        """
-        Walks a netcdf folder and
-
-        :param path:
-        :return:
-        """
+        # Walks a netcdf folder and finds data files in it
         items = []
         length = -1
 
@@ -156,8 +197,8 @@ class NetcdfLoader(DatasetLoader):
     def select_netcdf_files(
         self, first_date: np.datetime64, last_date: np.datetime64
     ) -> np.array:
-        first_date = self._shift_date(first_date, -1)
-        last_date = self._shift_date(last_date, 1)
+        first_date = self._shift_date(first_date, -1, self.time_delta)
+        last_date = self._shift_date(last_date, 1, self.time_delta)
         if first_date < self.ts["date"][0] or last_date > self.ts["date"][-1]:
             raise IndexError(
                 f"period [{first_date}, {last_date}] is out of range: "
@@ -168,13 +209,28 @@ class NetcdfLoader(DatasetLoader):
         return selected
 
     def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):
+        LOGGER.debug(f"fetch data for {first_date}, {last_date}")
         selected = self.select_netcdf_files(first_date, last_date)
         ds = xr.open_mfdataset(
             self.ts["path"][selected], concat_dim=self.time_name, combine="nested"
         )
+
         if self.time_name not in ds.coords:
-            return ds.assign_coords({self.time_name: self.ts["dates"][selected]})
-        return ds
+            LOGGER.debug(
+                f"Time coordinate {self.time_name} was not found, assigning "
+                f"axis with time from file names"
+            )
+            ds = ds.assign_coords({self.time_name: self.ts["dates"][selected]})
+
+        LOGGER.debug(f"Renaming dataset with canonical names lon, lat, time, ssh")
+        return ds.rename(
+            {
+                self.lon_name: "lon",
+                self.lat_name: "lat",
+                self.ssh_name: "ssh",
+                self.time_name: "time",
+            }
+        )
 
 
 class IrregularGridHandler(Interface):
@@ -184,7 +240,6 @@ class IrregularGridHandler(Interface):
     def interpolate(self, lon, lat, times):
         """Interpolate the SSH for the given coordinates"""
         # Spatial interpolation of the SSH on the different selected grids.
-        LOGGER.debug("fetch data for %s, %s", times.min(), times.max())
         ds = self.dataset_loader.load_dataset(times.min(), times.max())
         dates_p = ds.time.load().data
         lon_p = ds.lon.load().data

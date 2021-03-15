@@ -21,8 +21,8 @@ class AVISO(CartesianGridHandler):
         loader = NetcdfLoader(
             path,
             ssh_name="adt",
-            pattern=r"phy_l4_(?P<date>\w+).nc",
-            date_fmt="%Y%m%d_%H%M%S%f",
+            pattern=r"phy_l4_(?P<date>\d{8})_\d{8}.nc",
+            date_fmt="%Y%m%d",
         )
         super().__init__(loader)
 

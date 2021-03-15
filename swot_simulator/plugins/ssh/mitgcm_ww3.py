@@ -6,10 +6,14 @@
 Interpolation of the SSH from MITGCM interpolated model for WW3
 ===============================================================
 """
+import logging
+
 import numpy as np
 import xarray as xr
 
 from swot_simulator.plugins.ssh.base_impl import NetcdfLoader, CartesianGridHandler
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MITGCM_WW3(CartesianGridHandler):
@@ -21,13 +25,14 @@ class MITGCM_WW3(CartesianGridHandler):
         loader = MITGCM_WW3.OverriddenNetcdfLoader(
             path,
             ssh_name="wlv",
-            pattern=r"ww3.(?P<date>\w+)_wlv.nc",
+            pattern=r"ww3.(?P<date>\d{8})_wlv.nc",
             date_fmt="%Y%m%d",
         )
         super().__init__(loader)
 
     class OverriddenNetcdfLoader(NetcdfLoader):
         def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):
+            LOGGER.debug(f"fetch data for {first_date}, {last_date}")
             selected = self.select_netcdf_files(first_date, last_date)
             ds = xr.open_mfdataset(
                 self.ts["path"][selected],
@@ -35,6 +40,20 @@ class MITGCM_WW3(CartesianGridHandler):
                 combine="nested",
                 decode_times=True,
             )
+
             if self.time_name not in ds.coords:
-                return ds.assign_coords({self.time_name: self.ts["dates"][selected]})
-            return ds
+                LOGGER.debug(
+                    f"Time coordinate {self.time_name} was not found, assigning "
+                    f"axis with time from file names"
+                )
+                ds = ds.assign_coords({self.time_name: self.ts["dates"][selected]})
+
+            LOGGER.debug(f"Renaming dataset with canonical names lon, lat, time, ssh")
+            return ds.rename(
+                {
+                    self.lon_name: "lon",
+                    self.lat_name: "lat",
+                    self.ssh_name: "ssh",
+                    self.time_name: "time",
+                }
+            )

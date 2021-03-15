@@ -22,8 +22,8 @@ class HYCOM(CartesianGridHandler):
         loader = HYCOM.OverriddenNetcdfLoader(
             path,
             ssh_name="surf_el",
-            pattern=r"hycom_GLBu0.08_191_(?P<date>\w+).nc",
-            date_fmt="strptime",
+            pattern=r"hycom_GLBu0.08_191_(?P<date>\d{8})\d{2}_t\d{3}.nc",
+            date_fmt="%Y%m%d",
         )
         super().__init__(loader)
 
