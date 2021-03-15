@@ -20,6 +20,8 @@ class AVISO(CartesianGridHandler):
     def __init__(self, path: str):
         loader = NetcdfLoader(
             path,
+            lon_name='longitude',
+            lat_name='latitude',
             ssh_name="adt",
             pattern=r"phy_l4_(?P<date>\d{8})_\d{8}.nc",
             date_fmt="%Y%m%d",

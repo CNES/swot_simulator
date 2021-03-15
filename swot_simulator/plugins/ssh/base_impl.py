@@ -61,18 +61,18 @@ class DatasetLoader:
         return date
 
     @staticmethod
-    def _calculate_time_delta(dates: xr.DataArray):
+    def _calculate_time_delta(dates: xr.DataArray) -> np.timedelta64:
         """Calculation of the delta T between two consecutive grids."""
         frequency = np.diff(dates)
-        if not np.all(frequency == frequency[0]):
-            raise RuntimeError(
-                "Time series does not have a constant step between two "
-                f"grids: {set(frequency)} seconds"
-            )
-        elif len(frequency) != 1:
+        try:
+            if not np.all(frequency == frequency[0]):
+                raise RuntimeError(
+                    "Time series does not have a constant step between two "
+                    f"grids: {set(frequency)} seconds"
+                )
+            return np.timedelta64(frequency[0], "s")
+        except IndexError:
             raise RuntimeError("Check that your list of data is not empty")
-
-        return np.timedelta64(frequency.pop(), "s")
 
 
 @nb.njit(
@@ -180,7 +180,7 @@ class NetcdfLoader(DatasetLoader):
                     )
                     filepath = os.path.join(dir_path, filename)
                     items.append((time_counter, filepath))
-                    length = max(length, len(filename))
+                    length = max(length, len(filepath))
 
         # The time series is encoded in a structured Numpy array containing
         # the date and path to the file.
@@ -205,7 +205,7 @@ class NetcdfLoader(DatasetLoader):
                 f"[{self.ts['date'][0]}, {self.ts['date'][-1]}]"
             )
 
-        selected = self.ts["date"] >= first_date & (self.ts["date"] < last_date)
+        selected = np.logical_and(self.ts["date"] >= first_date, self.ts["date"] < last_date)
         return selected
 
     def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):

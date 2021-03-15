@@ -37,7 +37,7 @@ class MITGCM(IrregularGridHandler):
             first_date = self._shift_date(first_date, -1, self.time_delta)
             last_date = self._shift_date(last_date, 1, self.time_delta)
 
-            if first_date < self.ts[0] or last_date > self.ts[-1]:
+            if first_date < self.ds.dtime[0] or last_date > self.ds.dtime[-1]:
                 raise IndexError(
                     f"period [{first_date}, {last_date}] is out of range: "
                     f"[{self.ts[0]}, {self.ts[-1]}]"
