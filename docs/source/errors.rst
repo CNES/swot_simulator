@@ -17,7 +17,7 @@ shows the “observed” SSH when simulated noise is added to the interpolated S
    :figclass: align-left
 
    FIG. 4: Random realization of the error field (in meters). Swath coordinates
-   are in km. 
+   are in km.
 
 .. _Instrumentalerrors:
 

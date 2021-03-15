@@ -73,7 +73,7 @@ knowledge error plus the roll control error, the total roll error h_roll (in
 meters) at a distance ac (in km) from the nadir is given by (see
 :ref:`Esteban-Fernandez et al., 2014 <Esteban-Fernandez2014>`):
 
-.. math:: 
+.. math::
    h_{roll} (al,ac)=(1+ \frac{H}{Re}) \theta_{roll} (al) \frac{\pi}{648} ac
 
 where H is the altitude of the satellite and Re the earth radius. An example of
@@ -209,7 +209,7 @@ error :math:`\tau` are performed with uniform phase distribution. From
 :math:`h_\tau` (in meters) at a distance ac (in km) from the nadir is given by
 (see :ref:`Esteban-Fernandez et al., 2014 <Esteban-Fernandez2014>`):
 
-.. math:: 
+.. math::
    h_\tau (al,ac)=\frac{c}{2} \tau (al) \times 10^{-12}
 
 Where c is the speed of light in m/s. The timing errors are constant in the

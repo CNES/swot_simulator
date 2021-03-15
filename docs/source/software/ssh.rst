@@ -24,7 +24,7 @@ nadir. The naming follows the pattern :
   for the Karin products and
 * ``SWOT_GPN_2P1P_[cycle]_[pass]_[start_time]_[stop_time].nc``
   for the nadir products.
-  
+
 The interpolation method is specified in your SSH plugin. `pangeo-pyinterp
 <https://github.com/CNES/pangeo-pyinterp>`_ module is used in the examples.
 

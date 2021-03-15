@@ -5,7 +5,7 @@ The software is written in Python3, and is mainly tested on python 3.7 and 3.8.
 All the parameters that can be modified by the user are read in a params file
 (e.g. params.py) specified by the user.
 
-The software is divided in 6 main modules: 
+The software is divided in 6 main modules:
 
 +-------------------------------------------+----------------------------------+
 | Python module                             | Description                      |

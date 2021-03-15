@@ -54,10 +54,10 @@ requirement_bounds = [10, 60]
 # delivered with this software contain this type of declaration
 
 #: Duration of a cycle.
-cycle_duration=20.86455
+cycle_duration = 20.86455
 
 #: Satellite altitude (m)
-height=891000
+height = 891000
 
 #: True to generate Nadir products
 nadir = False
@@ -77,14 +77,14 @@ product_type = "expert"
 ssh_plugin = None
 
 #: Orbit shift in longitude (degrees)
-shift_lon=0
+shift_lon = 0
 
 #: Orbit shift in time (seconds)
-shift_time=0
+shift_time = 0
 
 #: The working directory. By default, files are generated in the user's root
 #: directory.
-working_directory=os.path.expanduser("~/")
+working_directory = os.path.expanduser("~/")
 
 # Generation of measurement noise.
 

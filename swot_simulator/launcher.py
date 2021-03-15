@@ -224,8 +224,8 @@ def file_path(first_date: np.datetime64,
     # If the product has already been produced, the generation of this
     # half orbit is disabled.
     if os.path.exists(result):
-        LOGGER.debug(("nadir" if nadir else "swath") +
-                     f" already generated: {cycle_number}/{pass_number}")
+        LOGGER.debug("%s already generated: %d/%d",
+                     "nadir" if nadir else "swath", cycle_number, pass_number)
         return None
     return result
 

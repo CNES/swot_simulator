@@ -284,7 +284,7 @@ class Orbit:
             the cycle number, pass number and start date of the half-orbit.
         """
         date = first_date or np.datetime64(datetime.datetime.now())
-        last_date = last_date or first_date + self.cycle_duration()
+        last_date = last_date or date + self.cycle_duration()
         while date <= last_date:
             cycle_number, pass_number = self.decode_absolute_pass_number(
                 absolute_pass_number)
@@ -333,10 +333,12 @@ class Pass:
 
     @property
     def time(self):
+        """Time of positions"""
         return self._time
 
     @time.setter
     def time(self, date: np.datetime64) -> None:
+        """Set time of positions"""
         self._time = date + (self.timedelta - self.timedelta[0])
 
     def mask(self) -> np.ndarray:
@@ -459,7 +461,7 @@ def calculate_pass(pass_number: int, orbit: Orbit,
                            & (orbit.time < orbit.pass_time[index + 1]))[0]
 
     if len(indexes) < 5:
-        return
+        return None
 
     lon_nadir = orbit.lon[indexes]
     lat_nadir = orbit.lat[indexes]
@@ -469,7 +471,7 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     # Selects the orbit in the defined box
     mask = parameters.box.within(lon_nadir, lat_nadir)
     if np.all(~mask):
-        return
+        return None
     lon_nadir = lon_nadir[mask]
     lat_nadir = lat_nadir[mask]
     time = time[mask]

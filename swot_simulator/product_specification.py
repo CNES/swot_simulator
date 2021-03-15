@@ -43,11 +43,11 @@ def _parse_type(dtype, width, signed):
     """Parse type from xml format specification file. """
     if dtype == "real":
         return getattr(np, "float" + width)
-    elif dtype == "integer":
+    if dtype == "integer":
         return getattr(np, ("u" if not signed else "") + "int" + width)
-    elif dtype == "string":
+    if dtype == "string":
         return np.str
-    elif dtype == "char":
+    if dtype == "char":
         return np.dtype(f"S{width}")
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
@@ -142,7 +142,7 @@ def _strtobool(value: str) -> bool:
     value = value.lower()
     if value == "true":
         return True
-    elif value == "false":
+    if value == "false":
         return False
     raise ValueError(f"invalid truth value {value!r}")
 

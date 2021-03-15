@@ -12,13 +12,13 @@ curve) sampled on a 2~km by 2~km grid is about 6 :math:`cm**2/(km/cy)`, which
 exceeds the requirements for a short wavelength. However, these requirements have
 been defined for wavelength exceeding 15~km in the plan (2 dimensions). Sampled
 at the Niquist frequency in the across swath direction (7.5~km), the noise drops
-down to 2 :math:`cm2/(km/cy)` (thick dark pink curve).      
+down to 2 :math:`cm2/(km/cy)` (thick dark pink curve).
 
 .. _Fig18:
 
 .. figure:: ../images/Fig18.png
    :align: left
-   :alt: Error budget in the spectral domain 
+   :alt: Error budget in the spectral domain
    :figclass: align-left
 
    FIG. 18: Error budget in the spectral domain, computed from a random
