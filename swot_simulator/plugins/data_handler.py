@@ -59,13 +59,11 @@ class DatasetLoader:
         condition is satisfied, interpolation at T0 and T1 will be possible. If this
         condition is not satisfied, interpolation becomes extrapolation.
         """
-        if np.datetime_data(date)[0] != np.datetime_data(time_delta)[0]:
-            raise RuntimeError(
-                f"Input date {date} and time_delta {time_delta} do not have the same "
-                f"units: {np.datetime_data(date)[0]} and "
-                f"{np.datetime_data(time_delta)[0]} respectively ")
+        # Before comparing the date and timedelta, ensure they have the same unit
+        date_same_unit = date + time_delta - time_delta
+        time_delta_same_unit = date + time_delta - date
 
-        if date.astype("int64") % time_delta.astype(
+        if date_same_unit.astype("int64") % time_delta_same_unit.astype(
                 "int64") != 0:  # type: ignore
             return date + time_delta * shift
         return date
