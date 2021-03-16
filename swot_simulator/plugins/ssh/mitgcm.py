@@ -11,49 +11,56 @@ import time
 
 import dask.array as da
 import numpy as np
+import pyinterp
 import pyinterp.geodetic
 import xarray as xr
 
-from .base_impl import DatasetLoader, IrregularGridHandler
+from .. import data_handler
 
 LOGGER = logging.getLogger(__name__)
 
 
-class MITGCM(IrregularGridHandler):
+class MITGCM(data_handler.IrregularGridHandler):
     def __init__(self, grid_path: str, eta_path: str):
         loader = MITGCM.ZarrLoader(grid_path, eta_path)
         super().__init__(loader)
 
-    class ZarrLoader(DatasetLoader):
+    class ZarrLoader(data_handler.DatasetLoader):
         def __init__(self, grid_path: str, eta_path: str):
-            ds = xr.merge([xr.open_zarr(grid_path), xr.open_zarr(eta_path)]).rename(
-                {"XC": "lon", "YC": "lat", "Eta": "ssh"}
-            )
-            self.ds = ds[["ssh"]]
-            self.ds.dtime.load()
-            self.time_delta = self._calculate_time_delta(self.ds.dtime)
+            dataset = xr.merge(
+                [xr.open_zarr(grid_path),
+                 xr.open_zarr(eta_path)]).rename({
+                     "XC": "lon",
+                     "YC": "lat",
+                     "Eta": "ssh"
+                 })
+            self.dataset = dataset[["ssh"]]
+            self.dataset.dtime.load()
+            self.time_delta = self._calculate_time_delta(self.dataset.dtime)
 
-        def load_dataset(self, first_date: np.datetime64, last_date: np.datetime64):
-            first_date = self._shift_date(first_date, -1, self.time_delta)
-            last_date = self._shift_date(last_date, 1, self.time_delta)
+        def load_dataset(self, first_date: np.datetime64,
+                         last_date: np.datetime64):
+            first_date = self._shift_date(first_date.astype("datetime64[ns]"),
+                                          -1, self.time_delta)
+            last_date = self._shift_date(last_date.astype("datetime64[ns]"), 1,
+                                         self.time_delta)
 
-            if first_date < self.ds.dtime[0] or last_date > self.ds.dtime[-1]:
+            if first_date < self.dataset.dtime[
+                    0] or last_date > self.dataset.dtime[-1]:
                 raise IndexError(
                     f"period [{first_date}, {last_date}] is out of range: "
-                    f"[{self.ts[0]}, {self.ts[-1]}]"
-                )
+                    f"[{self.dataset.dtime[0]}, {self.dataset.dtime[-1]}]")
 
             # Mask for selecting data covering the time period provided.
-            mask = (self.ds.dtime.data >= first_date) & (
-                self.ds.dtime.data <= last_date
-            )
-            return self.ds.isel(time=np.argwhere(mask).squeeze())
+            mask = (self.dataset.dtime.data >=
+                    first_date) & (self.dataset.dtime.data <= last_date)
+            return self.dataset.isel(time=np.argwhere(mask).squeeze())
 
     @staticmethod
     def _spatial_interp(
-        z_model: da.array,
-        x_model: da.array,
-        y_model: da.array,
+        z_model: da.Array,
+        x_model: da.Array,
+        y_model: da.Array,
         x_sat: np.ndarray,
         y_sat: np.ndarray,
     ):
@@ -70,9 +77,8 @@ class MITGCM(IrregularGridHandler):
             ix0, ix1 = x_face.min(), x_face.max()
             iy0, iy1 = y_face.min(), y_face.max()
 
-            box = pyinterp.geodetic.Box2D(
-                pyinterp.geodetic.Point2D(ix0, iy0), pyinterp.geodetic.Point2D(ix1, iy1)
-            )
+            box = pyinterp.geodetic.Box2D(pyinterp.geodetic.Point2D(ix0, iy0),
+                                          pyinterp.geodetic.Point2D(ix1, iy1))
             mask = box.covered_by(x_sat, y_sat)
             if not np.any(mask == 1):
                 continue
@@ -81,9 +87,9 @@ class MITGCM(IrregularGridHandler):
             # The undefined values are filtered
             z_face = z_model[face, :].compute()
             defined = ~np.isnan(z_face)
-            x += (x_face[defined].flatten(),)
-            y += (y_face[defined].flatten(),)
-            z += (z_face[defined].flatten(),)
+            x += (x_face[defined].flatten(), )
+            y += (y_face[defined].flatten(), )
+            z += (z_face[defined].flatten(), )
 
         # The tree is built and the interpolation is calculated
         x = np.concatenate(x)
@@ -94,7 +100,7 @@ class MITGCM(IrregularGridHandler):
         z = np.concatenate(z)
         LOGGER.debug(
             "loaded %d MB in %.2fs",
-            (coordinates.nbytes + z.nbytes) // 1024 ** 2,
+            (coordinates.nbytes + z.nbytes) // 1024**2,
             time.time() - start_time,
         )
         start_time = time.time()

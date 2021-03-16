@@ -6,21 +6,19 @@
 Interpolation of the SSH SYMPHONIE
 ==================================
 """
-from swot_simulator.plugins.ssh.base_impl import NetcdfLoader, IrregularGridHandler
+from .. import data_handler
 
 
-class SYMPHONIE(IrregularGridHandler):
+class SYMPHONIE(data_handler.IrregularGridHandler):
     """
     Interpolation of the SSH SYMPHONIE
     """
-
     def __init__(self, path: str):
-        loader = NetcdfLoader(
+        loader = data_handler.NetcdfLoader(
             path,
+            date_fmt="%Y%m%d_%Hh",
             lon_name="lon_t",
             lat_name="lat_t",
             ssh_name="ssh_ib_detided",
-            pattern=r"(?P<date>\d{8}_\d{2}h).detided.symphonie_bobshelf.nc",
-            date_fmt="%Y%m%d_%Hh",
-        )
+            pattern=r"(?P<date>\d{8}_\d{2}h).detided.symphonie_bobshelf.nc")
         super().__init__(loader)

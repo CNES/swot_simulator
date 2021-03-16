@@ -9,34 +9,33 @@ Interpolation of the SSH AVISO
 import numpy as np
 import pyinterp.backends.xarray
 
-from swot_simulator.plugins.ssh.base_impl import CartesianGridHandler, NetcdfLoader
+from .. import data_handler
 
 
-class AVISO(CartesianGridHandler):
+class AVISO(data_handler.CartesianGridHandler):
     """
     Interpolation of the SSH AVISO (CMEMS L4 products).
     """
-
     def __init__(self, path: str):
-        loader = NetcdfLoader(
+        loader = data_handler.NetcdfLoader(
             path,
+            date_fmt="%Y%m%d",
             lon_name='longitude',
             lat_name='latitude',
             ssh_name="adt",
-            pattern=r"phy_l4_(?P<date>\d{8})_\d{8}.nc",
-            date_fmt="%Y%m%d",
-        )
+            pattern=r"phy_l4_(?P<date>\d{8})_\d{8}.nc")
         super().__init__(loader)
 
-    def interpolate(
-        self, lon: np.ndarray, lat: np.ndarray, times: np.ndarray
-    ) -> np.ndarray:
+    def interpolate(self, lon: np.ndarray, lat: np.ndarray,
+                    dates: np.ndarray) -> np.ndarray:
         """Interpolate the SSH to the required coordinates"""
-        ds = self.dataset_loader.load_dataset(times.min(), times.max())
+        dataset = self.dataset_loader.load_dataset(
+            dates.min(),  # type: ignore
+            dates.max())  # type: ignore
 
-        interpolator = pyinterp.backends.xarray.Grid3D(ds.ssh)
+        interpolator = pyinterp.backends.xarray.Grid3D(dataset.ssh)
         ssh = interpolator.trivariate(
-            dict(longitude=lon, latitude=lat, time=times.astype("datetime64[ns]")),
+            dict(longitude=lon, latitude=lat, time=dates),
             interpolator="bilinear",
         )
         return ssh
