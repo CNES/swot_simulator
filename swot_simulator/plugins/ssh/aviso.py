@@ -35,7 +35,7 @@ class AVISO(data_handler.CartesianGridHandler):
 
         interpolator = pyinterp.backends.xarray.Grid3D(dataset.ssh)
         ssh = interpolator.trivariate(
-            dict(longitude=lon, latitude=lat, time=dates),
+            dict(lon=lon, lat=lat, time=dates),
             interpolator="bilinear",
         )
         return ssh

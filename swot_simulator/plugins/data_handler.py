@@ -59,6 +59,12 @@ class DatasetLoader:
         condition is satisfied, interpolation at T0 and T1 will be possible. If this
         condition is not satisfied, interpolation becomes extrapolation.
         """
+        if np.datetime_data(date)[0] != np.datetime_data(time_delta)[0]:
+            raise RuntimeError(
+                f"Input date {date} and time_delta {time_delta} do not have the same "
+                f"units: {np.datetime_data(date)[0]} and "
+                f"{np.datetime_data(time_delta)[0]} respectively ")
+
         if date.astype("int64") % time_delta.astype(
                 "int64") != 0:  # type: ignore
             return date + time_delta * shift
@@ -249,9 +255,9 @@ class IrregularGridHandler(Interface):
             dates.min(),  # type: ignore
             dates.max())  # type: ignore
         dates_p = dataset.time.load().data
-        lon_p = dataset.lon.load().data
-        lat_p = dataset.lat.load().data
-        ssh_p = dataset.ssh
+        lon_p = dataset.lon.data
+        lat_p = dataset.lat.data
+        ssh_p = dataset.ssh.data
 
         start_time = time.time()
         layers = []
