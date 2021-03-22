@@ -1,6 +1,10 @@
 """
 Data handler
 ============
+
+Set of classes that helps developping plugins for ssh and swh. This includes a default
+netcdf reader for loading a dataset, and default interpolators for both regular and
+irregular grids.
 """
 # Copyright (c) 2021 CNES/JPL
 #
@@ -26,24 +30,34 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DatasetLoader:
+    """
+    Interface that specializes in loading data for the plugin. This is helpful to
+    separate the data loading and interpolator definition. The dataset loader has only
+    one job : given a time range for interpolation, loads the model dataset that is
+    needed to do the said interpolation and transform it to have canonical variable
+    names.
+    """
     @abc.abstractmethod
     def load_dataset(self, first_date: np.datetime64,
                      last_date: np.datetime64) -> xr.Dataset:
         """
-        Loads the data under the form of a xarray.Dataset. The loaded dataset should
+        Loads the data under the form of a xr.Dataset. The loaded dataset should
         contain values that allow interpolating first_date and last_date. This means
         its time interval is a little large than [first_date, last_date].
 
         Moreover, the dataset should refer to the longitude, latitude, time and sea
         surface height using canonical names: lon, lat, time, ssh
 
-        See also
-        --------
-        _shift_date
+        Args:
+            first_date (np.datetime64): The first date that needs to be interpolated
+            last_date (np.datetime64): The last date that needs to be interpolated
 
-        :param first_date: The first date that needs to be interpolated
-        :param last_date: The last date that needs to be interpolated
-        :return: An xr.Dataset containing lon, lat, time and ssh
+        Returns:
+            xr.Dataset: dataset containing lon, lat, time and ssh variables, with
+            canonical names.
+
+        See also:
+            _shift_date
         """
         ...
 
@@ -54,10 +68,21 @@ class DatasetLoader:
         Shift the input date using the time_delta of original data. This is
         useful to generate a time interval for which we need an original value.
 
-        Example: if we have data on [t0, t1, dt], and we want an interpolation over
-        [T0, T1], then we must make sure that t0 <= T0 - dt and t1 >= T1 + dt. If this
-        condition is satisfied, interpolation at T0 and T1 will be possible. If this
-        condition is not satisfied, interpolation becomes extrapolation.
+        Args:
+            date (np.datetime64): interpolation date
+            shift (int): 1 for a later date, -1 for an earlier one
+            time_delta (np.timedelta64): delta specifying the time resolution of the
+            model data.
+
+        Returns:
+            The input date if it is the input date is a multiple of time_delta (meaning
+            it is on the model time axis). Else, the output is shifted.
+
+        Example:
+            If we have data on [t0, t1, dt], and we want an interpolation over [T0, T1],
+            then we must make sure that t0 <= T0 - dt and t1 >= T1 + dt. If this
+            condition is satisfied, interpolation at T0 and T1 will be possible. If this
+            condition is not satisfied, interpolation becomes extrapolation.
         """
         # Before comparing the date and timedelta, ensure they have the same unit
         date_same_unit = date + time_delta - time_delta
@@ -152,12 +177,14 @@ class NetcdfLoader(DatasetLoader):
             pattern (str): Pattern for the NetCDF file names. It should contain the
                 P(?<date>) group to retrieve the time
 
-        Example
-        -------
-        If we have netcdf files whose names are
-        model_20120305_12h.nc, we must define the following to retrieve the time:
-        pattern='model_P(?<date>\\w+).nc'
-        date_fmt='%Y%m%d_%Hh'
+        Example:
+            If we have netcdf files whose names are model_20120305_12h.nc, we must
+            define the following to retrieve the time::
+                loader = NetcdfLoader(
+                    '.',
+                    pattern='model_P(?<date>\\w+).nc',
+                    date_fmt='%Y%m%d_%Hh'
+                )
         """
         if not os.path.exists(path):
             raise FileNotFoundError(f"{path!r}")
@@ -243,6 +270,11 @@ class NetcdfLoader(DatasetLoader):
 
 
 class IrregularGridHandler(Interface):
+    """
+    Default interpolator for an irregular grid. First, uses an RTree to do the spatial
+    interpolation of all model grid, then do the time interpolation with a simple 
+    weighting of two grid
+    """
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 
@@ -293,6 +325,10 @@ class IrregularGridHandler(Interface):
 
 
 class CartesianGridHandler(Interface):
+    """
+    Default interpolator for regular grid.
+    Uses pyinterp.backends.xarray.Grid3D.trivariate interpolator
+    """
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 
