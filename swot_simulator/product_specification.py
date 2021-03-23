@@ -59,7 +59,8 @@ def _cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
-                      lat: np.ndarray) -> Dict[str, Any]:
+                      lat: np.ndarray, lon_eq: float,
+                      time_eq: np.datetime64) -> Dict[str, Any]:
     """Calculates the global attributes of the pass"""
     def _iso_date(date: np.datetime64) -> str:
         """Return the time formatted according to ISO."""
@@ -97,6 +98,10 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         _cast_to_dtype(cycle_number, attributes["cycle_number"]),
         "pass_number":
         _cast_to_dtype(pass_number, attributes["pass_number"]),
+        "equator_time":
+        _iso_date(time_eq),
+        "equator_longitude":
+        math.normalize_longitude(lon_eq, 0),  # type: ignore
         "time_coverage_start":
         _iso_date(date[0]),
         "time_coverage_end":
@@ -671,6 +676,8 @@ class Nadir:
         self.encoding, self.data_vars = self.product_spec.time(track.time)
         self._data_array("lon_nadir", track.lon_nadir)
         self._data_array("lat_nadir", track.lat_nadir)
+        self._time_eq = track.time_eq
+        self._lon_eq = track.lon_eq
 
     def _data_array(self,
                     attr: str,
@@ -788,7 +795,8 @@ class Nadir:
                           attrs=global_attributes(self.product_spec.attributes,
                                                   cycle_number, pass_number,
                                                   self.data_vars[0].values,
-                                                  lng, lat))
+                                                  lng, lat, self._lon_eq,
+                                                  self._time_eq))
 
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:

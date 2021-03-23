@@ -297,7 +297,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         return
 
     # Set the simulated date
-    track.time = date
+    track.set_simulated_date(date)
 
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
