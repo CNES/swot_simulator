@@ -68,7 +68,7 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
             date.astype("datetime64[us]").astype("int64") *
             1e-6).isoformat() + "Z"
 
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ : Creation")
 
     ellipsoid_semi_major_axis = _cast_to_dtype(
         6378137, attributes["ellipsoid_semi_major_axis"])
