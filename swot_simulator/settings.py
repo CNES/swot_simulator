@@ -64,11 +64,11 @@ def eval_config_file(filename: str) -> Dict:
             raise RuntimeError(
                 "There is a syntax error in your configuration file: "
                 f"{err}\n") from err
-        except SystemExit:
+        except SystemExit as err:
             raise RuntimeError(
                 "The configuration file (or one of the modules it imports) "
                 "called sys.exit()") from err
-        except Exception:
+        except Exception as err:
             raise RuntimeError(
                 "There is a programmable error in your configuration "
                 f"file:\n\n{traceback.format_exc()}") from err
@@ -369,7 +369,7 @@ class Parameters:
         Returns:
             Parameters: the default settings
         """
-        return Parameters(template(python=True))
+        return Parameters(template(python=True))  # type: ignore
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
