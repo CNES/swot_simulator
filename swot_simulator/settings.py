@@ -250,7 +250,9 @@ class Parameters:
                            "calculated variables will be written to the "
                            "netCDF file")),
         cycle_duration=(None, float,
-                        "Duration of a cycle in number of fractional days"),
+                        ("Duration of a cycle in number of fractional days. "
+                         "By default, this value is read from the ephemeris "
+                         "file)")),
         delta_ac=(2.0, float,
                   ("Distance, in km, between two points across track "
                    "direction")),
@@ -277,7 +279,8 @@ class Parameters:
         half_swath=(60.0, float,
                     ("Distance, in km, between the nadir and the center of "
                      "the last pixel of the swath")),
-        height=(None, float, "Satellite altitude (m)"),
+        height=(None, float, ("Satellite altitude (m). By default, this value "
+                              "is read from the ephemeris file.")),
         karin_noise=(None, str,
                      "KaRIN file containing spectrum for several SWH"),
         len_repeat=(20000.0, float, "Repeat length"),
