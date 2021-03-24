@@ -6,7 +6,7 @@
 Parse/Load the product specification
 ====================================
 """
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Hashable, Iterator, List, Optional, Tuple, Union
 import datetime
 import copy
 import collections
@@ -18,6 +18,7 @@ import xml.etree.ElementTree as xt
 #
 import netCDF4
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 from . import orbit_propagator
 from . import math
@@ -39,16 +40,16 @@ def _find(element: xt.Element, tag: str) -> xt.Element:
     return result
 
 
-def _parse_type(dtype, width, signed):
+def _parse_type(dtype, width, signed) -> Union[npt.DTypeLike, np.generic]:
     """Parse type from xml format specification file. """
     if dtype == "real":
         return getattr(np, "float" + width)
     if dtype == "integer":
         return getattr(np, ("u" if not signed else "") + "int" + width)
     if dtype == "string":
-        return np.str
+        return np.str_
     if dtype == "char":
-        return np.dtype(f"S{width}")
+        return np.dtype(f"S{width}")  # type: ignore
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
@@ -64,9 +65,9 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
     """Calculates the global attributes of the pass"""
     def _iso_date(date: np.datetime64) -> str:
         """Return the time formatted according to ISO."""
-        return datetime.datetime.utcfromtimestamp(
-            date.astype("datetime64[us]").astype("int64") *
-            1e-6).isoformat() + "Z"
+        epoch = date.astype("datetime64[us]").astype(
+            "int64") * 1e-6  # type: ignore
+        return datetime.datetime.utcfromtimestamp(epoch).isoformat() + "Z"
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ : Creation")
 
@@ -74,7 +75,6 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         6378137, attributes["ellipsoid_semi_major_axis"])
     ellipsoid_flattening = _cast_to_dtype(1 / 298.25722356,
                                           attributes["ellipsoid_flattening"])
-
     result = collections.OrderedDict({
         "Conventions":
         "CF-1.7",
@@ -170,7 +170,7 @@ def _parser(tree: xt.ElementTree):
             _strtobool(item.attrib["signed"])
             if "signed" in item.attrib else None)
         if not isinstance(dtype, np.dtype):
-            dtype = dtype.__name__
+            dtype = dtype.__name__  # type: ignore
         annotation = item.find("annotation")
         if annotation is None:
             continue
@@ -193,8 +193,9 @@ def _parse_specification_file(path: str) -> Tuple:
     return _parser(xt.parse(path))
 
 
-def _create_variable_args(encoding: Dict[str, Dict], name: str,
-                          variable: xr.Variable) -> Tuple[str, Dict[str, Any]]:
+def _create_variable_args(
+        encoding: Dict[Hashable, Dict], name: Hashable,
+        variable: xr.DataArray) -> Tuple[Hashable, Dict[str, Any]]:
     """Initiation of netCDF4.Dataset.createVariable method parameters from
     user-defined encoding information.
     """
@@ -217,9 +218,9 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
 
 
 def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
-                     encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
-                     unlimited_dims: Optional[List[str]],
-                     variable: xr.Variable) -> None:
+                     encoding: Dict[str, Dict[str, Dict[str, Any]]],
+                     name: Hashable, unlimited_dims: Optional[List[str]],
+                     variable: xr.DataArray) -> None:
     """Creation and writing of the NetCDF variable"""
     unlimited_dims = unlimited_dims or list()
 
