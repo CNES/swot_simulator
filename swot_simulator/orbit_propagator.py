@@ -283,7 +283,7 @@ class Orbit:
             iterator: An iterator for all passes in the interval pointing to
             the cycle number, pass number and start date of the half-orbit.
         """
-        date = first_date or np.datetime64(datetime.datetime.now())
+        date = first_date or np.datetime64("now")
         last_date = last_date or date + self.cycle_duration()
         while date <= last_date:
             cycle_number, pass_number = self.decode_absolute_pass_number(
@@ -414,6 +414,15 @@ def calculate_orbit(parameters: settings.Parameters,
         else:
             raise RuntimeError(f"The {key!r} parameter defined in the "
                                "ephemeris is not handled.")
+
+    if parameters.cycle_duration is None:
+        raise RuntimeError("The cycle duration is not defined either in the "
+                           "ephemeris file or in the simulator parameters.")
+
+    if parameters.height is None:
+        raise RuntimeError(
+            "The satellite altitude is not defined either in "
+            "the ephemeris file or in the simulator parameters.")
 
     # If orbit is at low resolution, interpolate the orbit provided
     if np.mean(np.diff(time)) > 0.5:

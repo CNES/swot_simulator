@@ -18,7 +18,7 @@ class Parameters:
     central_pixel: bool
     complete_product: bool
     corrected_roll_phase_dataset: Optional[str]
-    cycle_duration: float
+    cycle_duration: Optional[float]
     delta_ac: float
     delta_al: float
     ephemeris_cols: Optional[Tuple[int, int, int]]
@@ -26,7 +26,7 @@ class Parameters:
     error_spectrum: Optional[str]
     half_gap: float
     half_swath: float
-    height: float
+    height: Optional[float]
     karin_noise: Optional[str]
     len_repeat: float
     nadir: bool
