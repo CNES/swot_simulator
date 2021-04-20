@@ -349,7 +349,7 @@ class ProductSpecification:
     def x_ac(self, x_ac: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the cross track
         distance"""
-        return self._data_array("cross_track_distance", x_ac)
+        return self._data_array("cross_track_distance", x_ac * 1000)  # km -> m
 
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the longitudes of
