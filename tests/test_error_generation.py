@@ -21,8 +21,9 @@ def load_parameters():
              swath=True,
              error_spectrum=os.path.join(ROOT, "..", "data",
                                          "global_sim_instrument_error.nc"),
-             karin_noise=os.path.join(ROOT, "..", "data",
-                                      "karin_noise_v2.nc")))
+             karin_noise=os.path.join(ROOT, "..", "data", "karin_noise_v2.nc"),
+             cycle_duration=0.99349,
+             height=857244))
 
 
 def load_data(error=None):

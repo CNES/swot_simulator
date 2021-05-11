@@ -6,7 +6,7 @@
 Orbit Propagator
 ----------------
 """
-from typing import Dict, Iterator, Optional, TextIO, Tuple
+from typing import Dict, Iterator, NamedTuple, Optional, TextIO, Tuple
 import datetime
 import logging
 import warnings
@@ -283,7 +283,7 @@ class Orbit:
             iterator: An iterator for all passes in the interval pointing to
             the cycle number, pass number and start date of the half-orbit.
         """
-        date = first_date or np.datetime64(datetime.datetime.now())
+        date = first_date or np.datetime64("now")
         last_date = last_date or date + self.cycle_duration()
         while date <= last_date:
             cycle_number, pass_number = self.decode_absolute_pass_number(
@@ -299,6 +299,14 @@ class Orbit:
         return StopIteration
 
 
+class EquatorCoordinates(NamedTuple):
+    """Coordinates of the satellite at the equator."""
+    #: Longitude
+    longitude: float
+    #: Product dataset name
+    time: np.datetime64
+
+
 class Pass:
     """Handle one pass
 
@@ -307,8 +315,11 @@ class Pass:
         lat (np.ndarray): Latitudes of the swath
         lon_nadir (np.ndarray): Longitudes at nadir
         lon (np.ndarray): Longitudes of the swath
+        time (np.ndarray): Time of measurements
         x_ac (np.ndarray): Across track distance.
         x_al (np.ndarray): Along track distance.
+        equator_coordinate (EquatorCoordinates): Coordinates of the satellite at
+            the equator.
         requirement_bounds: Limits of swath requirements. Measurements outside
             the span will be set to NaN.
     """
@@ -320,6 +331,7 @@ class Pass:
                  time: np.ndarray,
                  x_ac: np.ndarray,
                  x_al: np.ndarray,
+                 equator_coordinates: EquatorCoordinates,
                  requirement_bounds: Optional[Tuple[float, float]] = None):
         self.lat_nadir = lat_nadir
         self.lat = lat
@@ -327,19 +339,33 @@ class Pass:
         self.lon = lon
         self.requirement_bounds = requirement_bounds
         self.timedelta = time
-        self._time = None
+        self._date = None
         self.x_ac = x_ac
         self.x_al = x_al
+        self._equator_coordinates = equator_coordinates
 
     @property
     def time(self):
         """Time of positions"""
-        return self._time
+        assert self._date is not None
+        return self._date + (self.timedelta - self.timedelta[0])
 
-    @time.setter
-    def time(self, date: np.datetime64) -> None:
+    @property
+    def time_eq(self):
+        """Time at the equator"""
+        assert self._date is not None
+        return self._date + (self._equator_coordinates.time -
+                             self.timedelta[0])
+
+    @property
+    def lon_eq(self):
+        """Equator longitude"""
+        return self._equator_coordinates.longitude
+
+    def set_simulated_date(self, date: np.datetime64) -> None:
         """Set time of positions"""
-        self._time = date + (self.timedelta - self.timedelta[0])
+        assert self._date is None
+        self._date = date
 
     def mask(self) -> np.ndarray:
         """Obtain a mask to set NaN values outside the mission
@@ -388,6 +414,15 @@ def calculate_orbit(parameters: settings.Parameters,
         else:
             raise RuntimeError(f"The {key!r} parameter defined in the "
                                "ephemeris is not handled.")
+
+    if parameters.cycle_duration is None:
+        raise RuntimeError("The cycle duration is not defined either in the "
+                           "ephemeris file or in the simulator parameters.")
+
+    if parameters.height is None:
+        raise RuntimeError(
+            "The satellite altitude is not defined either in "
+            "the ephemeris file or in the simulator parameters.")
 
     # If orbit is at low resolution, interpolate the orbit provided
     if np.mean(np.diff(time)) > 0.5:
@@ -439,6 +474,47 @@ def calculate_orbit(parameters: settings.Parameters,
                  distance[-1], parameters.shift_time)
 
 
+def equator_properties(lon_nadir: np.ndarray, lat_nadir: np.ndarray,
+                       time: np.ndarray) -> EquatorCoordinates:
+    """Calculate the position of the satellite at the equator"""
+    # Search the nearest point to the equator
+    i1 = (np.abs(lat_nadir)).argmin()
+    i0 = i1 - 1
+    if lat_nadir[i0] * lat_nadir[i1] > 0:
+        i0, i1 = i1, i1 + 1
+    lon1 = lon_nadir[i0:i1 + 1]
+    lat1 = lat_nadir[i0:i1 + 1]
+    time = time[i0:i1 + 1]
+
+    # Calculate the intersection point
+    p11, p12 = np.stack(math.spher2cart(lon1, lat1)).T
+    p21, p22 = np.stack(
+        math.spher2cart(lon1, np.zeros((2, ), dtype=np.float64))).T
+
+    # Calculate normal of the normal vectors for arc 1 and 2
+    l = np.cross(np.cross(p11, p12), np.cross(p21, p22))
+
+    # Calculate one of the solution of the intersection point (the other is -i1)
+    i1 = l / np.linalg.norm(l)
+    lon_eq, _ = math.cart2spher(i1[:1], i1[1:2], i1[2:])
+    if not lon1.min() <= lon_eq <= lon1.max():
+        i1 = -i1
+        lon_eq, _ = math.cart2spher(i1[:1], i1[1:2], i1[2:])
+
+    # Calculate the distance along the track
+    lon1 = np.insert(lon1, 1, lon_eq)
+    lat1 = np.insert(lat1, 1, 0)
+    x_al = math.curvilinear_distance(lon1, lat1, VOLUMETRIC_MEAN_RADIUS)
+
+    # Pop the along track distance at the equator
+    x_eq = x_al[1]
+    x_al = np.delete(x_al, 1)
+
+    # Finally interpolate the time ot the equator
+    time_eq = np.interp(x_eq, x_al, time.astype("int64")).astype(time.dtype)
+    return EquatorCoordinates(lon_eq[0], time_eq)
+
+
 def calculate_pass(pass_number: int, orbit: Orbit,
                    parameters: settings.Parameters) -> Optional[Pass]:
     """Get the properties of an half-orbit
@@ -467,6 +543,8 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     lat_nadir = orbit.lat[indexes]
     time = orbit.time[indexes]
     x_al = orbit.x_al[indexes]
+
+    equator_coordinates = equator_properties(lon_nadir, lat_nadir, time)
 
     # Selects the orbit in the defined box
     mask = parameters.box.within(lon_nadir, lat_nadir)
@@ -498,4 +576,5 @@ def calculate_pass(pass_number: int, orbit: Orbit,
                 time,
                 x_ac,
                 x_al,
+                equator_coordinates,
                 requirement_bounds=parameters.requirement_bounds)

@@ -4,8 +4,7 @@
 # BSD-style license that can be found in the LICENSE file.
 from typing import Any, Dict, List, Optional, Tuple, Union
 from . import math
-from .plugins import ssh
-from .plugins import swh as _swh
+from . import plugins
 import numpy as np
 
 
@@ -19,7 +18,7 @@ class Parameters:
     central_pixel: bool
     complete_product: bool
     corrected_roll_phase_dataset: Optional[str]
-    cycle_duration: float
+    cycle_duration: Optional[float]
     delta_ac: float
     delta_al: float
     ephemeris_cols: Optional[Tuple[int, int, int]]
@@ -27,7 +26,7 @@ class Parameters:
     error_spectrum: Optional[str]
     half_gap: float
     half_swath: float
-    height: float
+    height: Optional[float]
     karin_noise: Optional[str]
     len_repeat: float
     nadir: bool
@@ -37,10 +36,10 @@ class Parameters:
     product_type: str
     requirement_bounds: Optional[Tuple[float, float]]
     shift_lon: Optional[float]
-    shift_time: Optional[float]
+    shift_time: Optional[np.timedelta64]
     sigma: float
-    ssh_plugin: Optional[ssh.Interface]
-    swh_plugin: Optional[_swh.Interface]
+    ssh_plugin: Optional[plugins.Interface]
+    swh_plugin: Optional[plugins.Interface]
     swath: bool
     swh: float
     hierarchical_groups: bool

@@ -6,7 +6,7 @@
 Parse/Load the product specification
 ====================================
 """
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Hashable, Iterator, List, Optional, Tuple, Union
 import datetime
 import copy
 import collections
@@ -18,6 +18,7 @@ import xml.etree.ElementTree as xt
 #
 import netCDF4
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 from . import orbit_propagator
 from . import math
@@ -39,16 +40,16 @@ def _find(element: xt.Element, tag: str) -> xt.Element:
     return result
 
 
-def _parse_type(dtype, width, signed):
+def _parse_type(dtype, width, signed) -> Union[npt.DTypeLike, np.generic]:
     """Parse type from xml format specification file. """
     if dtype == "real":
         return getattr(np, "float" + width)
     if dtype == "integer":
         return getattr(np, ("u" if not signed else "") + "int" + width)
     if dtype == "string":
-        return np.str
+        return np.str_
     if dtype == "char":
-        return np.dtype(f"S{width}")
+        return np.dtype(f"S{width}")  # type: ignore
     raise ValueError("Data type '" + dtype + "' is not recognized.")
 
 
@@ -59,21 +60,21 @@ def _cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
-                      lat: np.ndarray) -> Dict[str, Any]:
+                      lat: np.ndarray, lon_eq: float,
+                      time_eq: np.datetime64) -> Dict[str, Any]:
     """Calculates the global attributes of the pass"""
     def _iso_date(date: np.datetime64) -> str:
         """Return the time formatted according to ISO."""
-        return datetime.datetime.utcfromtimestamp(
-            date.astype("datetime64[us]").astype("int64") *
-            1e-6).isoformat() + "Z"
+        epoch = date.astype("datetime64[us]").astype(
+            "int64") * 1e-6  # type: ignore
+        return datetime.datetime.utcfromtimestamp(epoch).isoformat() + "Z"
 
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S : Creation")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ : Creation")
 
     ellipsoid_semi_major_axis = _cast_to_dtype(
         6378137, attributes["ellipsoid_semi_major_axis"])
     ellipsoid_flattening = _cast_to_dtype(1 / 298.25722356,
                                           attributes["ellipsoid_flattening"])
-
     result = collections.OrderedDict({
         "Conventions":
         "CF-1.7",
@@ -97,6 +98,10 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         _cast_to_dtype(cycle_number, attributes["cycle_number"]),
         "pass_number":
         _cast_to_dtype(pass_number, attributes["pass_number"]),
+        "equator_time":
+        _iso_date(time_eq),
+        "equator_longitude":
+        math.normalize_longitude(lon_eq, 0),  # type: ignore
         "time_coverage_start":
         _iso_date(date[0]),
         "time_coverage_end":
@@ -165,7 +170,7 @@ def _parser(tree: xt.ElementTree):
             _strtobool(item.attrib["signed"])
             if "signed" in item.attrib else None)
         if not isinstance(dtype, np.dtype):
-            dtype = dtype.__name__
+            dtype = dtype.__name__  # type: ignore
         annotation = item.find("annotation")
         if annotation is None:
             continue
@@ -188,8 +193,9 @@ def _parse_specification_file(path: str) -> Tuple:
     return _parser(xt.parse(path))
 
 
-def _create_variable_args(encoding: Dict[str, Dict], name: str,
-                          variable: xr.Variable) -> Tuple[str, Dict[str, Any]]:
+def _create_variable_args(
+        encoding: Dict[Hashable, Dict], name: Hashable,
+        variable: xr.DataArray) -> Tuple[Hashable, Dict[str, Any]]:
     """Initiation of netCDF4.Dataset.createVariable method parameters from
     user-defined encoding information.
     """
@@ -212,9 +218,9 @@ def _create_variable_args(encoding: Dict[str, Dict], name: str,
 
 
 def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
-                     encoding: Dict[str, Dict[str, Dict[str, Any]]], name: str,
-                     unlimited_dims: Optional[List[str]],
-                     variable: xr.Variable) -> None:
+                     encoding: Dict[str, Dict[str, Dict[str, Any]]],
+                     name: Hashable, unlimited_dims: Optional[List[str]],
+                     variable: xr.DataArray) -> None:
     """Creation and writing of the NetCDF variable"""
     unlimited_dims = unlimited_dims or list()
 
@@ -343,7 +349,7 @@ class ProductSpecification:
     def x_ac(self, x_ac: np.ndarray) -> Optional[Tuple[Dict, xr.DataArray]]:
         """Returns the properties of the variable describing the cross track
         distance"""
-        return self._data_array("cross_track_distance", x_ac)
+        return self._data_array("cross_track_distance", x_ac * 1000)  # km -> m
 
     def lon(self, lon: np.ndarray) -> Tuple[Dict, xr.DataArray]:
         """Returns the properties of the variable describing the longitudes of
@@ -671,6 +677,8 @@ class Nadir:
         self.encoding, self.data_vars = self.product_spec.time(track.time)
         self._data_array("lon_nadir", track.lon_nadir)
         self._data_array("lat_nadir", track.lat_nadir)
+        self._time_eq = track.time_eq
+        self._lon_eq = track.lon_eq
 
     def _data_array(self,
                     attr: str,
@@ -788,7 +796,8 @@ class Nadir:
                           attrs=global_attributes(self.product_spec.attributes,
                                                   cycle_number, pass_number,
                                                   self.data_vars[0].values,
-                                                  lng, lat))
+                                                  lng, lat, self._lon_eq,
+                                                  self._time_eq))
 
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:

@@ -2,10 +2,10 @@
     <science uid="l2b_ssh">
       <nodes>
         <real name="/time" shape="num_lines_shape" width="64">
-          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in UTC" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DD hh:mm:ss" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute leap_second is set to the UTC time at which the leap second occurs."/>
+          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in UTC" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DDThh:mm:ssZ" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute leap_second is set to the UTC time at which the leap second occurs."/>
         </real>
         <real name="/time_tai" shape="num_lines_shape" width="64">
-          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in TAI" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DD hh:mm:ss" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the TAI time scale since 1 Jan 2000 00:00:00 TAI. This time scale contains no leap seconds. The difference (in seconds) with time in UTC is given by the attribute [time:tai_utc_difference]."/>
+          <annotation app="conformance" _FillValue="9.969209968386869e+36" long_name="time in TAI" standard_name="time" calendar="gregorian" tai_utc_difference="[Value of TAI-UTC at time of first record]" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the TAI time scale since 1 Jan 2000 00:00:00 TAI. This time scale contains no leap seconds. The difference (in seconds) with time in UTC is given by the attribute [time:tai_utc_difference]."/>
         </real>
         <integer name="/latitude" shape="num_lines_num_pixels_shape" width="32" signed="true">
           <annotation app="conformance" _FillValue="2147483647" long_name="latitude (positive N, negative S)" standard_name="latitude" units="degrees_north" scale_factor="0.000001"  valid_min="-80000000" valid_max="80000000" comment="Latitude of measurement [-80,80]. Positive latitude is North latitude, negative latitude is South latitude."/>
@@ -80,7 +80,7 @@
           <annotation description="The method of production of the original data. If it was model-generated, source should name the model and its version, as specifically as could be useful. If it is observational, source should characterize it (e.g., 'Ka-band radar interferometer')."/>
         </string>
         <string name="/@history" shape="Scalar" width="0">
-          <annotation description="UTC time when file generated. Format is: 'YYYY-MM-DD hh:mm:ss : Creation'"/>
+          <annotation description="UTC time when file generated. Format is: 'YYYY-MM-DDThh:mm:ssZ : Creation'"/>
         </string>
         <string name="/@platform" shape="Scalar" width="0">
           <annotation description="SWOT"/>
@@ -100,11 +100,35 @@
         <integer name="/@pass_number" shape="Scalar" width="16" signed="true">
           <annotation description="Pass number of the product granule."/>
         </integer>
+        <string name="/@equator_time" shape="Scalar" width="0">
+          <annotation description="UTC time of the first equator crossing in product. Format is YYYY-MM-DDThh:mm:ss.ssssssZ"/>
+        </string>
+        <real name="/@equator_longitude" shape="Scalar" width="64">
+          <annotation description="Longitude of the first equator crossing in product (degrees)"/>
+        </real>
+        <string name="/@short_name" shape="Scalar" width="0">
+          <annotation description="L2_LR_SSH"/>
+        </string>
+        <string name="/@product_file_id" shape="Scalar" width="0">
+          <annotation description="Basic"/>
+        </string>
+        <string name="/@crid" shape="Scalar" width="0">
+          <annotation description="Composite release identifier (CRID) of the data system used to generate this file"/>
+        </string>
+        <string name="/@product_version" shape="Scalar" width="0">
+          <annotation description="Version identifier of this data file"/>
+        </string>
+        <string name="/@pge_name" shape="Scalar" width="0">
+          <annotation description="Name of the product generation executable (PGE) that created this file"/>
+        </string>
+        <string name="/@pge_version" shape="Scalar" width="0">
+          <annotation description="Version identifier of the product generation executable (PGE) that created this file"/>
+        </string>
         <string name="/@time_coverage_start" shape="Scalar" width="0">
-          <annotation description="UTC time of first measurement. Format is: YYYY-MM-DD hh:mm:ss.ssssssZ"/>
+          <annotation description="UTC time of first measurement. Format is: YYYY-MM-DDThh:mm:ss.ssssssZ"/>
         </string>
         <string name="/@time_coverage_end" shape="Scalar" width="0">
-          <annotation description="UTC time of last measurement. Format is: YYYY-MM-DD hh:mm:ss.ssssssZ"/>
+          <annotation description="UTC time of last measurement. Format is: YYYY-MM-DDThh:mm:ss.ssssssZ"/>
         </string>
         <real name="/@geospatial_lon_min" shape="Scalar" width="64">
           <annotation description="Westernmost longitude (deg) of granule bounding box"/>
@@ -145,29 +169,62 @@
         <real name="/@wavelength" shape="Scalar" width="64">
           <annotation description="Wavelength (m) of the transmitted signal, which is determined based on the transmitter center frequency of the transmit chirp."/>
         </real>
-        <string name="/@orbit_solution" shape="Scalar" width="0">
-          <annotation description="TBD attribute to indicate POE or MOE (also available from CRID)."/>
+        <string name="/@transmit_antenna" shape="Scalar" width="0">
+          <annotation description="Flag indicating which of the KaRIn antennas (plus_y or minus_y) is transmitting."/>
         </string>
-        <string name="/@xref_input_l1b_lr_intf_file" shape="Scalar" width="0">
-          <annotation description="Name of input Level 1B Low-Rate Interferogram file."/>
+        <string name="/@xref_l1b_lr_intf_file" shape="Scalar" width="0">
+          <annotation description="Name of input Level 1B low rate interferogram file."/>
         </string>
-        <string name="/@xref_input_static_karin_cal_file" shape="Scalar" width="0">
-          <annotation description="Name of input static KaRIn calibration file."/>
+        <string name="/@xref_l2_nalt_gdr_files" shape="Scalar" width="0">
+          <annotation description="Names of input Level 2 nadir altimeter (interim) geophysical data record files."/>
         </string>
-        <string name="/@xref_input_static_geophys_files" shape="Scalar" width="0">
-          <annotation description="List of static geophysical parameter files (TBD: to be split into specific input types)."/>
+        <string name="/@xref_l2_rad_gdr_files" shape="Scalar" width="0">
+          <annotation description="Names of input Level 2 radiometer (interim) geophysical data record files."/>
         </string>
-        <string name="/@xref_input_dynamic_geophys_files" shape="Scalar" width="0">
-          <annotation description="List of dynamic geophysical parameter files (TBD: to be split into specific input types)."/>
+        <string name="/@xref_int_lr_xover_cal_file" shape="Scalar" width="0">
+          <annotation description="Name of input low rate crossover calibration file."/>
         </string>
-        <string name="/@xref_input_l1_nalt_gdr_files" shape="Scalar" width="0">
-          <annotation description="Name of input L2 Nadir Altimeter Geophysical Data Record files."/>
+        <string name="/@xref_statickarincal_files" shape="Scalar" width="0">
+          <annotation description="Names of input static KaRIn calibration files."/>
         </string>
-        <string name="/@xref_input_int_lr_xover_cal_files" shape="Scalar" width="0">
-          <annotation description="Name of input crossover calibration files."/>
+        <string name="/@xref_param_l2_lr_precalssh_file" shape="Scalar" width="0">
+          <annotation description="Name of input Level 2 low rate precalibration sea surface height processor configuration parameters file."/>
         </string>
-        <string name="/@xref_input_l2_rad_gdr_files" shape="Scalar" width="0">
-          <annotation description="Name of input Level 2 Radiometer Geophysical Data Record files."/>
+        <string name="/@xref_orbit_ephemeris_file" shape="Scalar" width="0">
+          <annotation description="Name of input orbit ephemeris file."/>
+        </string>
+        <string name="/@xref_reforbittrack_files" shape="Scalar" width="0">
+          <annotation description="Names of input reference orbit track files."/>
+        </string>
+        <string name="/@xref_meteorological_pressure_files" shape="Scalar" width="0">
+          <annotation description="Names of input meteorological model surface pressure files."/>
+        </string>
+        <string name="/@xref_meteorological_wettroposphere_files" shape="Scalar" width="0">
+          <annotation description="Names of input meteorological model wet troposphere files."/>
+        </string>
+        <string name="/@xref_meteorological_wind_files" shape="Scalar" width="0">
+          <annotation description="Names of input meteorological model wind speed files."/>
+        </string>
+        <string name="/@xref_gim_files" shape="Scalar" width="0">
+          <annotation description="Names of input global ionosphere map (GIM) files."/>
+        </string>
+        <string name="/@xref_pole_location_file" shape="Scalar" width="0">
+          <annotation description="Name of input pole location file."/>
+        </string>
+        <string name="/@xref_dac_files" shape="Scalar" width="0">
+          <annotation description="Names of input dynamic atmosphere correction files."/>
+        </string>
+        <string name="/@xref_precipitation_files" shape="Scalar" width="0">
+          <annotation description="Names of input precipitation model files."/>
+        </string>
+        <string name="/@xref_sea_ice_mask_files" shape="Scalar" width="0">
+          <annotation description="Names of input sea ice mask model files."/>
+        </string>
+        <string name="/@xref_wave_model_files" shape="Scalar" width="0">
+          <annotation description="Names of input wave model files."/>
+        </string>
+        <string name="/@xref_geco_database_version" shape="Scalar" width="0">
+          <annotation description="Version number of geophysical and environmental corrections static database. Provides models for surface classification, digital elevation (land) and bathymetry, geoid, mean sea surface, mean dynamic topography, ocean tides, load tides, pole tide, internal tides, monthly and diurnal atmospheric pressure climatology, sea state bias."/>
         </string>
         <real name="/@ellipsoid_semi_major_axis" shape="Scalar" width="64">
           <annotation description="Semi-major axis of reference ellipsoid in meters."/>

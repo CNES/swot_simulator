@@ -99,7 +99,7 @@ def usage() -> argparse.Namespace:
                        help="The first date to be processed. "
                        "Default to the current date",
                        type=datetime_type,
-                       default=np.datetime64(datetime.date.today()))
+                       default=np.datetime64("now"))
     group.add_argument("--last-date",
                        help="The last date to be processed. "
                        "Default to the last date allowing to cover an entire "
@@ -203,22 +203,25 @@ def file_path(first_date: np.datetime64,
         str, optional: The path to the file to be created or None if the file
         already exists
     """
-    first_date = first_date.astype(datetime.datetime)
-    last_date = last_date.astype(datetime.datetime)
+    first_datetime: datetime.datetime = first_date.astype(
+        datetime.datetime)  # type: ignore
+    last_datetime: datetime.datetime = last_date.astype(
+        datetime.datetime)  # type: ignore
     product_type = "nadir" if nadir else "karin"
     dirname = os.path.join(parameters.working_directory, product_type,
-                           first_date.strftime("%Y"))
+                           first_datetime.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
     if nadir:
         filename = (f"SWOT_GPN_2P1P{cycle_number:03d}_{pass_number:03d}_"
-                    f"{first_date:%Y%m%d}_{first_date:%H%M%S}_"
-                    f"{last_date:%Y%m%d}_{last_date:%H%M%S}.nc")
+                    f"{first_datetime:%Y%m%d}_{first_datetime:%H%M%S}_"
+                    f"{last_datetime:%Y%m%d}_{last_datetime:%H%M%S}.nc")
     else:
         product_type = "".join(
             [item.capitalize() for item in parameters.product_type.split("_")])
         filename = (f"SWOT_L2_LR_SSH_{product_type}_"
                     f"{cycle_number:03d}_{pass_number:03d}_"
-                    f"{first_date:%Y%m%dT%H%M%S}_{last_date:%Y%m%dT%H%M%S}_"
+                    f"{first_datetime:%Y%m%dT%H%M%S}_"
+                    f"{last_datetime:%Y%m%dT%H%M%S}_"
                     "DG10_01.nc")
     result = os.path.join(dirname, filename)
     # If the product has already been produced, the generation of this
@@ -297,7 +300,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         return
 
     # Set the simulated date
-    track.time = date
+    track.set_simulated_date(date)
 
     # Mask to set the measurements outside the requirements of the mission to
     # NaN.
@@ -384,9 +387,11 @@ def launch(client: dask.distributed.Client,
             cluster.
         parameters (settings.Parameters): Simulation parameters.
         logging_server (tuple, optional): Log server connection settings.
-        first_date (numpy.datetime64): First date of the simulation.
-        last_date (numpy.datetime64): Last date of the simulation.
+        first_date (numpy.datetime64, optional): First date of the simulation.
+        last_date (numpy.datetime64, optional): Last date of the simulation.
     """
+    first_date = first_date or np.datetime64("now")
+
     # Displaying Dask client information.
     LOGGER.info(client)
 

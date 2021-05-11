@@ -64,11 +64,11 @@ def eval_config_file(filename: str) -> Dict:
             raise RuntimeError(
                 "There is a syntax error in your configuration file: "
                 f"{err}\n") from err
-        except SystemExit:
+        except SystemExit as err:
             raise RuntimeError(
                 "The configuration file (or one of the modules it imports) "
                 "called sys.exit()") from err
-        except Exception:
+        except Exception as err:
             raise RuntimeError(
                 "There is a programmable error in your configuration "
                 f"file:\n\n{traceback.format_exc()}") from err
@@ -249,8 +249,10 @@ class Parameters:
                            "Description Document (PDD), otherwise only the "
                            "calculated variables will be written to the "
                            "netCDF file")),
-        cycle_duration=(20.86455, float,
-                        "Duration of a cycle in number of fractional days"),
+        cycle_duration=(None, float,
+                        ("Duration of a cycle in number of fractional days. "
+                         "By default, this value is read from the ephemeris "
+                         "file)")),
         delta_ac=(2.0, float,
                   ("Distance, in km, between two points across track "
                    "direction")),
@@ -277,7 +279,8 @@ class Parameters:
         half_swath=(60.0, float,
                     ("Distance, in km, between the nadir and the center of "
                      "the last pixel of the swath")),
-        height=(891000.0, float, "Satellite altitude (m)"),
+        height=(None, float, ("Satellite altitude (m). By default, this value "
+                              "is read from the ephemeris file.")),
         karin_noise=(None, str,
                      "KaRIN file containing spectrum for several SWH"),
         len_repeat=(20000.0, float, "Repeat length"),
@@ -369,7 +372,7 @@ class Parameters:
         Returns:
             Parameters: the default settings
         """
-        return Parameters(template(python=True))
+        return Parameters(template(python=True))  # type: ignore
 
     def _convert_overrides(self, name: str, value: Any) -> Any:
         expected_type = self.CONFIG_VALUES[name][1]
