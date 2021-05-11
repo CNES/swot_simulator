@@ -323,7 +323,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
     # Calculation of instrumental errors
     noise_errors = error_generator.generate(
         cycle_number, pass_number, orbit.curvilinear_distance, track.time,
-        track.x_al, track.x_ac, swh if swh is not None else parameters.swh)
+        track.x_al, track.x_ac,
+        swh[:, :-1] if swh is not None else parameters.swh)
     for error in noise_errors.values():
         # Only the swaths must be masked
         if len(error.shape) == 2:
