@@ -27,6 +27,7 @@ SSH plugins
 .. autosummary::
   :toctree: generated/
 
+    swot_simulator.plugins.data_handler
     swot_simulator.plugins.ssh.aviso
     swot_simulator.plugins.ssh.hycom
     swot_simulator.plugins.ssh.mitgcm
