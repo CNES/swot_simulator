@@ -272,7 +272,7 @@ class NetcdfLoader(DatasetLoader):
 class IrregularGridHandler(Interface):
     """
     Default interpolator for an irregular grid. First, uses an RTree to do the spatial
-    interpolation of all model grid, then do the time interpolation with a simple 
+    interpolation of all model grid, then do the time interpolation with a simple
     weighting of two grid
     """
     def __init__(self, dataset_loader: DatasetLoader):
