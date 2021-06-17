@@ -1,3 +1,7 @@
+# Copyright (c) 2021 CNES/JPL
+#
+# All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
 """
 Data handler
 ============
@@ -6,10 +10,6 @@ Set of classes that helps developping plugins for ssh and swh. This includes a d
 netcdf reader for loading a dataset, and default interpolators for both regular and
 irregular grids.
 """
-# Copyright (c) 2021 CNES/JPL
-#
-# All rights reserved. Use of this source code is governed by a
-# BSD-style license that can be found in the LICENSE file.
 import abc
 import datetime
 import logging
