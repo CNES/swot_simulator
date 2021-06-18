@@ -48,9 +48,9 @@ def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 @nb.njit(cache=True, nogil=True)
-def _interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
-                            height_sdt: np.array, cross_track: np.array,
-                            swh: np.array) -> Tuple[float, np.ndarray]:
+def _interpolate_file_karin(swh_in: np.ndarray, x_ac_in: np.ndarray,
+                            height_sdt: np.ndarray, cross_track: np.ndarray,
+                            swh: np.ndarray) -> Tuple[float, np.ndarray]:
     """Interpolates the standard deviation of KaRIN instrumental noise as a
     function of SWH and across track distance."""
     warning = 0
@@ -73,9 +73,9 @@ def _interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
     return warning, hsdt
 
 
-def interpolate_file_karin(swh_in: np.array, x_ac_in: np.array,
-                           height_sdt: np.array, cross_track: np.array,
-                           swh: np.array) -> np.ndarray:
+def interpolate_file_karin(swh_in: np.ndarray, x_ac_in: np.ndarray,
+                           height_sdt: np.ndarray, cross_track: np.ndarray,
+                           swh: np.ndarray) -> np.ndarray:
     """Interpolates the standard deviation of KaRIN instrumental noise as a
     function of SWH and across track distance."""
     if len(swh_in.shape) == 1:
