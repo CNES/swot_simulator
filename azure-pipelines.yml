@@ -3,9 +3,9 @@ trigger:
  - develop
 jobs:
 - job:
-  displayName: Ubuntu-16.04
+  displayName: Ubuntu-latest
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
   strategy:
     matrix:
       Python37:
