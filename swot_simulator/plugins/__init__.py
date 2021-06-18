@@ -18,6 +18,13 @@ class Interface:
         raise RuntimeError("You must register a plugin")
 
 
+class Puppet(Interface):
+    """Interpolation routine used for testing."""
+    def interpolate(self, lon, _lat, _time):
+        """Returns an array filled with zeros"""
+        return np.full_like(lon, 0)
+
+
 class Plugin:
     """Plug-in to interpolate a geophysical field"""
     def __init__(self):
