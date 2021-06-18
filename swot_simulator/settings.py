@@ -17,9 +17,9 @@ import pathlib
 import traceback
 import types
 import numpy as np
+from . import BASIC, EXPERT, PRODUCT_TYPE, UNSMOOTHED, WIND_WAVE
 from . import math
 from . import plugins
-from . import PRODUCT_TYPE
 
 #: Default working directory
 DEFAULT_WORKING_DIRECTORY = os.path.join(os.path.expanduser('~'),
@@ -299,10 +299,10 @@ class Parameters:
                 "versa")),
         nseed=(0, int, ("Seed for RandomState. Must be convertible to 32 bit "
                         "unsigned integers")),
-        product_type=("expert", str,
+        product_type=(EXPERT, str,
                       ("Type of SWOT product to be generated. Possible "
-                       "products are \"expert\", \"basic\" and \"wind_wave\". "
-                       "Default to expert")),
+                       f"products are {BASIC!r}, {EXPERT!r}, {UNSMOOTHED!r} "
+                       f"and {WIND_WAVE!r}. Default to {EXPERT!r}")),
         requirement_bounds=(None, [float, 2],
                             ("Limits of SWOT swath requirements. Measurements "
                              "outside the span will be set with fill values")),
@@ -317,7 +317,7 @@ class Parameters:
         swh_plugin=(
             None, plugins.Interface,
             "SWH plugin to interpolate model SWH on the SWOT grid. Use only "
-            "\"expert\" or \"wind_wave\" products that have the swh in its "
+            f"{EXPERT!r} or {WIND_WAVE!r} products that have the swh in its "
             "output"),
         swath=(True, bool, "True to generate swath products"),
         swh=(2.0, float, "SWH for the region"),
@@ -338,12 +338,17 @@ class Parameters:
         if product_type not in PRODUCT_TYPE:
             raise ValueError(f"Unknown product type: {product_type}")
 
-        if product_type == "wind_wave":
+        elif product_type == WIND_WAVE:
             if getattr(self, "ssh_plugin") is not None:
                 raise ValueError("The wind/wave product cannot store SSH.")
 
             if getattr(self, "noise") is not None:
                 raise ValueError("The wind/wave product cannot store errors.")
+
+        elif product_type == UNSMOOTHED:
+            if getattr(self, "central_pixel"):
+                raise RuntimeError("The unsmoothed product doesn't support a "
+                                   "center pixel.")
 
         noise = getattr(self, "noise")
         if noise is not None:

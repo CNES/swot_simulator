@@ -10,9 +10,9 @@ store all the variables and ``False`` to store only the one compute by the
 simulator.
 
 You can also select the output type
-:py:const:`product_type <settings.product_type>` among ``expert``, ``ssh``, and
-``windwave``. Default is ``expert`` and details are in the corresponding xml
-file.
+:py:const:`product_type <settings.product_type>` among ``basic``, ``expert``,
+``unsmoothed``, and ``wind_wave``. Default is ``expert`` and details are in the
+corresponding XML file.
 
 The output directory is defined in
 :py:const:`working_directory <settings.working_directory>` key, default is the

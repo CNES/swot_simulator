@@ -28,8 +28,12 @@ class Karin:
 
         self.size_grid = (parameters.delta_ac * parameters.delta_al)**0.5
 
-    def generate(self, seed: int, x_al: np.array, x_ac: np.array,
-                 swh: np.array) -> Dict[str, np.ndarray]:
+        # Hack for unsmoothed products at high resolution
+        if self.size_grid < 1:
+            self.size_grid *= 8 / (40**.5)
+
+    def generate(self, seed: int, x_al: np.ndarray, x_ac: np.ndarray,
+                 swh: np.ndarray) -> Dict[str, np.ndarray]:
         """Generate the karin noise
 
         Args:

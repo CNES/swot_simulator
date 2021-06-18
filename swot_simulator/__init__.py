@@ -23,9 +23,22 @@ BASELINE = 10
 #: KA frequency (in Hz)
 F_KA = 35750000000.0
 
+#: Basic product
+BASIC = "basic"
+
+#: Expert product
+EXPERT = "expert"
+
+#: High resolution
+UNSMOOTHED = "unsmoothed"
+
+#: Wind-wave product
+WIND_WAVE = "wind_wave"
+
 #: Product types
 PRODUCT_TYPE = {
-    "expert": "l2b-expert.xml",
-    "basic": "l2b-ssh.xml",
-    "wind_wave": "l2b-windwave.xml"
+    BASIC: "l2b-ssh.xml",
+    EXPERT: "l2b-expert.xml",
+    UNSMOOTHED: "l2a-highres.xml",
+    WIND_WAVE: "l2b-windwave.xml"
 }
