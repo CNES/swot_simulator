@@ -17,6 +17,10 @@ class Interface:
         """Interpolate the geophysical field for the given coordinates"""
         raise RuntimeError("You must register a plugin")
 
+    @property
+    def version() -> str:
+        return "Unspecified"
+
 
 class Puppet(Interface):
     """Interpolation routine used for testing."""

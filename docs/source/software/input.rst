@@ -44,3 +44,10 @@ the :py:const:`swh_plugin <settings.swh_plugin>` key.
 
 To disable interpolation of SWH or SSH models, the related parameters must be
 set to ``None``.
+
+Plugin versioning
+=================
+
+The simulator keeps track of the code version and parameters used to generate a dataset. It generates
+a version.py file containing the simulator version, the SSH plugin class and version, and the SWH plugin class and version.
+The :func:`~swot_simulator.plugins.Interface.version()` method should be overriden in the plugins to keep track of the changes in the plugins.

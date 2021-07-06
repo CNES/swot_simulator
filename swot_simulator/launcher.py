@@ -9,22 +9,21 @@ Main program
 This module defines the main :func:`function <launch>` handling the simulation
 of SWOT products as well as the entry point of the main program.
 """
-from typing import Dict, Optional, Tuple
 import argparse
 import datetime
 import logging
 import os
+import shutil
 import sys
 import traceback
+from typing import Dict, Optional, Tuple
+
 import dask.distributed
 import dateutil.parser
 import numpy as np
-from . import dispatch
-from . import exception
-from . import logbook
-from . import product_specification
-from . import orbit_propagator
-from . import settings
+
+from . import (dispatch, exception, logbook, orbit_propagator,
+               product_specification, settings, version)
 from .error import generator
 
 #: Logger of this module
@@ -440,8 +439,28 @@ def main():
 
     try:
         parameters = settings.eval_config_file(args.settings.name)
-        launch(client, settings.Parameters(parameters), logging_server,
-               args.first_date, args.last_date)
+        pp = settings.Parameters(parameters)
+
+        # Keep track of the overriden parameters
+        os.makedirs(pp.working_directory, exist_ok=True)
+        param_file = os.path.join(pp.working_directory, "parameters.py")
+        if not os.path.exists(param_file):
+            shutil.copyfile(os.path.abspath(args.settings.name), param_file)
+
+        # Keep track of versions used for the simulator and the interpolation plugin
+        version_file = os.path.join(pp.working_directory, "versions.txt")
+        if not os.path.exists(version_file):
+            with open(os.path.join(pp.working_directory, "versions.py"),
+                      "w") as f:
+                f.write(f"simulator version: {version.release()}\n")
+                f.write(
+                    f"SSH plugin: {pp.ssh_plugin.__class__} version '{pp.ssh_plugin.version()}'\n"
+                    if pp.ssh_plugin else "No SSH plugin")
+                f.write(
+                    f"SSH plugin: {pp.swh_plugin.__class__} version '{pp.swh_plugin.version()}'\n"
+                    if pp.swh_plugin else "No SWH plugin")
+
+        launch(client, pp, logging_server, args.first_date, args.last_date)
 
         client.close()
         logger.info("End of processing.")
