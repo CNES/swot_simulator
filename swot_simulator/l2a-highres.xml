@@ -20,7 +20,7 @@
       <integer name="/left/longitude_uncert" shape="left_num_lines_num_pixels_shape" width="16" signed="false">
         <annotation app="conformance" _FillValue="65535" long_name="1-sigma longitude uncertainty" units="degrees" scale_factor="0.000001" valid_min="0" valid_max="20000" coordinates="longitude latitude" comment="1-sigma longitude uncertainty."/>
       </integer>
-      <char name="/left/polarization_karin" shape="left_num_lines_num_sides_shape" width="1">
+      <char name="/left/polarization_karin" shape="left_num_lines_shape" width="1">
         <annotation app="conformance" _FillValue="*" long_name="polarization for each side of the KaRIn swath" comment="H denotes co-polarized linear horizontal, V denotes co-polarized linear vertical."/>
       </char>
       <integer name="/left/ssh_karin_2" shape="left_num_lines_num_pixels_shape" width="32" signed="true">
@@ -73,7 +73,7 @@
       <integer name="/right/longitude_uncert" shape="right_num_lines_num_pixels_shape" width="16" signed="false">
         <annotation app="conformance" _FillValue="65535" long_name="1-sigma longitude uncertainty" units="degrees" scale_factor="0.000001" valid_min="0" valid_max="20000" coordinates="longitude latitude" comment="1-sigma longitude uncertainty."/>
       </integer>
-      <char name="/right/polarization_karin" shape="right_num_lines_num_sides_shape" width="1">
+      <char name="/right/polarization_karin" shape="right_num_lines_shape" width="1">
         <annotation app="conformance" _FillValue="*" long_name="polarization for each side of the KaRIn swath" comment="H denotes co-polarized linear horizontal, V denotes co-polarized linear vertical."/>
       </char>
       <integer name="/right/ssh_karin_2" shape="right_num_lines_num_pixels_shape" width="32" signed="true">
@@ -283,19 +283,11 @@
     <dimension extent="0" name="/left/num_lines"/>
     <dimension extent="0" name="/left/num_pixels"/>
   </shape>
-  <shape name="left_num_lines_num_sides_shape" order="slowest...fastest">
-    <dimension extent="0" name="/left/num_lines"/>
-    <dimension extent="0" name="/left/num_sides"/>
-  </shape>
   <shape name="right_num_lines_shape" order="slowest...fastest">
     <dimension extent="0" name="/right/num_lines"/>
   </shape>
   <shape name="right_num_lines_num_pixels_shape" order="slowest...fastest">
     <dimension extent="0" name="/right/num_lines"/>
     <dimension extent="0" name="/right/num_pixels"/>
-  </shape>
-  <shape name="right_num_lines_num_sides_shape" order="slowest...fastest">
-    <dimension extent="0" name="/right/num_lines"/>
-    <dimension extent="0" name="/right/num_sides"/>
   </shape>
 </product>
