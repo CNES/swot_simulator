@@ -74,14 +74,12 @@ def read_version():
         raise AssertionError("The version module is invalid")
 
     # No tag already registred
-    if match is None:
-        pattern = re.compile(r'([\w\d]+)(?:-(dirty))?')
-        match = pattern.search(stdout)
-        version = "0.0.0"
-        sha1 = match.group(1)
-    else:
-        version = match.group(1)
-        sha1 = match.group(3)
+    assert match is not None
+    version = match.group(1)
+    commits = int(match.group(2))
+    sha1 = match.group(3)
+    if commits != 0:
+        version += f".dev{commits}"
 
     stdout = execute("git log  %s -1 --format=\"%%H %%at\"" % sha1)
     stdout = stdout.strip().split()
