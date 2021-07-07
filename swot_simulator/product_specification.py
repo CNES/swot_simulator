@@ -127,7 +127,7 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
 
 def _group_attributes(side: Side) -> Dict[str, str]:
     """Gets the attributes of a group (unsmoothed products)."""
-    if side is Side.LEFT:
+    if side == Side.LEFT.value:
         return dict(description="Unsmoothed SSH measurement data and related "
                     "information for the left half swath.")
     return dict(description="Unsmoothed SSH measurement data and related "
