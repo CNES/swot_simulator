@@ -6,6 +6,16 @@
 Constants that are defined for SWOT simulator
 ---------------------------------------------
 """
+from . import version
+
+#: Module Version
+__version__ = version.release()
+
+#: Module release date
+__date__ = version.date()
+
+del version
+
 # EARTH CONSTANTS
 
 #: Volumetric mean radius (km)
