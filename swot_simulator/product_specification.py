@@ -131,7 +131,7 @@ def _group_attributes(side: Side) -> Dict[str, str]:
         return dict(description="Unsmoothed SSH measurement data and related "
                     "information for the left half swath.")
     return dict(description="Unsmoothed SSH measurement data and related "
-                "information for the right half swath")
+                "information for the right half swath.")
 
 
 def _strtobool(value: str) -> bool:
