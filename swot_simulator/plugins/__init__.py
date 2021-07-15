@@ -18,7 +18,6 @@ class Interface:
         raise RuntimeError("You must register a plugin")
 
 
-
 class Puppet(Interface):
     """Interpolation routine used for testing."""
     def interpolate(self, lon, _lat, _time):
