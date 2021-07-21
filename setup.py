@@ -138,13 +138,13 @@ def main():
         name="swot_simulator",
         include_package_data=True,
         version=read_version(),
-        author="Frederic Briol",
+        author="CNES/JPL",
         author_email="fbriol@gmail.com",
         description="Simulate SWOT measurements on sea surface height with "
         "simulated errors",
         long_description=long_description,
         long_description_content_type="text/x-rst",
-        url="https://github.com/fbriol/swot_simulator",
+        url="https://github.com/CNES/swot_simulator",
         packages=setuptools.find_packages(),
         package_data={'': ['*.xml', '*.nc']},
         classifiers=[
