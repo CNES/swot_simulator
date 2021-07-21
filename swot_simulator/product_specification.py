@@ -21,7 +21,7 @@ import netCDF4
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
-from . import EXPERT, PRODUCT_TYPE, UNSMOOTHED
+from . import EXPERT, PRODUCT_TYPE, UNSMOOTHED, __version__
 from . import math
 from . import orbit_propagator
 
@@ -89,6 +89,7 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
         source="Simulate product",
         history=now,
         platform="SWOT",
+        product_version=__version__,
         references=REFERENCE,
         reference_document="D-56407_SWOT_Product_Description_L2_LR_SSH",
         contact="CNES aviso@altimetry.fr, JPL podaac@podaac.jpl.nasa.gov",
