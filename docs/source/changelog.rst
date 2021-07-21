@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.1 - 2021/07/21
+----------------
+* Support for unsmoothed products.
+* Retains the simulation parameters.
+* Bug fix: cross track distances are written in km.
+* Set the satellite coordinates at the equator.
+* Refactor the plugin architecture.
+
 1.0 - 2021/03/12
 ----------------
 * Restructuring of the random number generation.
