@@ -311,8 +311,8 @@ class IrregularGridHandler(Interface):
                         y_sat: np.ndarray) -> np.ndarray:
         mesh = pyinterp.RTree()
         mesh.packing(
-            np.vstack((x_model.compute(), y_model.compute())).T,
-            z_model.compute())
+            np.vstack((x_model.ravel().compute(), y_model.ravel().compute())).T,
+            z_model.ravel().compute())
 
         z, _ = mesh.radial_basis_function(
             np.vstack((x_sat, y_sat)).T.astype("float32"),

@@ -323,7 +323,8 @@ class Parameters:
         swh=(2.0, float, "SWH for the region"),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str,
                            ("The working directory. By default, files are "
-                            "generated in the user's root directory")))
+                            "generated in the user's root directory")),
+        filepattern=(None, str, "Pattern for file name"))
 
     #: Arguments that must be defined by the user.
     REQUIRED = ["ephemeris", "error_spectrum", "karin_noise"]

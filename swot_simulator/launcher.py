@@ -213,13 +213,21 @@ def file_path(first_date: np.datetime64,
                            first_datetime.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
     if nadir:
-        filename = (f"SWOT_GPN_2P1P{cycle_number:03d}_{pass_number:03d}_"
+        if parameters.filepattern is not None:
+            pattern = f"{parameters.filepattern}_nadir_"
+        else:
+            pattern = "SWOT_GPN_2P1P"
+        filename = (f"{pattern}{cycle_number:03d}_{pass_number:03d}_"
                     f"{first_datetime:%Y%m%d}_{first_datetime:%H%M%S}_"
                     f"{last_datetime:%Y%m%d}_{last_datetime:%H%M%S}.nc")
     else:
         product_type = "".join(
             [item.capitalize() for item in parameters.product_type.split("_")])
-        filename = (f"SWOT_L2_LR_SSH_{product_type}_"
+        if parameters.filepattern is not None:
+            pattern = f"{parameters.filepattern}_"
+        else:
+            pattern = f"SWOT_L2_LR_SSH_{product_type}_"
+        filename = (f"{pattern}"
                     f"{cycle_number:03d}_{pass_number:03d}_"
                     f"{first_datetime:%Y%m%dT%H%M%S}_"
                     f"{last_datetime:%Y%m%dT%H%M%S}_"
