@@ -233,8 +233,8 @@ class NetcdfLoader(DatasetLoader):
                                       self.time_delta)
         last_date = self._shift_date(last_date.astype("datetime64[ns]"), 1,
                                      self.time_delta)
-        if first_date < self.time_series["date"][
-                0] or last_date > self.time_series["date"][-1]:
+        if last_date < self.time_series["date"][
+                0] or first_date > self.time_series["date"][-1]:
             raise IndexError(
                 f"period [{first_date}, {last_date}] is out of range: "
                 f"[{self.time_series['date'][0]}, {self.time_series['date'][-1]}]"
