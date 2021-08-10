@@ -32,7 +32,7 @@ class WW3(data_handler.CartesianGridHandler):
 
         interpolator = pyinterp.backends.xarray.Grid3D(dataset.ssh)
         swh = interpolator.trivariate(
-            dict(longitude=lon, latitude=lat, time=dates),
+            dict(lon=lon, lat=lat, time=dates),
             interpolator="bilinear",
         )
         return swh
