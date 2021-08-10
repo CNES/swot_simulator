@@ -763,8 +763,8 @@ class Nadir:
         variable = getattr(self.product_spec, attr)(data)
         if variable is not None:
             encoding, array = variable
-            if self.standalone:
-                array.name = array.name.replace("_nadir", "")
+            #if self.standalone:
+            #    array.name = array.name.replace("_nadir", "")
             self.encoding.update(encoding)
             self.data_vars += array
 
