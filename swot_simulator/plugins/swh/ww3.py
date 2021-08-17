@@ -20,7 +20,9 @@ class WW3(data_handler.CartesianGridHandler):
         loader = data_handler.NetcdfLoader(path,
                                            date_fmt="%Y%m%d",
                                            ssh_name="hs",
-                                           pattern=r"ww3.(?P<date>\w+)_hs\.nc")
+                                           lon_name="longitude",
+                                           lat_name="latitude",
+                                           pattern=r"SKIM_WW3-GLOB-15M_(?P<date>\w+)_hs\.nc")
         super().__init__(loader)
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
