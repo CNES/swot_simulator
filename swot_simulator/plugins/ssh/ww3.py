@@ -54,12 +54,9 @@ class WW3(data_handler.IrregularGridHandler):
         layers = np.stack(layers)
         LOGGER.debug("interpolation completed in %.2fs for period %s, %s",
                      time.time() - start_time, dates.min(), dates.max())
-        print('bouhtime', dates_p)
         dates_p = dates_p.astype("int64") * 10**6
         ssh_interp = data_handler._time_interp(dates_p.astype("int64"),layers,
                                    dates.astype("datetime64[us]").astype("int64"),)
-        print('bouhtime', ssh_interp)
-        LOGGER.debug('bouhssh')
         # Time interpolation of the SSH.
         return data_handler._time_interp(
             dates_p.astype("int64"),
