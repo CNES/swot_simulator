@@ -32,6 +32,9 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
     " J. Atmos. Oceanic Technol., 33, 119-126, doi:10.1175/jtech-d-15-0160" \
     ".1. http://dx.doi.org/10.1175/JTECH-D-15-0160.1."
 
+#: Product specification file for the nadir product
+NADIR_SPECIFICATION = pathlib.Path(__file__).parent / "nadir-gpr.xml"
+
 
 class Side(enum.Enum):
     """Represents both sides of the swath."""
@@ -238,9 +241,12 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
     if np.issubdtype(variable.dtype, np.datetime64):
         # 946684800000000 number of microseconds between 2000-01-01 and
         # 1970-01-01
-        variable.values = (
-            variable.values.astype("datetime64[us]").astype("int64") -
-            946684800000000) * 1e-6
+        values = (variable.values.astype("datetime64[us]").astype("int64") -
+                  946684800000000) * 1e-6
+        if variable.name in xr_dataset.coords:
+            xr_dataset.assign_coords(coords={variable.name: values})
+        else:
+            variable.values = values
         assert (
             variable.attrs["units"] == "seconds since 2000-01-01 00:00:00.0")
     dtype, kwargs = _create_variable_args(encoding, name, variable)
@@ -303,9 +309,105 @@ def to_netcdf(dataset: xr.Dataset,
 def _fill_value(properties: Dict[str, Any]) -> np.ndarray:
     """Returns the fill value encoded with the data type specified"""
     dtype = properties["dtype"]
+    attrs = properties["attrs"]
+    fill_value = attrs["_FillValue"] if "_FillValue" in attrs else 0
     if isinstance(dtype, str):
-        return getattr(np, dtype)(properties["attrs"]["_FillValue"])
-    return np.array(properties["attrs"]["_FillValue"], dtype)
+        return getattr(np, dtype)(fill_value)
+    return np.array(fill_value, dtype)
+
+
+def _build_array(name: str, variables: Dict[str, Dict[str, Any]],
+                 data: np.ndarray):
+    """Builds the array from the data and the variables"""
+    properties = variables[name]
+    attrs = copy.deepcopy(properties["attrs"])
+
+    # The fill value is casted to the target value of the variable
+    fill_value = _fill_value(properties)
+    try:
+        del attrs["_FillValue"]
+    except KeyError:
+        pass
+
+    # Reading the storage properties of the variable ()
+    encoding: Dict[str, Any] = dict(_FillValue=fill_value,
+                                    dtype=properties["dtype"])
+
+    # Some values read from the XML files must be decoded
+    # TODO(fbriol): The type of these attributes should be determined
+    # from their type, but at the moment this is not possible.
+    for item in ["add_offset", "scale_factor"]:
+        if item in attrs:
+            attrs[item] = float(attrs[item])
+    for item in ["valid_range", "valid_min", "valid_max"]:
+        if item in attrs:
+            attrs[item] = _cast_to_dtype(attrs[item], properties)
+    if "flag_values" in attrs:
+        items = attrs["flag_values"].split()
+        attrs["flag_values"] = np.array(
+            [_cast_to_dtype(item, properties) for item in items],
+            properties["dtype"]) if len(items) != 1 else _cast_to_dtype(
+                float(attrs["flag_values"]), properties)
+    # if "scale_factor" in attrs and "add_offset" not in attrs:
+    #     attrs["add_offset"] = 0.0
+    # if "add_offset" in attrs and "scale_factor" not in attrs:
+    #     attrs["scale_factor"] = 1.0
+    return {
+        name: encoding
+    }, xr.DataArray(data=data,
+                    dims=properties["shape"],
+                    name=name,
+                    attrs=attrs)
+
+
+def _write_nadir_product(ds: xr.Dataset, path: str,
+                         complete_product: bool) -> None:
+    """Write the nadir product to a netCDF file."""
+    variables, _attributes = _parse_specification_file(NADIR_SPECIFICATION)
+    variables["data_01/ku/simulated_error_altimeter"] = dict(
+        attrs=dict(_FillValue=2147483647,
+                   long_name='Altimeter error',
+                   standard_name='',
+                   units='m',
+                   scale_factor=0.0001,
+                   coordinates='longitude latitude'),
+        dtype='int32',
+        shape=("data_01/time", ))
+
+    ds = ds.rename_dims({"num_lines": "data_01/time"})
+    ds = ds.rename_vars(
+        dict(time="data_01/time",
+             latitude_nadir="data_01/latitude",
+             longitude_nadir="data_01/longitude",
+             simulated_error_altimeter="data_01/ku/simulated_error_altimeter"))
+    if "ssh_nadir" in ds.variables:
+        ds = ds.rename_vars({"ssh_nadir": "data_01/ku/ssh"})
+
+    data_vars = {}
+    encoding = {}
+    for name in variables:
+        if name not in ds.data_vars:
+            continue
+        encoding_array, array = _build_array(name, variables,
+                                             ds.variables[name].values)
+        data_vars[array.name] = array
+        encoding.update(encoding_array)
+
+    shape = ds.variables["data_01/time"].shape
+
+    if complete_product:
+        for item in variables:
+            if item in data_vars:
+                continue
+            properties = variables[item]
+            data = np.full(shape, _fill_value(properties), properties["dtype"])
+            encoding_array, array = _build_array(item, variables, data)
+            data_vars[array.name] = array
+            encoding.update(encoding_array)
+
+    ds.attrs["title"] = f"GDR - Reduced dataset"
+    ds = xr.Dataset(data_vars=data_vars, attrs=ds.attrs)
+    to_netcdf(ds, path, encoding=encoding, mode="w")
 
 
 class ProductSpecification:
@@ -380,42 +482,10 @@ class ProductSpecification:
         for ix, name in enumerate(names):
             if name not in self.variables:
                 return None
-            properties = self.variables[name]
-            attrs = copy.deepcopy(properties["attrs"])
-
-            # The fill value is casted to the target value of the variable
-            fill_value = _fill_value(properties)
-            del attrs["_FillValue"]
-
-            # Reading the storage properties of the variable ()
-            encoding: Dict[str, Any] = dict(_FillValue=fill_value,
-                                            dtype=properties["dtype"])
-
-            # Some values read from the XML files must be decoded
-            # TODO(fbriol): The type of these attributes should be determined
-            # from their type, but at the moment this is not possible.
-            for item in ["add_offset", "scale_factor"]:
-                if item in attrs:
-                    attrs[item] = float(attrs[item])
-            for item in ["valid_range", "valid_min", "valid_max"]:
-                if item in attrs:
-                    attrs[item] = _cast_to_dtype(attrs[item], properties)
-            if "flag_values" in attrs:
-                items = attrs["flag_values"].split()
-                attrs["flag_values"] = np.array([
-                    _cast_to_dtype(item, properties) for item in items
-                ], properties["dtype"]) if len(items) != 1 else _cast_to_dtype(
-                    float(attrs["flag_values"]), properties)
-            # if "scale_factor" in attrs and "add_offset" not in attrs:
-            #     attrs["add_offset"] = 0.0
-            # if "add_offset" in attrs and "scale_factor" not in attrs:
-            #     attrs["scale_factor"] = 1.0
-            result[0].update({name: encoding})
-            result[1].append(
-                xr.DataArray(data=swaths[ix],
-                             dims=properties["shape"],
-                             name=name,
-                             attrs=attrs))
+            encoding_array, array = _build_array(name, self.variables,
+                                                 swaths[ix])
+            result[0].update(encoding_array)
+            result[1].append(array)
         return result if result[1] else None
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
@@ -885,11 +955,19 @@ class Nadir:
                 official dataset, even those not calculated by the simulator.
         """
         LOGGER.info("write %s", path)
-        dataset = self.to_xarray(cycle_number, pass_number, complete_product)
+        dataset = self.to_xarray(
+            cycle_number, pass_number,
+            complete_product if self.num_pixels == 1 else False)
         try:
-            to_netcdf(dataset, path, self.encoding, mode="w")
+            if self.num_pixels == 1:
+                _write_nadir_product(dataset, path, complete_product)
+            else:
+                to_netcdf(dataset, path, self.encoding, mode="w")
         except:
-            os.unlink(path)
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
             raise
 
 

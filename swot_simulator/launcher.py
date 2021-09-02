@@ -185,7 +185,7 @@ def file_path(first_date: np.datetime64,
                            first_datetime.strftime("%Y"))
     os.makedirs(dirname, exist_ok=True)
     if nadir:
-        filename = (f"SWOT_GPN_2P1P{cycle_number:03d}_{pass_number:03d}_"
+        filename = (f"SWOT_GPR_2P1P{cycle_number:03d}_{pass_number:03d}_"
                     f"{first_datetime:%Y%m%d}_{first_datetime:%H%M%S}_"
                     f"{last_datetime:%Y%m%d}_{last_datetime:%H%M%S}.nc")
     else:

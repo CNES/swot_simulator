@@ -22,7 +22,7 @@ nadir. The naming follows the pattern :
 
 * ``SWOT_L2_LR_Expert_[cycle]_[pass]_[start_time]_[stop_time]_DG10_01.nc``
   for the Karin products and
-* ``SWOT_GPN_2P1P_[cycle]_[pass]_[start_time]_[stop_time].nc``
+* ``SWOT_GPR_2P1P_[cycle]_[pass]_[start_time]_[stop_time].nc``
   for the nadir products.
 
 The interpolation method is specified in your SSH plugin. `pangeo-pyinterp
