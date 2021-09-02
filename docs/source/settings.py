@@ -66,7 +66,7 @@ nadir = False
 swath = True
 
 #: Type of SWOT product to be generated. Possible products are "basic",
-#: "expert", "unsmoothed"" and "wind_wave". Defaul to expert
+#: "expert", "unsmoothed" and "wind_wave". Defaul to expert
 product_type = "expert"
 
 #: The plug-in handling the SSH interpolation under the satellite swath.
