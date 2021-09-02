@@ -198,7 +198,7 @@ def _parse_specification_file(path: str) -> Tuple:
 def _split_group_name(name):
     """Get the name of the group and the variable deduced from the name."""
     if "/" in name:
-        return tuple(name.split("/"))
+        return tuple(name.rsplit("/", 1))
     return None, name
 
 
@@ -250,8 +250,9 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
     if group is not None:
         if group not in nc_dataset.groups:
             nc_dataset = nc_dataset.createGroup(group)
-            nc_dataset.setncatts(
-                _group_attributes(getattr(Side, group.upper()).value))
+            if group in ["left", "right"]:
+                nc_dataset.setncatts(
+                    _group_attributes(getattr(Side, group.upper()).value))
         else:
             nc_dataset = nc_dataset.groups[group]
 
@@ -297,6 +298,14 @@ def to_netcdf(dataset: xr.Dataset,
         for name, variable in dataset.data_vars.items():
             _create_variable(dataset, stream, encoding, name, unlimited_dims,
                              variable)
+
+
+def _fill_value(properties: Dict[str, Any]) -> np.ndarray:
+    """Returns the fill value encoded with the data type specified"""
+    dtype = properties["dtype"]
+    if isinstance(dtype, str):
+        return getattr(np, dtype)(properties["attrs"]["_FillValue"])
+    return np.array(properties["attrs"]["_FillValue"], dtype)
 
 
 class ProductSpecification:
@@ -348,14 +357,6 @@ class ProductSpecification:
             return (f"{Side.LEFT.value}/{name}", f"{Side.RIGHT.value}/{name}")
         return (name, )
 
-    @staticmethod
-    def _fill_value(properties: Dict[str, Any]) -> np.ndarray:
-        """Returns the fill value encoded with the data type specified"""
-        dtype = properties["dtype"]
-        if isinstance(dtype, str):
-            return getattr(np, dtype)(properties["attrs"]["_FillValue"])
-        return np.array(properties["attrs"]["_FillValue"], dtype)
-
     def _data_array(
             self,
             name: str,
@@ -383,7 +384,7 @@ class ProductSpecification:
             attrs = copy.deepcopy(properties["attrs"])
 
             # The fill value is casted to the target value of the variable
-            fill_value = self._fill_value(properties)
+            fill_value = _fill_value(properties)
             del attrs["_FillValue"]
 
             # Reading the storage properties of the variable ()
@@ -704,7 +705,7 @@ class ProductSpecification:
             if item in variables:
                 continue
             properties = self.variables[item]
-            fill_value = self._fill_value(properties)
+            fill_value = _fill_value(properties)
             data = np.full(tuple(shape[dim] for dim in properties["shape"]),
                            fill_value, properties["dtype"])
             variable = self._data_array(item, data, split=False)
