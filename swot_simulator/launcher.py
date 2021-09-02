@@ -56,34 +56,6 @@ def datetime_type(value: str) -> np.datetime64:
     return np.datetime64(result)
 
 
-def writable_directory(value: str) -> str:
-    """The option should define a writable directory
-
-    Args:
-        value (str): Value to parse
-
-    Returns:
-        str: The path to the directory
-
-    Raises:
-        argparse.ArgumentTypeError: If the option provided does not define a
-        writable directory.
-    """
-    # TODO: create directory if it does not exist?
-    # Check if value exists
-    if not os.path.exists(value):
-        _err = f"no such file or directory: {value!r}"
-        raise argparse.ArgumentTypeError(_err)
-    # Check if value is a directory
-    if not os.path.isdir(value):
-        raise argparse.ArgumentTypeError(f"{value!r} is not a directory")
-    # Check if directory value is writable
-    if not os.access(value, os.W_OK):
-        raise argparse.ArgumentTypeError(
-            f"cannot open directory {value!r} for writing")
-    return value
-
-
 def usage() -> argparse.Namespace:
     """Parse the options provided on the command line.
 
