@@ -396,16 +396,15 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
     shape = ds.variables["data_01/time"].shape
 
     if complete_product:
-        for item in variables:
+        for item, properties in variables.items():
             if item in data_vars:
                 continue
-            properties = variables[item]
             data = np.full(shape, _fill_value(properties), properties["dtype"])
             encoding_array, array = _build_array(item, variables, data)
             data_vars[array.name] = array
             encoding.update(encoding_array)
 
-    ds.attrs["title"] = f"GDR - Reduced dataset"
+    ds.attrs["title"] = "GDR - Reduced dataset"
     ds = xr.Dataset(data_vars=data_vars, attrs=ds.attrs)
     to_netcdf(ds, path, encoding=encoding, mode="w")
 
@@ -479,10 +478,10 @@ class ProductSpecification:
             swaths = (data, )
             names = self._names(name, split=False)
 
-        for ix, name in enumerate(names):
-            if name not in self.variables:
+        for ix, varname in enumerate(names):
+            if varname not in self.variables:
                 return None
-            encoding_array, array = _build_array(name, self.variables,
+            encoding_array, array = _build_array(varname, self.variables,
                                                  swaths[ix])
             result[0].update(encoding_array)
             result[1].append(array)
@@ -771,10 +770,9 @@ class ProductSpecification:
                        shape) -> Iterator[Tuple[Dict, List[xr.DataArray]]]:
         """Returns the properties of variables present in the official format
         of the SWOT product, but not calculated by this software."""
-        for item in self.variables:
+        for item, properties in self.variables.items():
             if item in variables:
                 continue
-            properties = self.variables[item]
             fill_value = _fill_value(properties)
             data = np.full(tuple(shape[dim] for dim in properties["shape"]),
                            fill_value, properties["dtype"])
@@ -943,6 +941,17 @@ class Nadir:
                                                   np.asarray(lat),
                                                   self._lon_eq, self._time_eq))
 
+    def _write_netcdf(self, path: str, cycle_number: int, pass_number: int,
+                      complete_product: bool) -> None:
+        """Writes the Nadir dataset to a netCDF file.
+
+        This method must be specialized to write Nadir and Karin products.
+        Indeed, these two products have different structures and cannot be
+        processed in the same way.
+        """
+        dataset = self.to_xarray(cycle_number, pass_number, False)
+        _write_nadir_product(dataset, path, complete_product)
+
     def to_netcdf(self, cycle_number: int, pass_number: int, path: str,
                   complete_product: bool) -> None:
         """Writes the dataset in a netCDF file.
@@ -955,19 +964,12 @@ class Nadir:
                 official dataset, even those not calculated by the simulator.
         """
         LOGGER.info("write %s", path)
-        dataset = self.to_xarray(
-            cycle_number, pass_number,
-            complete_product if self.num_pixels == 1 else False)
         try:
-            if self.num_pixels == 1:
-                _write_nadir_product(dataset, path, complete_product)
-            else:
-                to_netcdf(dataset, path, self.encoding, mode="w")
+            self._write_netcdf(path, cycle_number, pass_number,
+                               complete_product)
         except:
-            try:
+            if os.path.exists(path):
                 os.unlink(path)
-            except FileNotFoundError:
-                pass
             raise
 
 
@@ -1029,3 +1031,9 @@ class Swath(Nadir):
             for k, v in noise_errors.items():
                 if v.ndim == 2:
                     self._data_array(k, v)
+
+    def _write_netcdf(self, path: str, cycle_number: int, pass_number: int,
+                      complete_product: bool) -> None:
+        """Writes the swath dataset to a netCDF file."""
+        dataset = self.to_xarray(cycle_number, pass_number, complete_product)
+        to_netcdf(dataset, path, self.encoding, mode="w")
