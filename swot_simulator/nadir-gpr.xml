@@ -3,7 +3,7 @@
   <science uid="GPR">
     <nodes>
       <real name="/data_01/time" shape="data_01_time_shape" width="64">
-        <annotation app="conformance" long_name="time in UTC" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute [leap_second] is set to the UTC time at which the leap second occurs" tai_utc_difference="37.0" leap_second="0000-00-00 00:00:00"/>
+        <annotation app="conformance" long_name="time in UTC" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute [leap_second] is set to the UTC time at which the leap second occurs" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DDThh:mm:ssZ"/>
       </real>
       <real name="/data_01/time_tai" shape="data_01_time_shape" width="64">
         <annotation app="conformance" _FillValue="1.8446744073709552e+19" long_name="time in TAI" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the TAI time scale since 1 Jan 2000 00:00:00 TAI. This time scale contains no leap seconds. The difference (in seconds) with time in UTC is given by the attribute [time:tai_utc_difference]"/>
