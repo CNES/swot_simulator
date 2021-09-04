@@ -24,8 +24,8 @@ import dask.distributed
 import dateutil.parser
 import numpy as np
 
-from . import (dispatch, exception, logbook, orbit_propagator,
-               product_specification, settings, __date__, __version__)
+from . import (dispatch, exception, logbook, netcdf, orbit_propagator,
+               settings, __date__, __version__)
 from .error import generator
 
 #: Logger of this module
@@ -316,8 +316,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
                     track.time[0], track.time[-1])
 
         # Create the swath dataset
-        product = product_specification.Swath(track, parameters.central_pixel,
-                                              parameters.product_type)
+        product = netcdf.Swath(track, parameters.central_pixel,
+                               parameters.product_type)
 
         if ssh is not None:
             product.ssh((ssh[:, :-1] * mask) + sum_error(noise_errors))
@@ -335,8 +335,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         LOGGER.info("generate nadir %d/%d [%s, %s]", cycle_number, pass_number,
                     track.time[0], track.time[-1])
 
-        product = product_specification.Nadir(track,
-                                              standalone=not parameters.swath)
+        product = netcdf.Nadir(track, standalone=not parameters.swath)
 
         if ssh is not None:
             product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))
