@@ -299,6 +299,10 @@ class Parameters:
                 "versa")),
         nseed=(0, int, ("Seed for RandomState. Must be convertible to 32 bit "
                         "unsigned integers")),
+        orbital_error=(False, bool,
+                       ("Simulates an orbital error of 100 micro radians. "
+                        "This error, if simulated, is added to the roll "
+                        "error.")),
         product_type=(EXPERT, str,
                       ("Type of SWOT product to be generated. Possible "
                        f"products are {BASIC!r}, {EXPERT!r}, {UNSMOOTHED!r} "
@@ -352,6 +356,10 @@ class Parameters:
 
         noise = getattr(self, "noise")
         if noise is not None:
+            if "roll_phase" not in noise and getattr(self, "orbital_error"):
+                raise RuntimeError(
+                    "The roll_phase option must be present "
+                    "if you want to simulate the orbital error.")
             if "corrected_roll_phase" in noise:
                 if "roll_phase" in noise:
                     raise TypeError(

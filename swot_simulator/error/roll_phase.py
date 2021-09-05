@@ -6,9 +6,10 @@
 Roll errors
 -----------
 """
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 import numpy as np
 
+from . import orbital
 from .. import random_signal
 from .. import settings
 from .. import VOLUMETRIC_MEAN_RADIUS, CELERITY, F_KA, BASELINE
@@ -44,6 +45,7 @@ class RollPhase:
         self.spatial_frequency = spatial_frequency
 
         # TODO
+        assert parameters.height is not None
         height = parameters.height * 1e-3
         self.phase_conversion_factor = (
             1 / (F_KA * 2 * np.pi / CELERITY * BASELINE) *
@@ -87,8 +89,10 @@ class RollPhase:
 
     def generate(
         self,
+        time: np.ndarray,
         x_al: np.ndarray,
         x_ac: np.ndarray,
+        orbital_error: Optional[orbital.Simulate] = None,
     ) -> Dict[str, np.ndarray]:
         """Generate roll and phase errors
 
@@ -100,6 +104,8 @@ class RollPhase:
             dict: variable name and errors simulated.
         """
         roll_1d, phase_1d = self._generate_1d(x_al)
+        if orbital_error is not None:
+            roll_1d += orbital_error.generate(time)
         num_pixels = x_ac.shape[0]
         swath_center = num_pixels // 2
         ac_l = x_ac[:swath_center]

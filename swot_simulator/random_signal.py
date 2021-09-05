@@ -90,15 +90,14 @@ def interpolate_file_karin(swh_in: np.ndarray, x_ac_in: np.ndarray,
     return hsdt
 
 
-def _gen_signal_1d(fi: np.ndarray,
-                   psi: np.ndarray,
-                   x: np.ndarray,
-                   rng: np.random.Generator,
-                   fmin: Optional[float] = None,
-                   fmax: Optional[float] = None,
-                   alpha: int = 10,
-                   lf_extpl: bool = False,
-                   hf_extpl: bool = False) -> np.ndarray:
+def gen_psd_1d(fi: np.ndarray,
+               psi: np.ndarray,
+               rng: np.random.Generator,
+               fmin: Optional[float] = None,
+               fmax: Optional[float] = None,
+               alpha: int = 10,
+               lf_extpl: bool = False,
+               hf_extpl: bool = False) -> Tuple[np.ndarray, float]:
     """Generate 1d random signal using Fourier coefficient"""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
@@ -137,8 +136,21 @@ def _gen_signal_1d(fi: np.ndarray,
     fft1a = np.sqrt(fft1a) * np.exp(1j * phase) / np.sqrt(fmin)
 
     yg = 2 * fmaxr * np.real(IFFT(fft1a))
-    xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
+    return yg, fmaxr
 
+
+def _gen_signal_1d(fi: np.ndarray,
+                   psi: np.ndarray,
+                   x: np.ndarray,
+                   rng: np.random.Generator,
+                   fmin: Optional[float] = None,
+                   fmax: Optional[float] = None,
+                   alpha: int = 10,
+                   lf_extpl: bool = False,
+                   hf_extpl: bool = False) -> np.ndarray:
+    """Generate 1d random signal using Fourier coefficient"""
+    yg, fmaxr = gen_psd_1d(fi, psi, rng, fmin, fmax, alpha, lf_extpl, hf_extpl)
+    xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
     return np.interp(np.mod(x, xg.max()), xg, yg)
 
 

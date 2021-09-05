@@ -75,7 +75,7 @@ def test_roll_phase():
         parameters, error_spectrum['rollPSD'].data,
         error_spectrum['gyroPSD'].data, error_spectrum['phasePSD'].data,
         error_spectrum['spatial_frequency'].data)
-    generated = error.generate(x_al, x_ac)
+    generated = error.generate(None, x_al, x_ac)  # type: ignore
     assert generated['simulated_error_phase'].mean() < 1
     assert generated['simulated_error_roll'].mean() < 1
 

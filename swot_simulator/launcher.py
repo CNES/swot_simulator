@@ -26,7 +26,7 @@ import numpy as np
 
 from . import (dispatch, exception, logbook, netcdf, orbit_propagator,
                settings, __date__, __version__)
-from .error import generator
+from .error import generator, orbital
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -375,8 +375,16 @@ def launch(client: dask.distributed.Client,
         orbit = orbit_propagator.calculate_orbit(parameters,
                                                  stream)  # type: ignore
 
+    # Initialize the orbital error generator if the user has selected it.
+    if parameters.orbital_error:
+        orbital_error = orbital.Simulate(orbit.orbit_duration(),
+                                         parameters.rng())
+    else:
+        orbital_error = None
+
     # Initialization of measurement error generators
-    error_generator = generator.Generator(parameters, first_date)
+    error_generator = generator.Generator(parameters, first_date,
+                                          orbital_error)
 
     # Scatter data into distributed memory
     _error_generator = client.scatter(error_generator)

@@ -7,7 +7,6 @@ Orbit Propagator
 ----------------
 """
 from typing import Dict, Iterator, NamedTuple, Optional, TextIO, Tuple
-import datetime
 import logging
 import warnings
 import numpy as np
@@ -184,7 +183,15 @@ class Orbit:
         """Get the cycle duration"""
         return self.time[-1]
 
-    def passes_per_cycle(self):
+    def orbit_duration(self) -> float:
+        """Get the orbit duration in fractional days
+        """
+        duration = self.cycle_duration().astype(
+            "timedelta64[us]") / np.timedelta64(
+                int(self.passes_per_cycle() // 2), 'us') * 1e-6
+        return duration / 86400.0  # type: ignore
+
+    def passes_per_cycle(self) -> int:
         """Get the number of passes per cycle"""
         return len(self.pass_time)
 
