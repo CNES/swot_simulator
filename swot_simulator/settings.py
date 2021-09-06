@@ -124,8 +124,8 @@ def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
     return required, settings
 
 
-def _template_to_string(required: Dict[str, str], template: Dict[str,
-                                                                 Any]) -> str:
+def _template_to_string(required: Dict[str, str],
+                        parameters: Dict[str, Any]) -> str:
     """Get the string representing the default configuration template of the
     simulator."""
     def wrap(s: str) -> Iterator[str]:
@@ -153,7 +153,7 @@ def _template_to_string(required: Dict[str, str], template: Dict[str,
         f"DATA = {data_folder!r}",
         "",
     ]
-    for key, value in template.items():
+    for key, value in parameters.items():
         result += list(wrap(Parameters.CONFIG_VALUES[key][-1]))
         # The required data is supplied with the simulator. They are all
         # written in the template.
@@ -342,14 +342,14 @@ class Parameters:
         if product_type not in PRODUCT_TYPE:
             raise ValueError(f"Unknown product type: {product_type}")
 
-        elif product_type == WIND_WAVE:
+        if product_type == WIND_WAVE:
             if getattr(self, "ssh_plugin") is not None:
                 raise ValueError("The wind/wave product cannot store SSH.")
 
             if getattr(self, "noise") is not None:
                 raise ValueError("The wind/wave product cannot store errors.")
 
-        elif product_type == UNSMOOTHED:
+        if product_type == UNSMOOTHED:
             if getattr(self, "central_pixel"):
                 raise RuntimeError("The unsmoothed product doesn't support a "
                                    "center pixel.")

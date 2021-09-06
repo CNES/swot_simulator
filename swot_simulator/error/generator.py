@@ -6,12 +6,11 @@
 Generate instrumental errors
 ----------------------------
 """
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 import dask.distributed
 import numpy as np
 from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
                RollPhase, Timing, WetTroposphere)
-from . import orbital
 from .. import random_signal
 from .. import settings
 
@@ -23,12 +22,12 @@ class Generator:
         parameters (settings.Parameters): Simulation settings
         first_date (numpy.datetime64): Date of the first simulated
             measurement.
-        orbital_model (orital.Model, optional): Orbital model.
+        orbit_duration (numpy.timedelta64, optional): Orbit duration.
     """
     def __init__(self,
                  parameters: settings.Parameters,
                  first_date: np.datetime64,
-                 orbital_model: orbital.Model = None):
+                 orbit_duration: Optional[np.timedelta64] = None):
         #: The list of user-defined error generators
         self.generators = []
 
@@ -55,7 +54,7 @@ class Generator:
                               error_spectrum['gyroPSD'].data,
                               error_spectrum['phasePSD'].data,
                               error_spectrum['spatial_frequency'].data,
-                              orbital_model))
+                              orbit_duration))
             elif item == Timing.__name__:
                 self.generators.append(
                     Timing(parameters, error_spectrum['timingPSD'].data,
