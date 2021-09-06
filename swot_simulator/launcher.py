@@ -377,14 +377,13 @@ def launch(client: dask.distributed.Client,
 
     # Initialize the orbital error generator if the user has selected it.
     if parameters.orbital_error:
-        orbital_error = orbital.Simulate(orbit.orbit_duration(),
-                                         parameters.rng())
+        orbital_model = orbital.Model(orbit.orbit_duration(), parameters.rng())
     else:
-        orbital_error = None
+        orbital_model = None
 
     # Initialization of measurement error generators
     error_generator = generator.Generator(parameters, first_date,
-                                          orbital_error)
+                                          orbital_model)
 
     # Scatter data into distributed memory
     _error_generator = client.scatter(error_generator)

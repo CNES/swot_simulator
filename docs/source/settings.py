@@ -88,6 +88,10 @@ working_directory = os.path.expanduser("~/")
 
 # Generation of measurement noise.
 
+#: Simulates an orbital error of 100 micro radians. This error, if simulated,
+#: is added to the roll error.
+orbital_error = True
+
 #: The calculation of roll errors can be simulated, option "roll_phase", or
 #: interpolated, option "corrected_roll_phase", from the dataset specified by
 #: the option "roll_phase_dataset". Therefore, these two options are

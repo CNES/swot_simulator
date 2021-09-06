@@ -21,6 +21,9 @@ LOGGER = logging.getLogger(__name__)
 #: Signal amplitude of the orbital error in micro-radians
 AMPLITUDE = 100
 
+#: Delta T of the spatial sampling in seconds
+DT = 60
+
 
 class OrbitalErrorSpectrum(NamedTuple):
     """Orbital Error Spectrum"""
@@ -29,7 +32,7 @@ class OrbitalErrorSpectrum(NamedTuple):
 
 
 def _orbital_error_spectrum(
-        orbit_duration: float,
+        orbit_duration: np.timedelta64,
         rng: np.random.Generator) -> Tuple[np.ndarray, float]:
     """Calculate orbital error spectrum
 
@@ -40,11 +43,14 @@ def _orbital_error_spectrum(
     Returns:
         tuple: (yg, fmaxr)
     """
-    df = 1 / 100
-    spatial_frequency = np.arange(df, 1. / 0.0001, df)
-    forb = 1. / orbit_duration
-    sigma_peak = forb / 1000
-    ps_orbital = np.exp(-0.5 * (spatial_frequency - forb)**2 / sigma_peak**2)
+    df = 1 / (1000 * 86400)
+    spatial_frequency = np.arange(df, 1 / DT, df)
+    orbital_frequency = 1 / float(
+        orbit_duration.astype("timedelta64[us]").astype("float64") * 1e-6)
+    sigma_peak = orbital_frequency / 1000
+    ps_orbital = np.exp(-0.5 *
+                        (spatial_frequency - orbital_frequency)**2 /
+                        sigma_peak**2)
     ps_orbital[ps_orbital < 1 / 1000] = 0.
     ps_orbital /= np.sum(ps_orbital * df)
     ps_orbital *= AMPLITUDE**2
@@ -54,15 +60,15 @@ def _orbital_error_spectrum(
                                     alpha=10)
 
 
-class Simulate:
+class Model:
     """
     Simulate the orbital error
 
     Args:
-        orbit_duration (float): Orbit duration in fractional days
+        orbit_duration (np.timedelta64): Orbit duration
         rng (np.random.Generator): Random number generator
     """
-    def __init__(self, orbit_duration: float,
+    def __init__(self, orbit_duration: np.timedelta64,
                  rng: np.random.Generator) -> None:
         LOGGER.info("Generating orbital error spectrum")
         yg, self.fmaxr = _orbital_error_spectrum(orbit_duration, rng)
@@ -80,7 +86,7 @@ class Simulate:
         Returns:
             np.ndarray: orbital error
         """
-        epoch = time.astype("datetime64[us]").astype("float64") * 1e-6
+        time = time.astype("datetime64[us]").astype("float64") * 1e-6
         xg = np.linspace(0, 0.5 / self.fmaxr * self.yg.shape[0],
                          self.yg.shape[0])
-        return np.interp(np.mod(epoch / 86400.0, xg.max()), xg, self.yg)
+        return np.interp(np.mod(time, xg.max()), xg, self.yg)

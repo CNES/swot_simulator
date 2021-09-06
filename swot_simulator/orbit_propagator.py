@@ -183,13 +183,13 @@ class Orbit:
         """Get the cycle duration"""
         return self.time[-1]
 
-    def orbit_duration(self) -> float:
-        """Get the orbit duration in fractional days
+    def orbit_duration(self) -> np.timedelta64:
+        """Get the orbit duration
         """
         duration = self.cycle_duration().astype(
             "timedelta64[us]") / np.timedelta64(
-                int(self.passes_per_cycle() // 2), 'us') * 1e-6
-        return duration / 86400.0  # type: ignore
+                int(self.passes_per_cycle() // 2), 'us')
+        return np.timedelta64(int(duration), "us")
 
     def passes_per_cycle(self) -> int:
         """Get the number of passes per cycle"""

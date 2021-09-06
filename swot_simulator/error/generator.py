@@ -23,23 +23,18 @@ class Generator:
         parameters (settings.Parameters): Simulation settings
         first_date (numpy.datetime64): Date of the first simulated
             measurement.
-        orbital_error (orital.Simulate, optional): Orbital error generator.
+        orbital_model (orital.Model, optional): Orbital model.
     """
     def __init__(self,
                  parameters: settings.Parameters,
                  first_date: np.datetime64,
-                 orbital_error: orbital.Simulate = None):
+                 orbital_model: orbital.Model = None):
         #: The list of user-defined error generators
         self.generators = []
 
         assert parameters.error_spectrum is not None
         error_spectrum = random_signal.read_file_instr(
             parameters.error_spectrum, parameters.delta_al)
-
-        self.orbital_error = orbital_error
-        if self.orbital_error is not None:
-            client = dask.distributed.get_client()
-            self.orbital_error = client.scatter(self.orbital_error)
 
         for item in parameters.noise:
             if item == Altimeter.__name__:
@@ -59,7 +54,8 @@ class Generator:
                     RollPhase(parameters, error_spectrum['rollPSD'].data,
                               error_spectrum['gyroPSD'].data,
                               error_spectrum['phasePSD'].data,
-                              error_spectrum['spatial_frequency'].data))
+                              error_spectrum['spatial_frequency'].data,
+                              orbital_model))
             elif item == Timing.__name__:
                 self.generators.append(
                     Timing(parameters, error_spectrum['timingPSD'].data,
@@ -120,8 +116,7 @@ class Generator:
                                       x_ac, swh))
                 elif isinstance(item, RollPhase):
                     futures.append(
-                        client.submit(item.generate, time, x_al, x_ac,
-                                      self.orbital_error))
+                        client.submit(item.generate, time, x_al, x_ac))
                 elif isinstance(item, Timing):
                     futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, WetTroposphere):

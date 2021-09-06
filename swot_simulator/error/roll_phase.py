@@ -26,10 +26,12 @@ class RollPhase:
             knowledge (also called gyro error)
         phase_psd (numpy.ndarray): Power spectral density the error angle
         spatial_frequency (numpy.ndarray): Spatial frequency
+        orbital_model (orbital.Model, optional): Orbital model
     """
     def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
                  gyro_psd: np.ndarray, phase_psd: np.ndarray,
-                 spatial_frequency: np.ndarray) -> None:
+                 spatial_frequency: np.ndarray,
+                 orbital_model: Optional[orbital.Model] = None) -> None:
         # Store the generation parameters of the random signal.
         self.rng_theta = parameters.rng()
         self.rng_theta_l = parameters.rng()
@@ -52,6 +54,9 @@ class RollPhase:
             (1 + height / VOLUMETRIC_MEAN_RADIUS) * np.pi / 180 * 1e3)
         self.roll_conversion_factor = (
             (1 + height / VOLUMETRIC_MEAN_RADIUS) * np.pi / 180 / 3600) * 1e3
+
+        #: Orbital model
+        self.orbital_model = orbital_model
 
     def _generate_1d(self, x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
@@ -92,11 +97,11 @@ class RollPhase:
         time: np.ndarray,
         x_al: np.ndarray,
         x_ac: np.ndarray,
-        orbital_error: Optional[orbital.Simulate] = None,
     ) -> Dict[str, np.ndarray]:
         """Generate roll and phase errors
 
         Args:
+            time (numpy.ndarray): Time vector
             x_al (numpy.ndarray): Along track distance
             x_ac (numpy.ndarray): Across track distance
 
@@ -104,8 +109,8 @@ class RollPhase:
             dict: variable name and errors simulated.
         """
         roll_1d, phase_1d = self._generate_1d(x_al)
-        if orbital_error is not None:
-            roll_1d += orbital_error.generate(time)
+        if self.orbital_model is not None:
+            roll_1d += self.orbital_model.generate(time)
         num_pixels = x_ac.shape[0]
         swath_center = num_pixels // 2
         ac_l = x_ac[:swath_center]
