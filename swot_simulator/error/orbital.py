@@ -48,8 +48,7 @@ def _orbital_error_spectrum(
     orbital_frequency = 1 / float(
         orbit_duration.astype("timedelta64[us]").astype("float64") * 1e-6)
     sigma_peak = orbital_frequency / 1000
-    ps_orbital = np.exp(-0.5 *
-                        (spatial_frequency - orbital_frequency)**2 /
+    ps_orbital = np.exp(-0.5 * (spatial_frequency - orbital_frequency)**2 /
                         sigma_peak**2)
     ps_orbital[ps_orbital < 1 / 1000] = 0.
     ps_orbital /= np.sum(ps_orbital * df)

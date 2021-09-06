@@ -28,8 +28,11 @@ class RollPhase:
         spatial_frequency (numpy.ndarray): Spatial frequency
         orbital_model (orbital.Model, optional): Orbital model
     """
-    def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
-                 gyro_psd: np.ndarray, phase_psd: np.ndarray,
+    def __init__(self,
+                 parameters: settings.Parameters,
+                 roll_psd: np.ndarray,
+                 gyro_psd: np.ndarray,
+                 phase_psd: np.ndarray,
                  spatial_frequency: np.ndarray,
                  orbital_model: Optional[orbital.Model] = None) -> None:
         # Store the generation parameters of the random signal.
