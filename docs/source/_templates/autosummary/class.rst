@@ -27,7 +27,9 @@
                          '__init__',
                          '__members__',
                          '__module__',
-                         '__weakref__'] -%}
+                         '__weakref__',
+                         'OverriddenNetcdfLoader',
+                         'ZarrLoader'] -%}
         {{ meth.append(item) or "" }}
       {%- endif -%}
    {%- endfor -%}

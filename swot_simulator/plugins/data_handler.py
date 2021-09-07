@@ -170,16 +170,19 @@ class NetcdfLoader(DatasetLoader):
         Args:
             path (str): Folder containing the netcdf files
             date_fmt (str): date formatter
-            lon_name (str): longitude name in the netcdf files. Defaults to 'lon'
+            lon_name (str): longitude name in the netcdf files. Defaults to
+                'lon'
             lat_name (str): latitude name in the netcdf files. Defaults to 'lat'
-            ssh_name (str): sea surface height name in the netcdf files. Defaults to 'ssh'
+            ssh_name (str): sea surface height name in the netcdf files.
+                Defaults to 'ssh'
             time_name (str): time name in the netcdf files. Defaults to 'time'
-            pattern (str): Pattern for the NetCDF file names. It should contain the
-                P(?<date>) group to retrieve the time
+            pattern (str): Pattern for the NetCDF file names. It should contain
+                the P(?<date>) group to retrieve the time
 
         Example:
             If we have netcdf files whose names are model_20120305_12h.nc, we must
             define the following to retrieve the time::
+
                 loader = NetcdfLoader(
                     '.',
                     pattern='model_P(?<date>\\w+).nc',

@@ -36,4 +36,5 @@ The software is divided in 6 main modules:
    software/ssh.rst
    software/nadir.rst
    software/tutorial.rst
+   settings
    software/settings.rst

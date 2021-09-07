@@ -13,8 +13,7 @@ import sys
 
 HERE = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..")))
-sys.path.insert(1, HERE)
+sys.path.insert(0, HERE)
 
 # -- Project information -----------------------------------------------------
 
@@ -23,9 +22,9 @@ copyright = '(2021, CNES/JPL)'
 author = 'CNES/JPL'
 
 # The short X.Y version
-version = '1.1.0'
+version = '1.1.0.dev11'
 # The full version, including alpha/beta/rc tags
-release = '1.1.0'
+release = '1.1.0.dev11'
 
 # -- General configuration ---------------------------------------------------
 
