@@ -101,6 +101,11 @@ cycles and for one year. A file is available and contains roll, phase and the
 correction of roll and phase using cross-calibration algorithms. The user can use
 this file to simulate the roll and phase after cross-calibration.
 
+Orbital errors
+``````````````
+
+Random realisation of orbital pertubations.
+
 Phase errors
 ````````````
 
