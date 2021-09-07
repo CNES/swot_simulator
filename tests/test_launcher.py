@@ -3,6 +3,7 @@ import tempfile
 import dask.distributed
 import swot_simulator.launcher
 import swot_simulator.settings
+import swot_simulator.error
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,6 +15,14 @@ def test_launcher():
             ROOT, "..", "data", "ephemeris_calval_june2015_ell.txt")
         parameters.nadir = True
         parameters.working_directory = tmpdir
+        parameters.noise = [
+            'Altimeter',
+            # 'Orbital',
+            'BaselineDilation',
+            'Karin',
+            'RollPhase',
+            'Timing'
+        ]
         cluster = dask.distributed.LocalCluster()
         client = dask.distributed.Client(cluster)
         client.wait_for_workers(1)
