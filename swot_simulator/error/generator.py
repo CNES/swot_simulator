@@ -6,10 +6,10 @@
 Generate instrumental errors
 ----------------------------
 """
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 import dask.distributed
 import numpy as np
-from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin,
+from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin, Orbital,
                RollPhase, Timing, WetTroposphere)
 from .. import random_signal
 from .. import settings
@@ -24,10 +24,8 @@ class Generator:
             measurement.
         orbit_duration (numpy.timedelta64, optional): Orbit duration.
     """
-    def __init__(self,
-                 parameters: settings.Parameters,
-                 first_date: np.datetime64,
-                 orbit_duration: Optional[np.timedelta64] = None):
+    def __init__(self, parameters: settings.Parameters,
+                 first_date: np.datetime64, orbit_duration: np.timedelta64):
         #: The list of user-defined error generators
         self.generators = []
 
@@ -48,13 +46,14 @@ class Generator:
                     CorrectedRollPhase(parameters, first_date))
             elif item == Karin.__name__:
                 self.generators.append(Karin(parameters))
+            elif item == Orbital.__name__:
+                self.generators.append(Orbital(parameters, orbit_duration))
             elif item == RollPhase.__name__:
                 self.generators.append(
                     RollPhase(parameters, error_spectrum['rollPSD'].data,
                               error_spectrum['gyroPSD'].data,
                               error_spectrum['phasePSD'].data,
-                              error_spectrum['spatial_frequency'].data,
-                              orbit_duration))
+                              error_spectrum['spatial_frequency'].data))
             elif item == Timing.__name__:
                 self.generators.append(
                     Timing(parameters, error_spectrum['timingPSD'].data,
@@ -113,9 +112,10 @@ class Generator:
                         client.submit(item.generate,
                                       cycle_number * 10000 + pass_number, x_al,
                                       x_ac, swh))
+                elif isinstance(item, Orbital):
+                    futures.append(client.submit(item.generate, time, x_ac))
                 elif isinstance(item, RollPhase):
-                    futures.append(
-                        client.submit(item.generate, time, x_al, x_ac))
+                    futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, Timing):
                     futures.append(client.submit(item.generate, x_al, x_ac))
                 elif isinstance(item, WetTroposphere):

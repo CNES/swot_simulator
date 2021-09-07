@@ -117,8 +117,8 @@ def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
         if key in required:
             settings[key] = required[key][0]
         elif key == "noise":
-            settings[key] = list(
-                set(error_keywords()) - set(("corrected_roll_phase", )))
+            settings[key] = sorted(
+                list(set(error_keywords()) - set(("corrected_roll_phase", ))))
         else:
             settings[key] = default
     return required, settings
@@ -289,20 +289,20 @@ class Parameters:
                ("Number of beam used to correct wet troposphere signal "
                 "(1, 2 or 'both')")),
         noise=(None, [str, -1],
-               ("The calculation of roll errors can be simulated, option "
-                "\"roll_phase\", or interpolated, option "
-                "\"corrected_roll_phase\", from the dataset specified by the "
-                "option \"roll_phase_dataset\". Therefore, these two options "
-                "are mutually exclusive. In other words, if the "
+               ("This option defined the error to simulate. Allowed values "
+                "are \"altimeter,\" \"baseline_dilation,\" "
+                "\"corrected_roll_phase,\" \"karin,\" \"orbital,\" "
+                "\"roll_phase,\" \"timing,\" and \"wet_troposphere.\" The "
+                "calculation of roll errors can be simulated, option "
+                "\"roll_phase,\" or interpolated option "
+                "\"corrected_roll_phase,\" from the dataset specified by the "
+                "value of the option \"roll_phase_dataset.\" Therefore, these "
+                "two options are mutually exclusive. In other words, if the "
                 "\"roll_phase\" option is present, the "
                 "\"corrected_roll_phase\" option must be omitted, and vice "
-                "versa")),
+                "versa.")),
         nseed=(0, int, ("Seed for RandomState. Must be convertible to 32 bit "
                         "unsigned integers")),
-        orbital_error=(False, bool,
-                       ("Simulates an orbital error of 100 micro radians. "
-                        "This error, if simulated, is added to the roll "
-                        "error.")),
         product_type=(EXPERT, str,
                       ("Type of SWOT product to be generated. Possible "
                        f"products are {BASIC!r}, {EXPERT!r}, {UNSMOOTHED!r} "
@@ -356,10 +356,6 @@ class Parameters:
 
         noise = getattr(self, "noise")
         if noise is not None:
-            if "roll_phase" not in noise and getattr(self, "orbital_error"):
-                raise RuntimeError(
-                    "The roll_phase option must be present "
-                    "if you want to simulate the orbital error.")
             if "corrected_roll_phase" in noise:
                 if "roll_phase" in noise:
                     raise TypeError(

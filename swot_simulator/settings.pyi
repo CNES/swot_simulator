@@ -33,7 +33,6 @@ class Parameters:
     nbeam: int
     noise: List[str]
     nseed: int
-    orbital_error: bool
     product_type: str
     requirement_bounds: Optional[Tuple[float, float]]
     shift_lon: Optional[float]

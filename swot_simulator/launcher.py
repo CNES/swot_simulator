@@ -376,9 +376,8 @@ def launch(client: dask.distributed.Client,
                                                  stream)  # type: ignore
 
     # Initialization of measurement error generators
-    error_generator = generator.Generator(
-        parameters, first_date,
-        orbit.orbit_duration() if parameters.orbital_error else None)
+    error_generator = generator.Generator(parameters, first_date,
+                                          orbit.orbit_duration())
 
     # Scatter data into distributed memory
     _error_generator = client.scatter(error_generator)

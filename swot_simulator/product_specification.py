@@ -430,6 +430,22 @@ class ProductSpecification:
                                         shape=self._shape())
         return self._data_array(name, array)  # type: ignore
 
+    def simulated_error_orbital(
+            self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
+        """Returns the properties of the variable describing the error due to
+        orbital perturbations."""
+        name = "simulated_error_orbital"
+        for item in self._names(name):
+            self.variables[item] = dict(attrs=dict(
+                _FillValue=2147483647,
+                long_name='Error due to orbital perturbations',
+                units='m',
+                scale_factor=0.00001,
+                coordinates='longitude latitude'),
+                                        dtype='int32',
+                                        shape=self._shape())
+        return self._data_array(name, array)  # type: ignore
+
     def simulated_roll_phase_estimate(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the roll phase
