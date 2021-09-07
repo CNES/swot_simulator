@@ -440,7 +440,7 @@ class ProductSpecification:
                 _FillValue=2147483647,
                 long_name='Error due to orbital perturbations',
                 units='m',
-                scale_factor=0.00001,
+                scale_factor=0.0001,
                 coordinates='longitude latitude'),
                                         dtype='int32',
                                         shape=self._shape())

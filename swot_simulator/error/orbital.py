@@ -68,7 +68,7 @@ class Orbital:
 
         assert parameters.height is not None
         height = parameters.height * 1e-3
-        self.conversion_factor = 1 + height / VOLUMETRIC_MEAN_RADIUS
+        self.conversion_factor = (1 + height / VOLUMETRIC_MEAN_RADIUS) * 1e-3
 
     def generate(
         self,
@@ -86,7 +86,7 @@ class Orbital:
         time = time.astype("datetime64[us]").astype("float64") * 1e-6
         xg = np.linspace(0, 0.5 / self.fmaxr * self.yg.shape[0],
                          self.yg.shape[0])
-        error_orbital = np.interp(np.mod(time, xg.max()), xg, self.yg) * 1e-6
+        error_orbital = np.interp(np.mod(time, xg.max()), xg, self.yg)
         return {
             "simulated_error_orbital":
             x_ac * error_orbital[:, np.newaxis] * self.conversion_factor,
