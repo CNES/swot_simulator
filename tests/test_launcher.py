@@ -17,7 +17,7 @@ def test_launcher():
         parameters.working_directory = tmpdir
         parameters.noise = [
             'Altimeter',
-            # 'Orbital',
+            'Orbital',
             'BaselineDilation',
             'Karin',
             'RollPhase',

@@ -9,6 +9,7 @@ Orbital error
 from typing import Dict, Tuple
 
 #
+import dask.array as da
 import numpy as np
 
 #
@@ -63,7 +64,7 @@ class Orbital:
                  orbit_duration: np.timedelta64) -> None:
         yg, self.fmaxr = _orbital_error_spectrum(orbit_duration,
                                                  parameters.rng())
-        self.yg = yg.astype(np.float32)
+        self.yg = da.from_array(yg, name="orbital_error").persist()
 
         assert parameters.height is not None
         height = parameters.height * 1e-3
