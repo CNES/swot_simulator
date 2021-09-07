@@ -86,7 +86,8 @@ class Orbital:
         time = time.astype("datetime64[us]").astype("float64") * 1e-6
         xg = np.linspace(0, 0.5 / self.fmaxr * self.yg.shape[0],
                          self.yg.shape[0])
-        error_orbital = np.interp(np.mod(time, xg.max()), xg, self.yg)
+        error_orbital = np.interp(np.mod(time, xg.max()), xg,
+                                  self.yg.compute())
         return {
             "simulated_error_orbital":
             x_ac * error_orbital[:, np.newaxis] * self.conversion_factor,
