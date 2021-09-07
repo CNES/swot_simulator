@@ -88,20 +88,21 @@ working_directory = os.path.expanduser("~/")
 
 # Generation of measurement noise.
 
-#: Simulates an orbital error of 100 micro radians. This error, if simulated,
-#: is added to the roll error.
-orbital_error = True
-
-#: The calculation of roll errors can be simulated, option "roll_phase", or
-#: interpolated, option "corrected_roll_phase", from the dataset specified by
-#: the option "roll_phase_dataset". Therefore, these two options are
-#: mutually exclusive. In other words, if the "roll_phase" option is present,
-#: the "corrected_roll_phase" option must be omitted, and vice versa.
+#: This option defined the error to simulate. Allowed values are "altimeter,"
+#: ``baseline_dilation``, ``corrected_roll_phase``, ``karin``, ``orbital``,
+#: ``roll_phase``, ``timing``, and ``wet_troposphere``.
+#: 
+#: The calculation of roll errors can be simulated, option ``roll_phase``, or
+#: interpolated option ``corrected_roll_phase``, from the dataset specified by
+#: the value of the option ``roll_phase_dataset``. Therefore, these two options
+#: are mutually exclusive. In other words, if the ``roll_phase`` option is
+#: present, the ``corrected_roll_phase`` option must be omitted, and vice versa.
 noise = [
     'altimeter',
     'baseline_dilation',
     'karin',
     # 'corrected_roll_phase',
+    'orbital',
     'roll_phase',
     'timing',
     'wet_troposphere',
