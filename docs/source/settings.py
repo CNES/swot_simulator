@@ -91,7 +91,7 @@ working_directory = os.path.expanduser("~/")
 #: This option defined the error to simulate. Allowed values are "altimeter,"
 #: ``baseline_dilation``, ``corrected_roll_phase``, ``karin``, ``orbital``,
 #: ``roll_phase``, ``timing``, and ``wet_troposphere``.
-#: 
+#:
 #: The calculation of roll errors can be simulated, option ``roll_phase``, or
 #: interpolated option ``corrected_roll_phase``, from the dataset specified by
 #: the value of the option ``roll_phase_dataset``. Therefore, these two options
