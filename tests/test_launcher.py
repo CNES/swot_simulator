@@ -16,11 +16,7 @@ def test_launcher():
         parameters.nadir = True
         parameters.working_directory = tmpdir
         parameters.noise = [
-            'Altimeter',
-            'Orbital',
-            'BaselineDilation',
-            'Karin',
-            'RollPhase',
+            'Altimeter', 'Orbital', 'BaselineDilation', 'Karin', 'RollPhase',
             'Timing'
         ]
         cluster = dask.distributed.LocalCluster()
