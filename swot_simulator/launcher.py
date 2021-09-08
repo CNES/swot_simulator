@@ -335,7 +335,7 @@ def simulate(args: Tuple[int, int, np.datetime64],
         LOGGER.info("generate nadir %d/%d [%s, %s]", cycle_number, pass_number,
                     track.time[0], track.time[-1])
 
-        product = netcdf.Nadir(track, standalone=not parameters.swath)
+        product = netcdf.Nadir(track)
 
         if ssh is not None:
             product.ssh(ssh[:, -1] + sum_error(noise_errors, swath=False))

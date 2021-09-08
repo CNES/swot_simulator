@@ -9,7 +9,6 @@ Handle the product specification
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import copy
 import enum
-import functools
 import os
 import xml.etree.ElementTree as xt
 
@@ -109,7 +108,6 @@ def _parser(tree: xt.ElementTree):
     return variables, attributes
 
 
-@functools.lru_cache(maxsize=5)
 def parse_specification_file(path: str) -> Tuple:
     """Parse the XML specification file"""
     return _parser(xt.parse(path))

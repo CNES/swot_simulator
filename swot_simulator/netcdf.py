@@ -8,6 +8,7 @@ Write SWOT data to netCDF4 files.
 """
 from typing import Any, Dict, Hashable, List, Optional, Tuple, Union
 import collections
+import copy
 import datetime
 import logging
 import os
@@ -229,7 +230,7 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
                          complete_product: bool) -> None:
     """Write the nadir product to a netCDF file."""
     variables, _attributes = product_specification.parse_specification_file(
-        NADIR_SPECIFICATION)
+        str(NADIR_SPECIFICATION))
     variables["data_01/ku/simulated_error_altimeter"] = dict(
         attrs=dict(_FillValue=2147483647,
                    long_name='Altimeter error',
@@ -293,14 +294,10 @@ class Nadir:
 
     Args:
         track (orbit_propagator.Pass): Properties of the half-orbit to write
-        standalone (bool): True if this dataset is independent of the KaRIn
-            dataset.
     """
     def __init__(self,
                  track: orbit_propagator.Pass,
-                 standalone: bool = True,
                  product_type: Optional[str] = None):
-        self.standalone = standalone
         self.product_spec = product_specification.ProductSpecification(
             product_type)
         self.num_lines = track.time.size
@@ -411,6 +408,7 @@ class Nadir:
         # Variables that are not calculated are filled in in order to have a
         # product compatible with the PDD SWOT. Longitude is used as a
         # template.
+        pdd_vars = copy.copy(self.data_vars)
         if complete_product and len(lng.shape) == 2:
 
             # Creation of an associative dictionary between the name of the
@@ -428,10 +426,10 @@ class Nadir:
             for encoding, array in self.product_spec.fill_variables(
                     data_vars.keys(), shape):
                 self.encoding.update(encoding)
-                self.data_vars += array
+                pdd_vars += array
 
         # Variables must be written in the declaration order of the XML file
-        unordered_vars = dict((item.name, item) for item in self.data_vars)
+        unordered_vars = dict((item.name, item) for item in pdd_vars)
         data_vars = collections.OrderedDict()
         for item in self.product_spec.variables:
             if item in unordered_vars:
@@ -493,7 +491,7 @@ class Swath(Nadir):
                  track: orbit_propagator.Pass,
                  central_pixel: bool = False,
                  product_type: Optional[str] = None) -> None:
-        super().__init__(track, False, product_type)
+        super().__init__(track, product_type)
         self.num_pixels = track.x_ac.size + int(central_pixel)
         _x_ac = np.full((track.time.size, track.x_ac.size),
                         track.x_ac,
