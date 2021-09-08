@@ -157,7 +157,11 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
         values = (variable.values.astype("datetime64[us]").astype("int64") -
                   946684800000000) * 1e-6
         if variable.name in xr_dataset.coords:
-            xr_dataset.assign_coords(coords={variable.name: values})
+            xr_dataset = xr_dataset.assign_coords(
+                coords={variable.name: values})
+            attrs = variable.attrs
+            variable = xr_dataset[variable.name]
+            variable.attrs.update(attrs)
         else:
             variable.values = values
         assert (
