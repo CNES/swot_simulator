@@ -232,7 +232,7 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
                    standard_name='',
                    units='m',
                    scale_factor=0.0001,
-                   coordinates='longitude latitude'),
+                   coordinates='/data_01/longitude /data_01/latitude'),
         dtype='int32',
         shape=("data_01/time", ))
 
@@ -242,11 +242,18 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
              latitude_nadir="data_01/latitude",
              longitude_nadir="data_01/longitude",
              simulated_error_altimeter="data_01/ku/simulated_error_altimeter"))
-    if "ssh_nadir" in ds.variables:
-        ds = ds.rename_vars({"ssh_nadir": "data_01/ku/ssh"})
-    if "swh_nadir" in ds.variables:
-        ds = ds.rename_vars({"swh_nadir": "data_01/ku/swh_ocean"})
-
+    # Rename the simulated variables to match the specification pattern (These
+    # variables do not exist in the official product. Only the SSHA is present.)
+    for name in ["simulated_true_ssh_nadir", "ssh_nadir", "swh_nadir"]:
+        if name in ds.variables:
+            group_path = f"data_01/ku/{name.replace('_nadir', '')}"
+            ds = ds.rename_vars({name: group_path})
+            attrs = ds.variables[group_path].attrs.copy()
+            attrs["coordinates"] = "/data_01/longitude /data_01/latitude"
+            attrs["_FillValue"] = 2147483647
+            variables[group_path] = dict(attrs=attrs,
+                                         dtype='int32',
+                                         shape=("data_01/time", ))
     data_vars = {}
     encoding = {}
     for name in variables:
@@ -271,6 +278,7 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
             data_vars[array.name] = array
             encoding.update(encoding_array)
 
+    # import pdb; pdb.set_trace()
     ds.attrs["title"] = "GDR - Reduced dataset"
     ds = xr.Dataset(data_vars=data_vars, attrs=ds.attrs)
     to_netcdf(ds, path, encoding=encoding, mode="w")
@@ -327,8 +335,6 @@ class Nadir:
         variable = getattr(self.product_spec, attr)(data)
         if variable is not None:
             encoding, array = variable
-            if self.standalone:
-                array.name = array.name.replace("_nadir", "")
             self.encoding.update(encoding)
             self.data_vars += array
 
