@@ -3,144 +3,144 @@
   <science uid="GPR">
     <nodes>
       <real name="/data_01/time" shape="data_01_time_shape" width="64">
-        <annotation app="conformance" long_name="time in UTC" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute [leap_second] is set to the UTC time at which the leap second occurs" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DDThh:mm:ssZ"/>
+        <annotation app="conformance" long_name="time in UTC" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the UTC time scale since 1 Jan 2000 00:00:00 UTC. [tai_utc_difference] is the difference between TAI and UTC reference time (seconds) for the first measurement of the data set. If a leap second occurs within the data set, the attribute [leap_second] is set to the UTC time at which the leap second occurs" tai_utc_difference="[Value of TAI-UTC at time of first record]" leap_second="YYYY-MM-DDThh:mm:ss"/>
       </real>
       <real name="/data_01/time_tai" shape="data_01_time_shape" width="64">
         <annotation app="conformance" _FillValue="1.8446744073709552e+19" long_name="time in TAI" standard_name="time" calendar="gregorian" units="seconds since 2000-01-01 00:00:00.0" comment="Time of measurement in seconds in the TAI time scale since 1 Jan 2000 00:00:00 TAI. This time scale contains no leap seconds. The difference (in seconds) with time in UTC is given by the attribute [time:tai_utc_difference]"/>
       </real>
-      <integer name="/data_01/latitude" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/latitude" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="latitude" standard_name="latitude" units="degrees_north" scale_factor="1e-06" comment="Positive latitude is North latitude, negative latitude is South latitude. See SWOT Nadir Altimeter User Handbook. Associated quality flag is orb_state_diode_flag for the OGDR products, orb_state_rest_flag for the IGDR and GDR products"/>
       </integer>
-      <integer name="/data_01/longitude" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/longitude" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="longitude" standard_name="longitude" units="degrees_east" scale_factor="1e-06" comment="East longitude relative to Greenwich meridian. See SWOT Nadir Altimeter User Handbook. Associated quality flag is orb_state_diode_flag for the OGDR products, orb_state_rest_flag for the IGDR and GDR products"/>
       </integer>
-      <integer name="/data_01/surface_classification_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/surface_classification_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="surface classification" flag_meanings="open_ocean land continental_water aquatic_vegetation continental_ice_snow floating_ice salted_basin" flag_values="0 1 2 3 4 5 6" coordinates="longitude latitude" comment="Computed from a mask built with MODIS and GlobCover data"/>
       </integer>
-      <integer name="/data_01/rad_side_1_surface_type_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_1_surface_type_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer surface type from first radiometer" flag_meanings="open_ocean near_coast land" flag_values="0 1 2" coordinates="longitude latitude"/>
       </integer>
-      <integer name="/data_01/rad_side_2_surface_type_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_2_surface_type_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer surface type from second radiometer" flag_meanings="open_ocean near_coast land" flag_values="0 1 2" coordinates="longitude latitude"/>
       </integer>
-      <integer name="/data_01/alt_qual" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/alt_qual" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="altimeter quality flag" flag_meanings="good bad" flag_values="0 1" coordinates="longitude latitude" comment="Compilation of all altimeter flags except altimeter echo type : Set to default in the current issue"/>
       </integer>
-      <integer name="/data_01/rad_qual" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_qual" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer quality flag" flag_meanings="good bad" flag_values="0 1" coordinates="longitude latitude" comment="Compilation of all radiometer flags except radiometer surface type : Set to default in the current issue"/>
       </integer>
-      <integer name="/data_01/geo_qual" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/geo_qual" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="geophysical quality flag" flag_meanings="good bad" flag_values="0 1" coordinates="longitude latitude" comment="Check on validity of all geophysical fields : Set to default in the current issue"/>
       </integer>
-      <integer name="/data_01/meteo_map_availability_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/meteo_map_availability_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="ECMWF meteorological map availability" flag_meanings="2_maps_nominal 2_maps_degraded 1_map_closest_used no_valid_map" flag_values="0 1 2 3" coordinates="longitude latitude" comment="Possible values are: 0 meaning &#x2019;2 maps, nominal&#x2019; (six hours apart), 1 meaning &#x2019;2 maps, degraded&#x2019; (more than six hours apart), 2 meaning &#x2019;1 map, closest map used&#x2019;, 3 meaning &#x2019;no valid map&#x2019;"/>
       </integer>
-      <integer name="/data_01/rad_wet_tropo_cor_interp_qual" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_wet_tropo_cor_interp_qual" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer wet tropospheric correction interpolation quality flag" flag_meanings="good degraded bad" flag_values="0 1 2" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rain_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rain_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="rain flag" flag_meanings="no_rain rain high_rain_probability_from_altimeter high_probability_of_no_rain_from_altimeter ambiguous_situation_possibility_of_ice evaluation_not_possible" flag_values="0 1 2 3 4 5" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rad_side_1_rain_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_1_rain_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer rain flag from first radiometer" flag_meanings="no_rain rain" flag_values="0 1" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rad_side_2_rain_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_2_rain_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer rain flag from second radiometer" flag_meanings="no_rain rain" flag_values="0 1" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ice_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/ice_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="ice flag" flag_meanings="no_ice ice" flag_values="0 1" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rad_side_1_sea_ice_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_1_sea_ice_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer sea-ice flag from first radiometer" flag_meanings="no_sea_ice sea_ice" flag_values="0 1" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rad_side_2_sea_ice_flag" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/rad_side_2_sea_ice_flag" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer sea-ice flag from second radiometer" flag_meanings="no_sea_ice sea_ice" flag_values="0 1" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/altitude" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/altitude" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="1 Hz altitude of satellite" standard_name="height_above_reference_ellipsoid" units="m" add_offset="1300000.0" scale_factor="0.0001" coordinates="longitude latitude" comment="Altitude of satellite above the reference ellipsoid. Associated quality flag is orb_state_diode_flag for the OGDR products, orb_state_rest_flag for the IGDR and GDR products"/>
       </integer>
-      <integer name="/data_01/model_dry_tropo_cor_zero_altitude" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/model_dry_tropo_cor_zero_altitude" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="model dry tropospheric correction at zero altitude" standard_name="altimeter_range_correction_due_to_dry_troposphere" source="European Center for Medium Range Weather Forecasting" institution="ECMWF" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="Computed at the altimeter time-tag from the interpolation of 2 meteorological fields that surround the altimeter time-tag. A dry tropospheric correction must be added (negative value) to the instrument range to correct this range measurement for dry tropospheric range delays of the radar pulse. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/rad_wet_tropo_cor" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/rad_wet_tropo_cor" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="radiometer wet tropospheric correction" standard_name="altimeter_range_correction_due_to_wet_troposphere" source="AMR" institution="NASA/JPL" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="A wet tropospheric correction must be added (negative value) to the instrument range to correct this range measurement for wet tropospheric range delays of the radar pulse"/>
       </integer>
-      <integer name="/data_01/mean_sea_surface_cnescls" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/mean_sea_surface_cnescls" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="mean sea surface height (CNES/CLS solution) above reference ellipsoid" source="MSS_CNES_CLS-2015" institution="CLS/CNES" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/mean_dynamic_topography" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/mean_dynamic_topography" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="mean dynamic topography above geoid" source="MDT_CNES_CLS-2018" institution="CLS/CNES" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/depth_or_elevation" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/depth_or_elevation" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="ocean depth/land elevation" source="ACE2" institution="EAPRS Laboratory" units="m" coordinates="longitude latitude"/>
       </integer>
-      <integer name="/data_01/inv_bar_cor" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/inv_bar_cor" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="inverted barometer height correction" standard_name="sea_surface_height_correction_due_to_air_pressure_at_low_frequency" source="European Center for Medium Range Weather Forecasting" institution="ECMWF" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="Computed at the altimeter time-tag from the interpolation of 2 meteorological fields that surround the altimeter time-tag. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/dac" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/dac" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="dynamic atmospheric correction" institution="LEGOS/CLS/CNES" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="Sum of the high frequency fluctuations correction and of the low frequency inverted barometer correction (inv_bar_cor). See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ocean_tide_fes" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/ocean_tide_fes" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="geocentric ocean tide height (FES solution)" standard_name="sea_surface_height_amplitude_due_to_geocentric_ocean_tide" source="FES2014b" institution="LEGOS/NOVELTIS/CNES/CLS" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="Includes the equilibrium long-period ocean tide height and the short-period part of the corresponding loading tide. The permanent tide (zero frequency) is not included in this parameter because it is included in the geoid and mean sea surface (geoid, mean_sea_surface_cnescls). See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/solid_earth_tide" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/solid_earth_tide" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="solid earth tide height" standard_name="sea_surface_height_amplitude_due_to_earth_tide" source="Cartwright and Edden [1973] Corrected tables of tidal harmonics - J. Geophys. J. R. Astr. Soc., 33, 253-264." units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="Calculated using Cartwright and Tayler tables and consisting of the second and third degree constituents. The permanent tide (zero frequency) is not included. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/pole_tide" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/pole_tide" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="geocentric pole tide height" standard_name="sea_surface_height_amplitude_due_to_pole_tide" source="Desai, S., Wahr, J. &amp; Beckley, B. J Geod [2015] 89: 1233" units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/internal_tide" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/internal_tide" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="internal tide height" source="E. D. Zaron. Baroclinic tidal sea level from exact-repeat mission altimetry. Journal of Physical Oceanography, 49(1):193-210, 2019." units="m" scale_factor="0.0001" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/wind_speed_alt" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/wind_speed_alt" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="altimeter wind speed" standard_name="wind_speed" units="m/s" scale_factor="0.01" coordinates="longitude latitude" comment="Should not be used over land. See SWOT Nadir Altimeter User Handbook. A calibration bias of +0.06 dB has been added to the Ku band backscatter coefficient (/data_01/ku/sig0_ocean) before computing the wind speed"/>
       </integer>
-      <integer name="/data_01/wind_speed_alt_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/wind_speed_alt_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="altimeter wind speed (MLE3 retracking)" standard_name="wind_speed" units="m/s" scale_factor="0.01" coordinates="longitude latitude" comment="Should not be used over land. See SWOT Nadir Altimeter User Handbook. A calibration bias of +0.109 dB has been added to the Ku band backscatter coefficient (/data_01/ku/sig0_ocean_mle3) before computing the wind speed"/>
       </integer>
-      <integer name="/data_01/rad_water_vapor" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/rad_water_vapor" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="radiometer water vapor content" standard_name="atmosphere_water_vapor_content" source="AMR" institution="NASA/JPL" units="kg/m^2" scale_factor="0.1" coordinates="longitude latitude" comment="Should not be used over land"/>
       </integer>
-      <integer name="/data_01/rad_cloud_liquid_water" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/rad_cloud_liquid_water" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="radiometer liquid water content" standard_name="atmosphere_cloud_liquid_water_content" source="AMR" institution="NASA/JPL" units="kg/m^2" scale_factor="0.01" coordinates="longitude latitude" comment="Should not be used over land"/>
       </integer>
-      <integer name="/data_01/ku/range_ocean" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/ku/range_ocean" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="1 Hz Ku band corrected altimeter range" standard_name="altimeter_range" units="m" add_offset="1300000.0" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, i.e. distance antenna-COG (/data_01/range_cor_cog), USO drift correction (/data_01/range_cor_uso), internal path correction (range_cor_internal_path), Doppler correction (range_cor_doppler), modeled instrumental errors correction (range_cor_ocean_model_instr) and system bias"/>
       </integer>
-      <integer name="/data_01/ku/range_ocean_mle3" shape="data_01_time_shape" width="32">
+      <integer name="/data_01/ku/range_ocean_mle3" shape="data_01_time_shape" width="32" signed="True">
         <annotation app="conformance" _FillValue="2147483647" long_name="1 Hz Ku band corrected altimeter range (MLE3 retracking)" standard_name="altimeter_range" units="m" add_offset="1300000.0" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, i.e. distance antenna-COG (/data_01/range_cor_cog), USO drift correction (/data_01/range_cor_uso), internal path correction (range_cor_internal_path), Doppler correction (range_cor_doppler), modeled instrumental errors correction (range_cor_ocean_mle3_model_instr) and system bias"/>
       </integer>
-      <integer name="/data_01/ku/iono_cor_alt_filtered" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/iono_cor_alt_filtered" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="filtered altimeter ionospheric correction on Ku band" standard_name="altimeter_range_correction_due_to_ionosphere" source="Poseidon-3C" institution="CNES" units="m" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="An ionospheric correction must be added (negative value) to the instrument range to correct this range measurement for ionospheric range delays of the radar pulse. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ku/iono_cor_alt_filtered_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/iono_cor_alt_filtered_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="filtered altimeter ionospheric correction on Ku band (MLE3 retracking)" standard_name="altimeter_range_correction_due_to_ionosphere" source="Poseidon-3C" institution="CNES" units="m" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="An ionospheric correction must be added (negative value) to the instrument range to correct this range measurement for ionospheric range delays of the radar pulse. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ku/sea_state_bias" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/sea_state_bias" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="sea state bias correction in Ku band" standard_name="sea_surface_height_bias_due_to_sea_surface_roughness" source="Tran2020 empirical solution fitted on one year of Jason-3 GDR_F data from MLE4 retracking" institution="CLS/CNES" units="m" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="A sea state bias correction must be added (negative value) to the instrument range to correct this range measurement for sea state delays of the radar pulse. This element should not be used over land. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ku/sea_state_bias_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/sea_state_bias_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="sea state bias correction in Ku band (MLE3 retracking)" standard_name="sea_surface_height_bias_due_to_sea_surface_roughness" source="Empirical solution fitted on Jason-2 GDR_C data" institution="CLS/CNES" units="m" scale_factor="0.0001" coordinates="/data_01/longitude /data_01/latitude" comment="A sea state bias correction must be added (negative value) to the instrument range to correct this range measurement for sea state delays of the radar pulse. This element should not be used over land. See SWOT Nadir Altimeter User Handbook"/>
       </integer>
-      <integer name="/data_01/ku/swh_ocean" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/swh_ocean" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="Ku band corrected significant waveheight" standard_name="sea_surface_wave_significant_height" units="m" scale_factor="0.001" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, i.e. modeled instrumental errors correction (swh_cor_ocean_model_instr) and system bias"/>
       </integer>
-      <integer name="/data_01/ku/swh_ocean_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/swh_ocean_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="Ku band corrected significant waveheight (MLE3 retracking)" standard_name="sea_surface_wave_significant_height" units="m" scale_factor="0.001" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, i.e. modeled instrumental errors correction (swh_cor_ocean_mle3_model_instr) and system bias"/>
       </integer>
-      <integer name="/data_01/ku/sig0_ocean" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/sig0_ocean" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="Ku band corrected backscatter coefficient" standard_name="surface_backwards_scattering_coefficient_of_radar_wave" units="dB" scale_factor="0.01" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, excepted the system bias, i.e. AGC instrumental errors correction, internal calibration correction (sig0_cor_calibration), modeled instrumental errors correction (sig0_cor_ocean_model_instr) and atmospheric attenuation (sig0_cor_atm)"/>
       </integer>
-      <integer name="/data_01/ku/sig0_ocean_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/sig0_ocean_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="Ku band corrected backscatter coefficient (MLE3 retracking)" standard_name="surface_backwards_scattering_coefficient_of_radar_wave" units="dB" scale_factor="0.01" coordinates="/data_01/longitude /data_01/latitude" comment="All instrumental corrections included, excepted the system bias, i.e. AGC instrumental errors correction, internal calibration correction (sig0_cor_calibration), modeled instrumental errors correction (sig0_cor_ocean_mle3_model_instr) and atmospheric attenuation (sig0_cor_atm)"/>
       </integer>
-      <integer name="/data_01/ku/wvf_main_class" shape="data_01_time_shape" width="8">
+      <integer name="/data_01/ku/wvf_main_class" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="1 Hz Ku band waveform main class" flag_meanings="brown_ocean peaky noise strong_peak brown_peak_trailing_edge brown_peak_leading_edge brown_flat_trailing_eadge peak_end trash brown_noise two_leading_edges shifted_brown brown_noise_leading_edge linear_positive_slope linear_negative_slope" flag_values="1 2 3 4 5 6 7 8 9 10 11 12 13 15 18" coordinates="/data_01/longitude /data_01/latitude" comment="Waveform classification : main class selected by classification neural network trained on shape features of the waveforms"/>
       </integer>
-      <integer name="/data_01/ku/ssha" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/ssha" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="sea surface height anomaly" standard_name="sea_surface_height_above_sea_level" source="Poseidon-3C" institution="CNES" units="m" scale_factor="0.001" coordinates="/data_01/longitude /data_01/latitude" comment="= altitude of satellite (/data_01/altitude) - Ku band corrected altimeter range (range_ocean) - filtered altimeter ionospheric correction on Ku band (iono_cor_alt_filtered) - model dry tropospheric correction (/data_01/model_dry_tropo_cor_zero_altitude) - radiometer wet tropospheric correction (/data_01/rad_wet_tropo_cor) - sea state bias correction in Ku band (sea_state_bias) - solid earth tide height (/data_01/solid_earth_tide) - geocentric ocean tide height from FES solution (/data_01/ocean_tide_fes) - non-equilibrium long-period ocean tide height (/data_01/ocean_tide_non_eq) - geocentric pole tide height (/data_01/pole_tide) - internal tide (/data_01/internal_tide) - dynamic atmospheric correction (/data_01/dac) - mean sea surface from CNES/CLS solution (/data_01/mean_sea_surface_cnescls). Set to default if the waveform classification (wvf_main_class) is not set to 1 = brown ocean, 12 = shifted brown, 13 = brown noise leading edge or 15 = linear positive_slope, or if the radiometer wet tropospheric interpolation quality flag (/data_01/rad_wet_tropo_cor_interp_qual) is set to 2 = fail"/>
       </integer>
-      <integer name="/data_01/ku/ssha_mle3" shape="data_01_time_shape" width="16">
+      <integer name="/data_01/ku/ssha_mle3" shape="data_01_time_shape" width="16" signed="True">
         <annotation app="conformance" _FillValue="32767" long_name="sea surface height anomaly (MLE3 retracking)" standard_name="sea_surface_height_above_sea_level" source="Poseidon-3C" institution="CNES" units="m" scale_factor="0.001" coordinates="/data_01/longitude /data_01/latitude" comment="= altitude of satellite (/data_01/altitude) - Ku band corrected altimeter range (range_ocean_mle3) - filtered altimeter ionospheric correction on Ku band (iono_cor_alt_filtered_mle3) - model dry tropospheric correction (/data_01/model_dry_tropo_cor_zero_altitude) - radiometer wet tropospheric correction (/data_01/rad_wet_tropo_cor) - sea state bias correction in Ku band (sea_state_bias_mle3) - solid earth tide height (/data_01/solid_earth_tide) - geocentric ocean tide height from FES solution (/data_01/ocean_tide_fes) - non-equilibrium long-period ocean tide height (/data_01/ocean_tide_non_eq) - geocentric pole tide height (/data_01/pole_tide) - internal tide (/data_01/internal_tide) - dynamic atmospheric correction (/data_01/dac) - mean sea surface from CNES/CLS solution (/data_01/mean_sea_surface_cnescls). Set to default if the waveform classification (wvf_main_class) is not set to 1 = brown ocean, 12 = shifted brown, 13 = brown noise leading edge or 15 = linear positive_slope, or if the radiometer wet tropospheric interpolation quality flag (/data_01/rad_wet_tropo_cor_interp_qual) is set to 2 = fail"/>
       </integer>
       <string name="/@Conventions" shape="Scalar" width="0">
