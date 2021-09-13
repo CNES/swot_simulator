@@ -129,16 +129,13 @@ def build_array(name: str, variables: Dict[str, Dict[str, Any]],
     properties = variables[name]
     attrs = copy.deepcopy(properties["attrs"])
 
-    # The fill value is casted to the target value of the variable
-    fill_value = encode_fill_value(properties)
-    try:
-        del attrs["_FillValue"]
-    except KeyError:
-        pass
+    # Reading the storage properties of the variable
+    encoding: Dict[str, Any] = dict(dtype=properties["dtype"])
 
-    # Reading the storage properties of the variable ()
-    encoding: Dict[str, Any] = dict(_FillValue=fill_value,
-                                    dtype=properties["dtype"])
+    # If the variable defines a fill value.
+    if "_FillValue" in attrs:
+        encoding["_FillValue"] = encode_fill_value(properties)
+        del attrs["_FillValue"]
 
     # Some values read from the XML files must be decoded
     # TODO(fbriol): The type of these attributes should be determined
