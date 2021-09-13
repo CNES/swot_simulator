@@ -138,8 +138,8 @@ def calculate_swath(delta_ac: float, half_gap: float, half_swath: int,
 
     for ix in range(len(location)):
         for jx in range(0, int(half_swath)):
-            rotation = -rotation_3d_matrix(
-                (jx * delta_ac + half_gap) / radius, direction[ix, :])
+            rotation = rotation_3d_matrix(-(jx * delta_ac + half_gap) / radius,
+                                          direction[ix, :])
 
             loc = np.dot(rotation, location[ix])
             kx = half_swath + jx
