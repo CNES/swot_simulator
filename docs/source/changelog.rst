@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.2 - 2021/09/13
+----------------
+* Bug fix: swaths are stored from right to left instead of left to right.
+* Writing of Nadir products in proper format (official GDR reduced format).
+* Addition of the orbital error.
+* The simulator version is written in the generated products.
+
 1.1 - 2021/07/21
 ----------------
 * Support for unsmoothed products.
