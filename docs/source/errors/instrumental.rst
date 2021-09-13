@@ -101,11 +101,6 @@ cycles and for one year. A file is available and contains roll, phase and the
 correction of roll and phase using cross-calibration algorithms. The user can use
 this file to simulate the roll and phase after cross-calibration.
 
-Orbital errors
-``````````````
-
-Random realisation of orbital pertubations.
-
 Phase errors
 ````````````
 
@@ -231,3 +226,20 @@ shown in :ref:`Fig. 14 <Fig14>`.
    FIG. 14: Random realization of timing error on the height (in m) following
    the power spectra of the timing error shown Fig. 13 (with filtering of long
    wavelengths).
+
+Orbital errors
+``````````````
+
+.. figure:: ../images/orbital_error.png
+   :align: left
+   :alt: Random realization of the orbital error (df=fo/1000)
+   :figclass: align-left
+
+   Random realization of the orbital error (in micro-radians).
+
+.. figure:: ../images/orbital_error_zoom.png
+   :align: left
+   :alt: Random realization of the orbital error (df=fo/1000)
+   :figclass: align-left
+
+   Zoom of the Random realization of the orbital error on the first day.
