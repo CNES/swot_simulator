@@ -3,6 +3,7 @@ Simulation settings
 -------------------
 """
 import os
+import swot_simulator
 import swot_simulator.plugins.ssh
 #import swot_simulator.plugins.swh
 
@@ -19,8 +20,7 @@ delta_al = 2.0
 delta_ac = 2.0
 
 #: Ephemeris file to read containing the satellite's orbit.
-ephemeris = os.path.join("..", "..", "data",
-                         "ephemeris_science_sept2015_ell.txt")
+ephemeris = swot_simulator.DATA.joinpath("ephemeris_science_sept2015_ell.txt")
 
 #: Index of columns to read in the ephemeris file containing, respectively,
 #: longitude in degrees, latitude in degrees and the number of seconds elapsed
@@ -112,10 +112,10 @@ noise = [
 len_repeat = 20000
 
 #: File containing spectrum of instrument error
-error_spectrum = os.path.join("..", "..", "data", "error_spectrum.nc")
+error_spectrum = swot_simulator.DATA.joinpath("error_spectrum.nc")
 
 #: KaRIN file containing spectrum for several SWH
-karin_noise = os.path.join("..", "..", "data", "karin_noise_v2.nc")
+karin_noise = swot_simulator.DATA.joinpath("karin_noise_v2.nc")
 
 #: Estimated roll phase dataset
 corrected_roll_phase_dataset = "<PATH>"
