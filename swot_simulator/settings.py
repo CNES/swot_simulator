@@ -17,7 +17,7 @@ import pathlib
 import traceback
 import types
 import numpy as np
-from . import BASIC, EXPERT, PRODUCT_TYPE, UNSMOOTHED, WIND_WAVE
+from . import BASIC, DATA, EXPERT, PRODUCT_TYPE, UNSMOOTHED, WIND_WAVE
 from . import math
 from . import plugins
 
@@ -91,24 +91,18 @@ def error_keywords() -> Iterator[str]:
         yield re.sub(r'([A-Z])', r'_\1', item).lower()
 
 
-def _data_folder():
-    """Get the folder containing the simulator data"""
-    return pathlib.Path(__file__).parent.joinpath("..", "data")
-
-
 def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
     """Get the code representing the default configuration template of the
     simulator."""
     def required_settings():
         """Get the path to the simulator data."""
-        data = _data_folder()
         result = dict()
         for item in Parameters.REQUIRED:
             result[item] = list()
-        for item in os.listdir(data):
+        for item in os.listdir(DATA):
             for data_type, values in result.items():
                 if item.startswith(data_type):
-                    values.append(str(data.joinpath(item).resolve()))
+                    values.append(str(DATA.joinpath(item).resolve()))
         return result
 
     required = required_settings()
@@ -143,14 +137,13 @@ def _template_to_string(required: Dict[str, str],
         if words:
             yield line(words)
 
-    data_folder = str(_data_folder().resolve())
     result = [
         "import os",
         "import swot_simulator.plugins.ssh",
         "import swot_simulator.plugins.swh",
         "",
         "# Path to the data supplied with the simulator.",
-        f"DATA = {data_folder!r}",
+        f"DATA = {str(DATA)!r}",
         "",
     ]
     for key, value in parameters.items():

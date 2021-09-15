@@ -128,7 +128,6 @@ def date() -> str:
 def main():
     """Main function"""
     here = pathlib.Path(__file__).parent.absolute()
-    data = here.joinpath("data")
     os.chdir(here)
 
     with open("README.rst", "r") as fh:
@@ -146,7 +145,6 @@ def main():
         long_description_content_type="text/x-rst",
         url="https://github.com/CNES/swot_simulator",
         packages=setuptools.find_packages(),
-        package_data={'': ['*.xml', '*.nc']},
         classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: MIT License",
@@ -160,10 +158,6 @@ def main():
         install_requires=[
             "python-dateutil", "distributed", "netCDF4", "numba", "numpy",
             "pyinterp", "scipy", "xarray"
-        ],
-        data_files=[
-            ("data",
-             [str(item.relative_to(data.parent)) for item in data.iterdir()])
         ])
 
 

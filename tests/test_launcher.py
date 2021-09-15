@@ -1,6 +1,7 @@
 import os
 import tempfile
 import dask.distributed
+import swot_simulator
 import swot_simulator.launcher
 import swot_simulator.settings
 import swot_simulator.error
@@ -11,8 +12,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 def test_launcher():
     with tempfile.TemporaryDirectory() as tmpdir:
         parameters = swot_simulator.settings.Parameters.load_default()
-        parameters.ephemeris = os.path.join(
-            ROOT, "..", "data", "ephemeris_calval_june2015_ell.txt")
+        parameters.ephemeris = str(
+            swot_simulator.DATA.joinpath("ephemeris_calval_june2015_ell.txt"))
         parameters.nadir = True
         parameters.working_directory = tmpdir
         parameters.noise = [

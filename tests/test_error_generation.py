@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import swot_simulator
 import swot_simulator.error.altimeter
 import swot_simulator.error.baseline_dilation
 import swot_simulator.error.karin
@@ -12,16 +13,19 @@ import swot_simulator.settings
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
+ERROR_SPECTRUM = swot_simulator.DATA.joinpath("error_spectrum.nc")
+
 
 def load_parameters():
+    ephemeris = swot_simulator.DATA.joinpath(
+        "ephemeris_calval_june2015_ell.txt")
+    karin_noise = swot_simulator.DATA.joinpath("karin_noise_v2.nc")
     return swot_simulator.settings.Parameters(
-        dict(ephemeris=os.path.join(ROOT, "..", "data",
-                                    "ephemeris_calval_june2015_ell.txt"),
+        dict(ephemeris=str(ephemeris),
              nadir=True,
              swath=True,
-             error_spectrum=os.path.join(ROOT, "..", "data",
-                                         "global_sim_instrument_error.nc"),
-             karin_noise=os.path.join(ROOT, "..", "data", "karin_noise_v2.nc"),
+             error_spectrum=str(ERROR_SPECTRUM),
+             karin_noise=str(karin_noise),
              cycle_duration=0.99349,
              height=857244))
 
@@ -55,7 +59,7 @@ def test_error_karin():
 def test_baseline_dilation():
     parameters = load_parameters()
     error_spectrum = swot_simulator.random_signal.read_file_instr(
-        os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0)
+        str(ERROR_SPECTRUM), 2.0)
 
     (x_al, x_ac, _, _, _) = load_data('baseline_dilation')
     error = swot_simulator.error.baseline_dilation.BaselineDilation(
@@ -69,7 +73,7 @@ def test_roll_phase():
     parameters = load_parameters()
     (x_al, x_ac, _, _, _) = load_data()
     error_spectrum = swot_simulator.random_signal.read_file_instr(
-        os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0)
+        str(ERROR_SPECTRUM), 2.0)
 
     error = swot_simulator.error.roll_phase.RollPhase(
         parameters, error_spectrum['rollPSD'].data,
@@ -83,7 +87,7 @@ def test_roll_phase():
 def test_timing():
     parameters = load_parameters()
     error_spectrum = swot_simulator.random_signal.read_file_instr(
-        os.path.join(ROOT, "..", "data", "error_spectrum.nc"), 2.0)
+        swot_simulator.DATA.joinpath("error_spectrum.nc"), 2.0)
 
     (x_al, x_ac, _, _, _) = load_data('timing')
     error = swot_simulator.error.timing.Timing(

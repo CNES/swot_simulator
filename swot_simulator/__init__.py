@@ -6,6 +6,9 @@
 Constants that are defined for SWOT simulator
 ---------------------------------------------
 """
+import pathlib
+
+#
 from . import version
 
 #: Module Version
@@ -52,3 +55,6 @@ PRODUCT_TYPE = {
     UNSMOOTHED: "l2a-highres.xml",
     WIND_WAVE: "l2b-windwave.xml"
 }
+
+#: Path to the auxiliary data
+DATA = pathlib.Path(__file__).parent / "data"

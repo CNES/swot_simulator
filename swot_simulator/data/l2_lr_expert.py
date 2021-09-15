@@ -1,9 +1,7 @@
 # Configuration file used to generate the SWOT_L2_LR_SSH_Expert files according
 # to the SWOT PDD.
 import pathlib
-
-# Path to the data supplied with the simulator.
-DATA = pathlib.Path(__file__).parent / "data"
+import swot_simulator
 
 # Geographical area to simulate defined by the minimum and maximum corner
 # point :lon_min, lat_min, lon_max, lat_max. Default: -180, -90, 180, 90
@@ -38,10 +36,10 @@ ephemeris_cols = None
 
 # Ephemeris file to read containing the satellite's orbit.
 #ephemeris = os.path.join(DATA, 'ephemeris_calval_june2015_ell.txt')
-ephemeris = DATA / 'ephemeris_science_sept2015_ell.txt'
+ephemeris = swot_simulator.DATA / 'ephemeris_science_sept2015_ell.txt'
 
 # File containing spectrum of instrument error
-error_spectrum = DATA / 'error_spectrum.nc'
+error_spectrum = swot_simulator.DATA / 'error_spectrum.nc'
 
 # Estimated roll phase dataset. Default: None
 corrected_roll_phase_dataset = None
