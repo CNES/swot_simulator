@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.2.1 - 2021/09/15
+------------------
+* DATA folder is not available after pip install.
+
 1.2 - 2021/09/13
 ----------------
 * Bug fix: swaths are stored from right to left instead of left to right.
