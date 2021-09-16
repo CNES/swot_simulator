@@ -33,7 +33,7 @@
         <annotation app="conformance" _FillValue="127" long_name="geophysical quality flag" flag_meanings="good bad" flag_values="0 1" coordinates="longitude latitude" comment="Check on validity of all geophysical fields : Set to default in the current issue"/>
       </integer>
       <integer name="/data_01/meteo_map_availability_flag" shape="data_01_time_shape" width="8" signed="True">
-        <annotation app="conformance" _FillValue="127" long_name="ECMWF meteorological map availability" flag_meanings="2_maps_nominal 2_maps_degraded 1_map_closest_used no_valid_map" flag_values="0 1 2 3" coordinates="longitude latitude" comment="Possible values are: 0 meaning &#x2019;2 maps, nominal&#x2019; (six hours apart), 1 meaning &#x2019;2 maps, degraded&#x2019; (more than six hours apart), 2 meaning &#x2019;1 map, closest map used&#x2019;, 3 meaning &#x2019;no valid map&#x2019;"/>
+        <annotation app="conformance" _FillValue="127" long_name="ECMWF meteorological map availability" flag_meanings="2_maps_nominal 2_maps_degraded 1_map_closest_used no_valid_map" flag_values="0 1 2 3" coordinates="longitude latitude" comment="Possible values are: 0 meaning '2 maps, nominal' (six hours apart), 1 meaning '2 maps, degraded' (more than six hours apart), 2 meaning '1 map, closest map used', 3 meaning 'no valid map'"/>
       </integer>
       <integer name="/data_01/rad_wet_tropo_cor_interp_qual" shape="data_01_time_shape" width="8" signed="True">
         <annotation app="conformance" _FillValue="127" long_name="radiometer wet tropospheric correction interpolation quality flag" flag_meanings="good degraded bad" flag_values="0 1 2" coordinates="longitude latitude" comment="See SWOT Nadir Altimeter User Handbook"/>
@@ -185,13 +185,13 @@
       <string name="/@processing_center" shape="Scalar" width="0">
         <annotation description="N/A"/>
       </string>
-      <integer name="/@cycle_number" shape="Scalar" width="32">
+      <integer name="/@cycle_number" shape="Scalar" width="32" signed="True">
         <annotation description="N/A"/>
       </integer>
       <integer name="/@absolute_rev_number" shape="Scalar" width="32">
         <annotation description="N/A"/>
       </integer>
-      <integer name="/@pass_number" shape="Scalar" width="32">
+      <integer name="/@pass_number" shape="Scalar" width="32" signed="True">
         <annotation description="N/A"/>
       </integer>
       <integer name="/@absolute_pass_number" shape="Scalar" width="32">

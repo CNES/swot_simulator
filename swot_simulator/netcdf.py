@@ -38,23 +38,24 @@ REFERENCE = "Gaultier, L., C. Ubelmann, and L.-L. Fu, 2016: The " \
 NADIR_SPECIFICATION = pathlib.Path(__file__).parent / "nadir-gpr.xml"
 
 
+def _iso_date(date: np.datetime64) -> str:
+    """Return the time formatted according to ISO."""
+    epoch = date.astype("datetime64[us]").astype(
+        "int64") * 1e-6  # type: ignore
+    return datetime.datetime.utcfromtimestamp(epoch).isoformat() + "Z"
+
+
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
                       lat: np.ndarray, lon_eq: float,
                       time_eq: np.datetime64) -> Dict[str, Any]:
     """Calculates the global attributes of the pass"""
-    def _iso_date(date: np.datetime64) -> str:
-        """Return the time formatted according to ISO."""
-        epoch = date.astype("datetime64[us]").astype(
-            "int64") * 1e-6  # type: ignore
-        return datetime.datetime.utcfromtimestamp(epoch).isoformat() + "Z"
-
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ : Creation")
 
     ellipsoid_semi_major_axis = product_specification.cast_to_dtype(
         6378137, attributes["ellipsoid_semi_major_axis"])
     ellipsoid_flattening = product_specification.cast_to_dtype(
-        1 / 298.25722356, attributes["ellipsoid_flattening"])
+        1 / 298.257223563, attributes["ellipsoid_flattening"])
     result = collections.OrderedDict(
         Conventions="CF-1.7",
         title=attributes["title"]["attrs"]["description"],
@@ -229,7 +230,7 @@ def to_netcdf(dataset: xr.Dataset,
 def _write_nadir_product(ds: xr.Dataset, path: str,
                          complete_product: bool) -> None:
     """Write the nadir product to a netCDF file."""
-    variables, _attributes = product_specification.parse_specification_file(
+    variables, attributes = product_specification.parse_specification_file(
         str(NADIR_SPECIFICATION))
     variables["data_01/ku/simulated_error_altimeter"] = dict(
         attrs=dict(_FillValue=2147483647,
@@ -261,31 +262,57 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
                                          shape=("data_01/time", ))
     data_vars = {}
     encoding = {}
-    for name in variables:
-        if name not in ds.data_vars:
-            continue
-        encoding_array, array = product_specification.build_array(
-            name, variables, ds.variables[name].values)
-        data_vars[array.name] = array
-        encoding.update(encoding_array)
 
     shape = ds.variables["data_01/time"].shape
 
     if complete_product:
         for item, properties in variables.items():
-            if item in data_vars:
-                continue
-            data = np.full(shape,
-                           product_specification.encode_fill_value(properties),
-                           properties["dtype"])
-            encoding_array, array = product_specification.build_array(
-                item, variables, data)
-            data_vars[array.name] = array
-            encoding.update(encoding_array)
+            if item in ds.variables:
+                encoding_array, array = product_specification.build_array(
+                    item, variables, ds.variables[item].values)
+                data_vars[array.name] = array
+                encoding.update(encoding_array)
+            else:
+                data = np.full(
+                    shape, product_specification.encode_fill_value(properties),
+                    properties["dtype"])
+                encoding_array, array = product_specification.build_array(
+                    item, variables, data)
+                data_vars[array.name] = array
+                encoding.update(encoding_array)
+    else:
+        for item, properties in variables.items():
+            if item in variables:
+                encoding_array, array = product_specification.build_array(
+                    item, variables, ds.variables[item].values)
+                data_vars[array.name] = array
+                encoding.update(encoding_array)
 
-    # import pdb; pdb.set_trace()
+    # Nadir specific attributes.
     ds.attrs["title"] = "GDR - Reduced dataset"
-    ds = xr.Dataset(data_vars=data_vars, attrs=ds.attrs)
+    ds.attrs["reference_document"] = ("SWOT Nadir Altimeter Products "
+                                      "Handbook, SALP-MU-M-OP-xxxxx-CN")
+    ds.attrs["mission_name"] = "SWOT"
+    ds.attrs["altimeter_sensor_name"] = "Poseidon-3C"
+    ds.attrs["radiometer_sensor_name"] = "AMR"
+    ds.attrs["doris_sensor_name"] = "DGXX-S"
+    ds.attrs["gpsr_sensor_name"] = "GPSP"
+
+    attrs = dict()
+    for item in attributes:
+        if item == "ellipsoid_axis":
+            attrs[item] = product_specification.cast_to_dtype(
+                ds.attrs["ellipsoid_semi_major_axis"],
+                attributes["ellipsoid_axis"])
+        elif item == "first_meas_time":
+            attrs[item] = ds.attrs["time_coverage_start"]
+        elif item == "last_meas_time":
+            attrs[item] = ds.attrs["time_coverage_end"]
+        elif item in ds.attrs:
+            attrs[item] = product_specification.cast_to_dtype(
+                ds.attrs[item], attributes[item])
+
+    ds = xr.Dataset(data_vars=data_vars, attrs=attrs)
     to_netcdf(ds, path, encoding=encoding, mode="w")
 
 
