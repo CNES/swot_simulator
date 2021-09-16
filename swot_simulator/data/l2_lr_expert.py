@@ -34,7 +34,7 @@ delta_al = 2.0
 ephemeris_cols = None
 
 # Ephemeris file to read containing the satellite's orbit.
-#ephemeris = os.path.join(DATA, 'ephemeris_calval_june2015_ell.txt')
+#ephemeris = swot_simulator.DATA / 'ephemeris_calval_june2015_ell.txt'
 ephemeris = swot_simulator.DATA / 'ephemeris_science_sept2015_ell.txt'
 
 # File containing spectrum of instrument error
