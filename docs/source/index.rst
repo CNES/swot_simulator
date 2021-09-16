@@ -8,6 +8,7 @@
 
    changelog
    install
+   first_steps
    sampling
    errors
    nadir_errors

@@ -35,6 +35,5 @@ The software is divided in 6 main modules:
    software/swot_grid.rst
    software/ssh.rst
    software/nadir.rst
-   software/tutorial.rst
    settings
    software/settings.rst

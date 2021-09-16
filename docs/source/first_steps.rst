@@ -1,5 +1,9 @@
-Getting started
-===============
+First Steps
+===========
+
+This section presents the steps required to generate simulated SWOT products.
+Before getting started, make sure that simulator is set up to run on your
+machine.
 
 .. _main_program:
 
@@ -59,6 +63,9 @@ option allows to display the online help of the command:
         --template PATH     Writes the default configuration of the simulator
                             into the file and ends the program.
 
+Generate the configuration file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The first step is to create a configuration file for the simulator. To do this,
 execute the following command:
 
@@ -75,6 +82,9 @@ scientific orbit without interpolating SSH. In other words, this setting is
 sufficient to launch the simulator and generate the various errors, but the
 generated products will not contain any interpolated SSH under the satellite
 swath.
+
+Launch the simulator
+~~~~~~~~~~~~~~~~~~~~
 
 To start the simulator execute the following command.
 
@@ -100,6 +110,9 @@ the ``first-date`` and ``last-date`` parameters.
 The data will be written in the directory specified by the
 :py:const:`working_directory <settings.working_directory>` parameter.
 
+Simulation parallelization
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 By default, the program generates the products on a single thread and process.
 You can change this behavior by modifying the program's ``n-workers``,
 ``processes`` and ``threads-per-worker`` options.
@@ -109,6 +122,49 @@ cluster. To do this, you need to start the dask cluster, write the cluster
 properties to a JSON file, for example the ``scheduler.json`` file, and then run
 the program by specifying this file to simulator using the ``scheduler-file``
 option.
+
+Interpolate SSH
+~~~~~~~~~~~~~~~
+
+The `data provided
+<https://github.com/CNES/swot_simulator/tree/master/swot_simulator/data>`_ by
+the simulator contains AVISO L4 grids to generate a one-day mission orbit. If
+you want to use these grids to generate SWOT products with an interpolated SSH,
+change the value of the :py:const:`ssh_plugin <settings.ssh_plugin>` variable
+with the AVISO SSH plugins as shown below :
+
+.. code-block:: python
+
+    ssh_plugin = swot_simulator.plugins.ssh.AVISO(DATA)
+
+The data provided for this example generates products on January 1, 2019. So, to
+generate products using these AVISO maps you need to run the following command
+to specify the date of the first measurement :
+
+.. code-block:: python
+
+    swot_simulator conf.py --first-date 20190101
+
+Swath geometry
+~~~~~~~~~~~~~~
+
+By default, the simulator generates swaths from -60 km to 60 km from the nadir,
+i.e., within the swath requirements. If you want to simulate swaths identical to
+the data measured by the satellite, you must modify the settings in order to
+specify a swath from -70 km to 70 km from the nadir (:py:const:`half_swath
+<settings.half_swath>`), to invalidate all data located outside the swath
+requirement limits (:py:const:`requirement_bounds
+<settings.requirement_bounds>`) and insert a central pixel below the satellite
+nadir (:py:const:`central_pixel <settings.central_pixel>`).
+
+The following code shows the parameters to change in the configuration file to
+generate the swath geometry described above.
+
+.. code-block:: python
+
+    half_swath = 70.0
+    requirement_bounds = [10, 60]
+    central_pixel = True
 
 Library
 -------
