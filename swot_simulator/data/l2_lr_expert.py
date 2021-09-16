@@ -57,7 +57,7 @@ half_swath = 70.0
 # height = None
 
 # KaRIN file containing spectrum for several SWH
-karin_noise = DATA / 'karin_noise_v2.nc'
+karin_noise = swot_simulator.DATA / 'karin_noise_v2.nc'
 
 # Repeat length
 len_repeat = 20000.0
