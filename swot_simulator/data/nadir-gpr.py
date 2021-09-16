@@ -11,7 +11,7 @@ beam_position = [-20, 20]
 
 # If true, the swath, in the final dataset, will contain a center pixel
 # divided in half by the reference ground track
-central_pixel = True
+central_pixel = False
 
 # If true, the generated netCDF file will be the complete product compliant
 # with SWOT's Product Description Document (PDD), otherwise only the calculated
@@ -26,7 +26,7 @@ complete_product = True
 delta_ac = 2.0
 
 # Distance, in km, between two points along track direction
-delta_al = 2.0
+delta_al = 6.5
 
 # Index of columns to read in the ephemeris file containing, respectively,
 # longitude in degrees, latitude in degrees and the number of seconds elapsed
@@ -77,12 +77,6 @@ nbeam = 2
 # be omitted, and vice versa.
 noise = [
     'altimeter',
-    'baseline_dilation',
-    'karin',
-    'orbital',
-    'roll_phase',
-    'timing',
-    # 'wet_troposphere',
 ]
 
 # Seed for RandomState. Must be convertible to 32 bit unsigned integers
@@ -94,7 +88,7 @@ product_type = 'expert'
 
 # Limits of SWOT swath requirements. Measurements outside the span will be
 # set with fill values
-requirement_bounds = [10, 60]
+requirement_bounds = None
 
 # Orbit shift in longitude (degrees). Default 0.
 shift_lon = None
@@ -113,7 +107,7 @@ ssh_plugin = None
 swh_plugin = None
 
 # True to generate swath products
-swath = True
+swath = False
 
 # SWH for the region
 swh = 2.0

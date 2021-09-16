@@ -1,6 +1,5 @@
 # Configuration file used to generate the SWOT_L2_LR_SSH_Unsmoothed files
 # according to the SWOT PDD.
-import pathlib
 import swot_simulator
 
 # Geographical area to simulate defined by the minimum and maximum corner

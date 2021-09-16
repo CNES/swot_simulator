@@ -281,12 +281,11 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
                 data_vars[array.name] = array
                 encoding.update(encoding_array)
     else:
-        for item, properties in variables.items():
-            if item in variables:
-                encoding_array, array = product_specification.build_array(
-                    item, variables, ds.variables[item].values)
-                data_vars[array.name] = array
-                encoding.update(encoding_array)
+        for item in ds.variables:
+            encoding_array, array = product_specification.build_array(
+                item, variables, ds.variables[item].values)
+            data_vars[array.name] = array
+            encoding.update(encoding_array)
 
     # Nadir specific attributes.
     ds.attrs["title"] = "GDR - Reduced dataset"
