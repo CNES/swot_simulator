@@ -138,12 +138,9 @@ def _template_to_string(required: Dict[str, str],
             yield line(words)
 
     result = [
-        "import os",
+        "import swot_simulator",
         "import swot_simulator.plugins.ssh",
         "import swot_simulator.plugins.swh",
-        "",
-        "# Path to the data supplied with the simulator.",
-        f"DATA = {str(DATA)!r}",
         "",
     ]
     for key, value in parameters.items():
@@ -155,10 +152,9 @@ def _template_to_string(required: Dict[str, str],
             # enabled, the others are disabled.
             enable = True
             for item in required[key]:
-                result += [
-                    ("" if enable else "# ") + key + " = os.path.join(DATA, " +
-                    repr(pathlib.Path(item).name) + ")"
-                ]
+                result += [("" if enable else "# ") + key +
+                           " = swot_simulator.DATA / " +
+                           repr(pathlib.Path(item).name)]
                 enable = False
             result.append("")
         else:

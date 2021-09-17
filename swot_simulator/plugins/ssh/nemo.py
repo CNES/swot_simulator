@@ -14,7 +14,7 @@ from .. import data_handler
 
 class NEMO(data_handler.CartesianGridHandler):
     """
-    Interpolation of the SSH NEMO (CMEMS L4 products).
+    Interpolation of the SSH NEMO.
     """
     def __init__(self, path: str):
         loader = data_handler.NetcdfLoader(

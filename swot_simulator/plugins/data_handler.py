@@ -111,7 +111,7 @@ class DatasetLoader:
 @nb.njit("(float32[::1])(int64[::1], float32[:, ::1], int64[::1])",
          cache=True,
          nogil=True)  # type:ignore
-def _time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
+def time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
     """Time interpolation for the different spatial grids interpolated on the
     SWOT data"""
     xp_diff = np.diff(xp)
@@ -302,7 +302,7 @@ class IrregularGridHandler(Interface):
                      time.time() - start_time, dates.min(), dates.max())
 
         # Time interpolation of the SSH.
-        return _time_interp(
+        return time_interp(
             dates_p.astype("int64"),
             layers,
             dates.astype("datetime64[us]").astype("int64"),
