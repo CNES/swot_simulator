@@ -20,6 +20,7 @@ import numpy as np
 from . import BASIC, DATA, EXPERT, PRODUCT_TYPE, UNSMOOTHED, WIND_WAVE
 from . import math
 from . import plugins
+import swot_simulator
 
 #: Default working directory
 DEFAULT_WORKING_DIRECTORY = os.path.join(os.path.expanduser('~'),
@@ -162,6 +163,16 @@ def _template_to_string(required: Dict[str, str],
     # Remove the last carriage return
     result.pop()
     return "\n".join(result)
+
+
+def pretty_print(value: Any) -> str:
+    """Replace the path to the provided data with the variable name."""
+    data = str(swot_simulator.DATA)
+    value = str(value)
+    if data in value:
+        value = value.replace(data, 'swot_simulator.DATA / "')
+        value += '"'
+    return value
 
 
 def template(python: bool = False) -> Union[str, Dict[str, Any]]:
@@ -326,6 +337,9 @@ class Parameters:
             if required not in overrides:
                 raise TypeError(f"missing required argument: {required!r}")
         self._init_user_parameters(overrides)
+
+        for item in self.CONFIG_VALUES:
+            LOGGER.info(f"{item} = {pretty_print(getattr(self, item))}")
 
         product_type = getattr(self, "product_type")
         if product_type not in PRODUCT_TYPE:

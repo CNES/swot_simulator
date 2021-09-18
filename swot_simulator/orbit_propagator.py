@@ -35,7 +35,7 @@ def load_ephemeris(
     """
     if cols is None:
         cols = (1, 2, 0)
-    LOGGER.info("loading ephemeris: %s", stream.name)
+    LOGGER.info("loading ephemeris: %s", settings.pretty_print(stream.name))
 
     comments = []
     data = []
