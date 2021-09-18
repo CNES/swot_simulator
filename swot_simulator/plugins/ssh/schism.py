@@ -57,19 +57,27 @@ class SCHISM(Interface):
         """Select the time series to process"""
         first_date -= self._dt
         last_date += self._dt
-        mask = ((self._ts["date"] >= first_date) &
-                (self._ts["date"] <= last_date))
-        selected = self._ts[mask]
-        return selected
+        ts = self._ts["date"]
+        if first_date < ts[0] or last_date > ts[-1]:
+            raise IndexError(
+                f"period [{first_date}, {last_date}] is out of range: "
+                f"[{ts[0]}, {ts[-1]}]")
+        mask = (ts >= first_date) & (ts <= last_date)
+        return self._ts[mask]
 
     @staticmethod
     def _rtree(ds: xr.Dataset, index: np.uint64) -> pyinterp.RTree:
         """Constructs the interpolator"""
-        lon = ds.variables["SCHISM_hgrid_node_x"].values
-        lat = ds.variables["SCHISM_hgrid_node_y"].values
+        ssh = ds.variables["elev"].isel(dict(time=index)).values
+
+        # Filter out NaN values.
+        mask = ~np.isnan(ssh)
+        lon = ds.variables["SCHISM_hgrid_node_x"].values[mask]
+        lat = ds.variables["SCHISM_hgrid_node_y"].values[mask]
+        ssh = ssh[mask]
+
         coordinates = np.vstack((lon, lat)).T
 
-        ssh = ds.variables["elev"].isel(dict(time=index)).values
         mesh = pyinterp.RTree(dtype=np.dtype("float32"))
         mesh.packing(coordinates, ssh)
         return mesh
