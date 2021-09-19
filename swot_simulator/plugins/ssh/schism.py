@@ -17,7 +17,7 @@ from .. import Interface
 
 class SCHISM(Interface):
     """
-    Interpolation of the SSH SYMPHONIE
+    Interpolation of the SSH NEMO
     """
     def __init__(self, path: str):
         # Delta time between two time steps.
