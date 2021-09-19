@@ -6,9 +6,9 @@
 Data handler
 ============
 
-Set of classes that helps developping plugins for ssh and swh. This includes a default
-netcdf reader for loading a dataset, and default interpolators for both regular and
-irregular grids.
+Set of classes that helps developping plugins for ssh and swh. This includes a
+default netcdf reader for loading a dataset, and default interpolators for both
+regular and irregular grids.
 """
 import abc
 import datetime
@@ -31,33 +31,35 @@ LOGGER = logging.getLogger(__name__)
 
 class DatasetLoader:
     """
-    Interface that specializes in loading data for the plugin. This is helpful to
-    separate the data loading and interpolator definition. The dataset loader has only
-    one job : given a time range for interpolation, loads the model dataset that is
-    needed to do the said interpolation and transform it to have canonical variable
-    names.
+    Interface that specializes in loading data for the plugin. This is helpful
+    to separate the data loading and interpolator definition. The dataset loader
+    has only one job : given a time range for interpolation, loads the model
+    dataset that is needed to do the said interpolation and transform it to have
+    canonical variable names.
     """
     @abc.abstractmethod
     def load_dataset(self, first_date: np.datetime64,
                      last_date: np.datetime64) -> xr.Dataset:
         """
         Loads the data under the form of a xr.Dataset. The loaded dataset should
-        contain values that allow interpolating first_date and last_date. This means
-        its time interval is a little large than [first_date, last_date].
+        contain values that allow interpolating first_date and last_date. This
+        means its time interval is a little large than [first_date, last_date].
 
-        Moreover, the dataset should refer to the longitude, latitude, time and sea
-        surface height using canonical names: lon, lat, time, ssh
+        Moreover, the dataset should refer to the longitude, latitude, time and
+        sea surface height using canonical names: lon, lat, time, ssh
 
         Args:
-            first_date (np.datetime64): The first date that needs to be interpolated
-            last_date (np.datetime64): The last date that needs to be interpolated
+            first_date (np.datetime64): The first date that needs to be
+                interpolated
+            last_date (np.datetime64): The last date that needs to be
+                interpolated
 
         Returns:
-            xr.Dataset: dataset containing lon, lat, time and ssh variables, with
-            canonical names.
+            xr.Dataset: dataset containing lon, lat, time and ssh variables,
+                with canonical names.
 
         See also:
-            _shift_date
+           :py:meth:`DatasetLoader._shift_date`
         """
         ...
 
@@ -71,18 +73,19 @@ class DatasetLoader:
         Args:
             date (np.datetime64): interpolation date
             shift (int): 1 for a later date, -1 for an earlier one
-            time_delta (np.timedelta64): delta specifying the time resolution of the
-            model data.
+            time_delta (np.timedelta64): delta specifying the time resolution
+                of the model data.
 
         Returns:
-            The input date if it is the input date is a multiple of time_delta (meaning
-            it is on the model time axis). Else, the output is shifted.
+            The input date if it is the input date is a multiple of time_delta
+            (meaning it is on the model time axis). Else, the output is shifted.
 
         Example:
-            If we have data on [t0, t1, dt], and we want an interpolation over [T0, T1],
-            then we must make sure that t0 <= T0 - dt and t1 >= T1 + dt. If this
-            condition is satisfied, interpolation at T0 and T1 will be possible. If this
-            condition is not satisfied, interpolation becomes extrapolation.
+            If we have data on [t0, t1, dt], and we want an interpolation over
+            [T0, T1], then we must make sure that t0 <= T0 - dt and t1 >= T1 +
+            dt. If this condition is satisfied, interpolation at T0 and T1 will
+            be possible. If this condition is not satisfied, interpolation
+            becomes extrapolation.
         """
         # Before comparing the date and timedelta, ensure they have the same unit
         date_same_unit = date + time_delta - time_delta
@@ -147,14 +150,15 @@ def time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
 
 class NetcdfLoader(DatasetLoader):
     """
-    Plugin that implements a netcdf reader. The netcdf reader works on files whose
-    names have the date in it. A pattern (ex. P(?<date>.*).nc), associated with a
-    date formatter (ex. %Y%m%d) is used to get build the time series.
+    Plugin that implements a netcdf reader. The netcdf reader works on files
+    whose names have the date in it. A pattern (ex. P(?<date>.*).nc), associated
+    with a date formatter (ex. %Y%m%d) is used to get build the time series.
 
-    Netcdf files can be expensive to concatenate if there are a lot of files. This
-    loader avoid loading too much files by building a dictionary matching file paths
-    to their time. During the interpolation, where only a given time period is
-    needed, only the files that cover the time period are loaded in the dataset.
+    Netcdf files can be expensive to concatenate if there are a lot of files.
+    This loader avoid loading too much files by building a dictionary matching
+    file paths to their time. During the interpolation, where only a given time
+    period is needed, only the files that cover the time period are loaded in
+    the dataset.
     """
     def __init__(self,
                  path: str,
@@ -180,8 +184,10 @@ class NetcdfLoader(DatasetLoader):
                 the P(?<date>) group to retrieve the time
 
         Example:
-            If we have netcdf files whose names are model_20120305_12h.nc, we must
-            define the following to retrieve the time::
+            If we have netcdf files whose names are model_20120305_12h.nc, we
+            must define the following to retrieve the time:
+
+            .. code-block:: python
 
                 loader = NetcdfLoader(
                     '.',
@@ -240,8 +246,8 @@ class NetcdfLoader(DatasetLoader):
                 0] or last_date > self.time_series["date"][-1]:
             raise IndexError(
                 f"period [{first_date}, {last_date}] is out of range: "
-                f"[{self.time_series['date'][0]}, {self.time_series['date'][-1]}]"
-            )
+                f"[{self.time_series['date'][0]}, "
+                f"{self.time_series['date'][-1]}]")
 
         selected = np.logical_and(self.time_series["date"] >= first_date,
                                   self.time_series["date"] < last_date)
@@ -274,9 +280,9 @@ class NetcdfLoader(DatasetLoader):
 
 class IrregularGridHandler(Interface):
     """
-    Default interpolator for an irregular grid. First, uses an RTree to do the spatial
-    interpolation of all model grid, then do the time interpolation with a simple
-    weighting of two grid
+    Default interpolator for an irregular grid. First, uses an RTree to do the
+    spatial interpolation of all model grid, then do the time interpolation with
+    a simple weighting of two grid
     """
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
