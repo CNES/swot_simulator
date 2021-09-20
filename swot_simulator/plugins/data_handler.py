@@ -26,16 +26,19 @@ import xarray as xr
 
 from . import Interface
 
+#: Module logger
 LOGGER = logging.getLogger(__name__)
 
 
 class DatasetLoader:
     """
     Interface that specializes in loading data for the plugin. This is helpful
-    to separate the data loading and interpolator definition. The dataset loader
-    has only one job : given a time range for interpolation, loads the model
-    dataset that is needed to do the said interpolation and transform it to have
-    canonical variable names.
+    to separate the data loading and interpolator definition.
+    The data loader has only one task:
+
+    * Given a time range for interpolation.
+    * Loads the model data set needed to perform the interpolation.
+    * Transforms it to have canonical variable names.
     """
     @abc.abstractmethod
     def load_dataset(self, first_date: np.datetime64,
@@ -49,14 +52,14 @@ class DatasetLoader:
         sea surface height using canonical names: lon, lat, time, ssh
 
         Args:
-            first_date (np.datetime64): The first date that needs to be
+            first_date (numpy.datetime64): The first date that needs to be
                 interpolated
-            last_date (np.datetime64): The last date that needs to be
+            last_date (numpy.datetime64): The last date that needs to be
                 interpolated
 
         Returns:
             xr.Dataset: dataset containing lon, lat, time and ssh variables,
-                with canonical names.
+            with canonical names.
 
         See also:
            :py:meth:`DatasetLoader._shift_date`
@@ -98,7 +101,14 @@ class DatasetLoader:
 
     @staticmethod
     def _calculate_time_delta(dates: xr.DataArray) -> np.timedelta64:
-        """Calculation of the delta T between two consecutive grids."""
+        """Calculation of the delta T between two consecutive grids.
+
+        Args:
+            dates (xr.DataArray): dates of the model data.
+
+        Returns:
+            np.timedelta64: the time delta between two consecutive maps.
+        """
         frequency = np.diff(dates)
         try:
             if not np.all(frequency == frequency[0]):
@@ -116,7 +126,17 @@ class DatasetLoader:
          nogil=True)  # type:ignore
 def time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
     """Time interpolation for the different spatial grids interpolated on the
-    SWOT data"""
+    SWOT data
+
+    Args:
+        xp (numpy.ndarray): The x-coordinates of the SWOT grid.
+        yp (numpy.ndarray): The y-coordinates of the SWOT grid, same shape as
+            xp.
+        xi (numpy.ndarray): The x-coordinates of the interpolation grid.
+
+    Returns:
+        numpy.ndarray: The interpolated values.
+    """
     xp_diff = np.diff(xp)
 
     assert xp.shape[0] == yp.shape[0] and yp.shape[1] == xi.shape[0]
@@ -184,8 +204,8 @@ class NetcdfLoader(DatasetLoader):
                 the P(?<date>) group to retrieve the time
 
         Example:
-            If we have netcdf files whose names are model_20120305_12h.nc, we
-            must define the following to retrieve the time:
+            If we have netcdf files whose names are ``model_20120305_12h.nc``,
+            we must define the following to retrieve the time:
 
             .. code-block:: python
 
@@ -209,6 +229,15 @@ class NetcdfLoader(DatasetLoader):
         self.time_delta = self._calculate_time_delta(self.time_series["date"])
 
     def _walk_netcdf(self, path: str) -> np.ndarray:
+        """Browse the NetCDF grids in the directory to create the time series
+        constituted by these files (a file contains a time step).
+
+        Args:
+            path (str): Folder containing the netcdf files
+
+        Returns:
+            numpy.ndarray: Time series of the netcdf files.
+        """
         # Walks a netcdf folder and finds data files in it
         items = []
         length = -1
@@ -238,6 +267,17 @@ class NetcdfLoader(DatasetLoader):
 
     def select_netcdf_files(self, first_date: np.datetime64,
                             last_date: np.datetime64) -> np.ndarray:
+        """
+        Selects the netcdf files that cover the time period.
+
+        Args:
+            first_date (numpy.datetime64): first date of the time period
+            last_date (numpy.datetime64): last date of the time period
+
+        Returns:
+            numpy.ndarray: Array containing the paths to the netcdf files that
+            cover the time period.
+        """
         first_date = self._shift_date(first_date.astype("datetime64[ns]"), -1,
                                       self.time_delta)
         last_date = self._shift_date(last_date.astype("datetime64[ns]"), 1,
@@ -255,6 +295,15 @@ class NetcdfLoader(DatasetLoader):
 
     def load_dataset(self, first_date: np.datetime64,
                      last_date: np.datetime64):
+        """Loads the dataset between the given dates.
+
+        Args:
+            first_date (numpy.datetime64): first date to load.
+            last_date (numpy.datetime64): last date to load.
+
+        Returns:
+            xarray.Dataset: the dataset loaded.
+        """
         LOGGER.debug("fetch data for %s, %s", first_date, last_date)
         selected = self.select_netcdf_files(first_date, last_date)
         dataset = xr.open_mfdataset(self.time_series["path"][selected],
@@ -282,13 +331,26 @@ class IrregularGridHandler(Interface):
     """
     Default interpolator for an irregular grid. First, uses an RTree to do the
     spatial interpolation of all model grid, then do the time interpolation with
-    a simple weighting of two grid
+    a simple weighting of two grid.
+
+    Args:
+        dataset_loader (DataLoader): Data loader
     """
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 
-    def interpolate(self, lon: np.ndarray, lat: np.ndarray, dates: np.ndarray):
-        """Interpolate the SSH for the given coordinates"""
+    def interpolate(self, lon: np.ndarray, lat: np.ndarray,
+                    dates: np.ndarray) -> np.ndarray:
+        """Interpolate the SSH for the given coordinates
+
+        Args:
+            lon (numpy.ndarray): longitude coordinates
+            lat (numpy.ndarray): latitude coordinates
+            dates (numpy.ndarray): dates
+
+        Returns:
+            numpy.ndarray: interpolated SSH
+        """
         # Spatial interpolation of the SSH on the different selected grids.
         dataset = self.dataset_loader.load_dataset(
             dates.min(),  # type: ignore
@@ -318,6 +380,19 @@ class IrregularGridHandler(Interface):
     def _spatial_interp(z_model: da.Array, x_model: da.Array,
                         y_model: da.Array, x_sat: np.ndarray,
                         y_sat: np.ndarray) -> np.ndarray:
+        """
+        Spatial interpolation of the SSH on the selected maps.
+
+        Args:
+            z_model (numpy.ndarray): model SSH
+            x_model (numpy.ndarray): model longitude
+            y_model (numpy.ndarray): model latitude
+            x_sat (numpy.ndarray): satellite longitude
+            y_sat (numpy.ndarray): satellite latitude
+
+        Returns:
+            numpy.ndarray: interpolated SSH in space.
+        """
         mesh = pyinterp.RTree()
         mesh.packing(
             np.vstack((x_model.compute(), y_model.compute())).T,
@@ -337,13 +412,22 @@ class CartesianGridHandler(Interface):
     """
     Default interpolator for regular grid.
     Uses pyinterp.backends.xarray.Grid3D.trivariate interpolator
+
+    Args:
+        dataset_loader (DatasetLoader): DatasetLoader object
     """
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SSH to the required coordinates
+
+        Args:
+            lon (numpy.ndarray): longitude coordinates
+            lat (numpy.ndarray): latitude coordinates
+            dates (numpy.ndarray): dates of the simulated measurements
+        """
         dataset = self.dataset_loader.load_dataset(
             dates.min(),  # type: ignore
             dates.max())  # type: ignore
