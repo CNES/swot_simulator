@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.2.2 - 2021/09/24
+------------------
+* Logging settings
+* Plugins to interpolate Schism maps
+* Fixes issues on Nadir products
+
 1.2.1 - 2021/09/15
 ------------------
 * DATA folder is not available after pip install.
