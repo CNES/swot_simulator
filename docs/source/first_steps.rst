@@ -135,7 +135,7 @@ with the AVISO SSH plugins as shown below :
 
 .. code-block:: python
 
-    ssh_plugin = swot_simulator.plugins.ssh.AVISO(DATA)
+    ssh_plugin = swot_simulator.plugins.ssh.AVISO(swot_simulator.DATA)
 
 The data provided for this example generates products on January 1, 2019. So, to
 generate products using these AVISO maps you need to run the following command
