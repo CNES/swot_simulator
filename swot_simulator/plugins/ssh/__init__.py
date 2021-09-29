@@ -11,5 +11,6 @@ from .hycom import HYCOM
 from .mitgcm import MITGCM
 from .mitgcm_ww3 import MITGCM_WW3
 from .nemo import NEMO
+from .nz import NZCartesian, NZMesh
 from .schism import SCHISM
 from .symphonie import SYMPHONIE
