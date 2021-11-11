@@ -101,7 +101,7 @@ class SCHISM(Interface):
             xp.append(np.asarray(ds.time[index]).astype("datetime64[us]"))
             mesh = self._rtree(ds, index)
             ssh, _ = mesh.radial_basis_function(
-                np.vstack((lon.flatten(), lat.flatten())).T.astype("float32"),
+                np.vstack((lon.ravel(), lat.ravel())).T.astype("float32"),
                 within=True,
                 k=11,
                 radius=10000,  # Spatial resolution in meters.

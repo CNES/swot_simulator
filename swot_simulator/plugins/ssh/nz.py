@@ -21,7 +21,7 @@ from .. import Interface
 
 class Base(Interface):
     """Base class for NZ interface.
-    
+
     Args:
         path: Path to the time series.
         ssh: Name of the variable containing the SSH.
@@ -108,9 +108,9 @@ class NZCartesian(Base):
         assert np.all(np.diff(ds.ocean_time.values) == self._dt)
         interpolator = pyinterp.backends.xarray.RegularGridInterpolator(
             ds[self.ssh])
-        return interpolator(dict(lat_rho=lat.flatten(),
-                                 lon_rho=lon.flatten(),
-                                 ocean_time=dates.flatten()),
+        return interpolator(dict(lat_rho=lat.ravel(),
+                                 lon_rho=lon.ravel(),
+                                 ocean_time=dates.ravel()),
                             method="bilinear",
                             bounds_error=False).reshape(lon.shape)
 
@@ -140,8 +140,8 @@ class NZMesh(Base):
             ds[self.ssh].values.T)
 
         ssh = pyinterp.trivariate(grid3d,
-                                  lon.flatten(),
-                                  lat.flatten(),
-                                  t_axis.safe_cast(dates.flatten()),
+                                  lon.ravel(),
+                                  lat.ravel(),
+                                  t_axis.safe_cast(dates.ravel()),
                                   num_threads=1).reshape(lon.shape)
         return ssh

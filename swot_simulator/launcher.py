@@ -287,8 +287,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
 
     # Interpolation of the SWH if the user wishes.
     if parameters.swh_plugin is not None:
-        swh = parameters.swh_plugin.interpolate(lon.flatten(), lat.flatten(),
-                                                swath_time.flatten())
+        swh = parameters.swh_plugin.interpolate(lon.ravel(), lat.ravel(),
+                                                swath_time.ravel())
         swh = swh.reshape(lon.shape)
     else:
         swh = None
@@ -305,8 +305,8 @@ def simulate(args: Tuple[int, int, np.datetime64],
 
     # Interpolation of the SSH if the user wishes.
     if parameters.ssh_plugin is not None:
-        ssh = parameters.ssh_plugin.interpolate(lon.flatten(), lat.flatten(),
-                                                swath_time.flatten())
+        ssh = parameters.ssh_plugin.interpolate(lon.ravel(), lat.ravel(),
+                                                swath_time.ravel())
         ssh = ssh.reshape(lon.shape)
     else:
         ssh = None
