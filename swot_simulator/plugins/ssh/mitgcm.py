@@ -87,9 +87,9 @@ class MITGCM(data_handler.IrregularGridHandler):
             # The undefined values are filtered
             z_face = z_model[face, :].compute()
             defined = ~np.isnan(z_face)
-            x += (x_face[defined].flatten(), )
-            y += (y_face[defined].flatten(), )
-            z += (z_face[defined].flatten(), )
+            x += (x_face[defined].ravel(), )
+            y += (y_face[defined].ravel(), )
+            z += (z_face[defined].ravel(), )
 
         # The tree is built and the interpolation is calculated
         x = np.concatenate(x)

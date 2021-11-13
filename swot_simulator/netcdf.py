@@ -42,7 +42,8 @@ def _iso_date(date: np.datetime64) -> str:
     """Return the time formatted according to ISO."""
     epoch = date.astype("datetime64[us]").astype(
         "int64") * 1e-6  # type: ignore
-    return datetime.datetime.utcfromtimestamp(epoch).isoformat() + "Z"
+    return datetime.datetime.utcfromtimestamp(epoch).strftime(
+        "%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
