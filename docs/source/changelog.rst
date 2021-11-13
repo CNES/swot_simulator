@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.2.3 - 2021/11/13
+------------------
+* ISO date doesn't always contain microseconds.
+* Use ravel instead of flatten for numpy arrays.
+* Handle NZ grids
+
 1.2.2 - 2021/09/24
 ------------------
 * Logging settings
