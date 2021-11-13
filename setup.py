@@ -58,13 +58,10 @@ def update_sphinx_conf(conf, version, year):
 def read_version():
     """Returns the software version"""
     module = pathlib.Path('swot_simulator', 'version.py')
-    stdout = execute("git describe --tags --dirty --long --always").strip()
-    pattern = re.compile(r'([\w\d\.]+)-(\d+)-g([\w\d]+)(?:-(dirty))?')
-    match = pattern.search(stdout)
 
-    # If the information is unavailable (execution of this function outside the
-    # development environment), file creation is not possible
-    if not stdout:
+    # If the ".git" directory exists, this function is executed in the
+    # development environment, otherwise it's a release.
+    if not pathlib.Path('.git').exists():
         pattern = re.compile(r'return "(\d+\.\d+\.\d+)"')
         with open(module, "r") as stream:
             for line in stream:
@@ -73,10 +70,15 @@ def read_version():
                     return match.group(1)
         raise AssertionError("The version module is invalid")
 
-    # No tag already registred
+    stdout = execute("git describe --tags --dirty --long --always").strip()
+    pattern = re.compile(r'([\w\d\.]+)-(\d+)-g([\w\d]+)(?:-(dirty))?')
+    match = pattern.search(stdout)
+
     if match is None:
+        # No tag found, use the last commit
         pattern = re.compile(r'([\w\d]+)(?:-(dirty))?')
         match = pattern.search(stdout)
+        assert match is not None, f"Unable to parse git output {stdout!r}"
         version = "0.0.0"
         sha1 = match.group(1)
     else:
