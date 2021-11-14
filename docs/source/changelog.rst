@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.2.4 - 2021/11/14
+------------------
+* Unable to write wet troposphere correction in Nadir products (#9)
+
 1.2.3 - 2021/11/13
 ------------------
 * ISO date doesn't always contain microseconds.

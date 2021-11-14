@@ -22,9 +22,9 @@ copyright = '(2021, CNES/JPL)'
 author = 'CNES/JPL'
 
 # The short X.Y version
-version = '1.2.3'
+version = '1.2.4'
 # The full version, including alpha/beta/rc tags
-release = '1.2.3'
+release = '1.2.4'
 
 # -- General configuration ---------------------------------------------------
 
