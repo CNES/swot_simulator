@@ -251,7 +251,10 @@ def _write_nadir_product(ds: xr.Dataset, path: str,
              simulated_error_altimeter="data_01/ku/simulated_error_altimeter"))
     # Rename the simulated variables to match the specification pattern (These
     # variables do not exist in the official product. Only the SSHA is present.)
-    for name in ["simulated_true_ssh_nadir", "ssh_nadir", "swh_nadir"]:
+    for name in [
+            "simulated_error_troposphere_nadir", "simulated_true_ssh_nadir",
+            "ssh_nadir", "swh_nadir"
+    ]:
         if name in ds.variables:
             group_path = f"data_01/ku/{name.replace('_nadir', '')}"
             ds = ds.rename_vars({name: group_path})
