@@ -7,10 +7,15 @@ Altimeter instrument error
 --------------------------
 """
 from typing import Dict
+import logging
+
 import numpy as np
 
 from .. import random_signal
 from .. import settings
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 class Altimeter:
@@ -20,20 +25,24 @@ class Altimeter:
         parameters (settings.Parameters): Simulation settings
     """
     def __init__(self, parameters: settings.Parameters) -> None:
+        LOGGER.info("Initialize altimeter instrument error")
         # Store the generation parameters of the random signal.
-        self.delta_al = 2 * parameters.delta_al
-        self.rng = parameters.rng()
-        self.len_repeat = parameters.len_repeat
+        delta_al = 2 * parameters.delta_al
         # Define the sepctrum of the nadir instrument error
-        freq = np.arange(1 / 3000, 1 / self.delta_al, 1 / 3000)
+        freq = np.arange(1 / 3000, 1 / delta_al, 1 / 3000)
         psd = 8 + 1.05 * 1e-4 * freq**(-2.2)
         psd[freq < 0.00023627939582672978] = 1e4
 
-        # Convert spectrum in m2/cy
-        self.psd = psd * 1e-4
-        self.freq = freq
+        self.signal = random_signal.Signal1D(
+            freq,
+            # Convert spectrum in m2/cy
+            psd * 1e-4,
+            parameters.rng(),
+            fmin=1 / parameters.len_repeat,
+            fmax=1 / delta_al,
+            alpha=10)
 
-    def generate(self, x_al: np.array) -> Dict[str, np.ndarray]:
+    def generate(self, x_al: np.ndarray) -> Dict[str, np.ndarray]:
         """Generate altimeter instrument error.
 
         Args:
@@ -44,11 +53,5 @@ class Altimeter:
         """
         # Compute random noise of 10**2 cm**2/(km/cycle)
         # Compute the correspond error on the nadir in m
-        error = random_signal.gen_signal_1d(self.freq,
-                                            self.psd,
-                                            x_al,
-                                            rng=self.rng,
-                                            fmin=1 / self.len_repeat,
-                                            fmax=1 / self.delta_al,
-                                            alpha=10)
+        error = self.signal(x_al)
         return {"simulated_error_altimeter": error}

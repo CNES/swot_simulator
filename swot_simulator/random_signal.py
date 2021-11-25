@@ -141,33 +141,43 @@ def gen_psd_1d(fi: np.ndarray,
 
 def _gen_signal_1d(fi: np.ndarray,
                    psi: np.ndarray,
-                   x: np.ndarray,
                    rng: np.random.Generator,
                    fmin: Optional[float] = None,
                    fmax: Optional[float] = None,
                    alpha: int = 10,
                    lf_extpl: bool = False,
-                   hf_extpl: bool = False) -> np.ndarray:
+                   hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     """Generate 1d random signal using Fourier coefficient"""
     yg, fmaxr = gen_psd_1d(fi, psi, rng, fmin, fmax, alpha, lf_extpl, hf_extpl)
     xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
-    return np.interp(np.mod(x, xg.max()), xg, yg)
+    return xg, yg
 
 
-def gen_signal_1d(fi: np.ndarray,
-                  psi: np.ndarray,
-                  x: np.ndarray,
-                  rng: np.random.Generator,
-                  fmin: Optional[float] = None,
-                  fmax: Optional[float] = None,
-                  alpha: int = 10,
-                  lf_extpl: bool = False,
-                  hf_extpl: bool = False) -> np.ndarray:
-    """Generate 1d random signal using Fourier coefficient"""
-    lf = _gen_signal_1d(fi, psi, x, rng, 1 / 100000000, 1 / 1000000, alpha,
-                        True, hf_extpl)
-    hf = _gen_signal_1d(fi, psi, x, rng, fmin, fmax, alpha, lf_extpl, hf_extpl)
-    return lf + hf
+class Signal1D:
+    def __init__(self,
+                 fi: np.ndarray,
+                 psi: np.ndarray,
+                 rng: np.random.Generator,
+                 fmin: Optional[float] = None,
+                 fmax: Optional[float] = None,
+                 alpha: int = 10,
+                 lf_extpl: bool = False,
+                 hf_extpl: bool = False):
+        self.xg_lf, self.yg_lf = _gen_signal_1d(fi, psi, rng, 1 / 100000000,
+                                                1 / 1000000, alpha, True,
+                                                hf_extpl)
+        self.xg_hf, self.yg_hf = _gen_signal_1d(fi, psi, rng, fmin, fmax,
+                                                alpha, lf_extpl, hf_extpl)
+        self.xg_lf_max = self.xg_lf.max()
+        self.xg_hf_max = self.xg_hf.max()
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        """
+        Returns the 1D random signal at the specified x.
+        """
+        lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf, self.yg_lf)
+        hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf, self.yg_hf)
+        return lf + hf
 
 
 @nb.njit("(float64[:, ::1])"
@@ -259,54 +269,60 @@ def gen_ps2d(fi: np.ndarray,
     return ps2d, f
 
 
-def gen_signal_2d_rectangle(ps2d: np.ndarray,
-                            f: np.ndarray,
-                            x: np.ndarray,
-                            y: np.ndarray,
-                            rng: np.random.Generator,
-                            fminx: float,
-                            fminy: float,
-                            fmax: float,
-                            alpha: int = 10) -> np.ndarray:
-    """TODO(lgaultier)"""
-    revert = fminy < fminx
-    if revert:
-        fmin, fminy = fminy, fminx
-        x, y = y, x
-    else:
-        fmin = fminx
+class Signal2D:
+    def __init__(self,
+                 ps2d: np.ndarray,
+                 f: np.ndarray,
+                 rng: np.random.Generator,
+                 fminx: float,
+                 fminy: float,
+                 fmax: float,
+                 alpha: int = 10) -> None:
+        revert = fminy < fminx
+        if revert:
+            fmin, fminy = fminy, fminx
+        else:
+            fmin = fminx
 
-    # Go alpha times further in frequency to avoid interpolation aliasing.
-    fmaxr = alpha * fmax
+        # Go alpha times further in frequency to avoid interpolation aliasing.
+        fmaxr = alpha * fmax
 
-    # Build the 2D PSD following the given 1D PSD
-    fx = np.concatenate(([0], f))
-    fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
-    dfx, dfy = fmin, fminy
+        # Build the 2D PSD following the given 1D PSD
+        fx = np.concatenate(([0], f))
+        fy = np.concatenate(([0], np.arange(fminy, fmaxr + fminy, fminy)))
+        dfx, dfy = fmin, fminy
 
-    phase = rng.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
-    phase[0, 0] = 0.
-    phase[-len(fy) + 1:, 0] = -phase[1:len(fy), 0][::-1]
+        phase = rng.random((2 * len(fy) - 1, len(fx))) * 2 * np.pi
+        phase[0, 0] = 0.
+        phase[-len(fy) + 1:, 0] = -phase[1:len(fy), 0][::-1]
 
-    fft2a = np.concatenate((0.25 * ps2d, 0.25 * ps2d[1:, :][::-1, :]), axis=0)
-    fft2a = np.sqrt(fft2a) * np.exp(1j * phase) / np.sqrt((dfx * dfy))
-    fft2 = np.zeros((2 * len(fy) - 1, 2 * len(fx) - 1), dtype=complex)
-    fft2[:, :len(fx)] = fft2a
-    fft2[1:, -len(fx) + 1:] = fft2a[1:, 1:].conj()[::-1, ::-1]
-    fft2[0, -len(fx) + 1:] = fft2a[0, 1:].conj()[::-1]
+        fft2a = np.concatenate((0.25 * ps2d, 0.25 * ps2d[1:, :][::-1, :]),
+                               axis=0)
+        fft2a = np.sqrt(fft2a) * np.exp(1j * phase) / np.sqrt((dfx * dfy))
+        fft2 = np.zeros((2 * len(fy) - 1, 2 * len(fx) - 1), dtype=complex)
+        fft2[:, :len(fx)] = fft2a
+        fft2[1:, -len(fx) + 1:] = fft2a[1:, 1:].conj()[::-1, ::-1]
+        fft2[0, -len(fx) + 1:] = fft2a[0, 1:].conj()[::-1]
 
-    sg = (4 * fy[-1] * fx[-1]) * np.real(IFFT2(fft2))
-    xg = np.linspace(0, 1 / fmin, sg.shape[1])
-    yg = np.linspace(0, 1 / fminy, sg.shape[0])
-    xgmax = xg.max()
-    ygmax = yg.max()
+        sg = (4 * fy[-1] * fx[-1]) * np.real(IFFT2(fft2))
+        xg = np.linspace(0, 1 / fmin, sg.shape[1])
+        yg = np.linspace(0, 1 / fminy, sg.shape[0])
+        self.xgmax = xg.max()
+        self.ygmax = yg.max()
+        self.reverse = revert
 
-    yl = y - y[0]
-    yl = yl[yl < yg.max()]
-    xl = x - x[0]
-    xl = xl[xl < xg.max()]
-    rectangle = np.ascontiguousarray(
-        scipy.interpolate.interp2d(xg, yg, sg)(xl, yl))
-    signal = _calculate_signal(rectangle, x, y, xgmax, ygmax)
+        self.xg, self.yg, self.sg = xg, yg, sg
 
-    return signal.transpose() if revert else signal
+    def __call__(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        if self.reverse:
+            x, y = y, x
+
+        yl = y - y[0]
+        yl = yl[yl < self.yg.max()]
+        xl = x - x[0]
+        xl = xl[xl < self.xg.max()]
+        rectangle = np.ascontiguousarray(
+            scipy.interpolate.interp2d(self.xg, self.yg, self.sg)(xl, yl))
+        signal = _calculate_signal(rectangle, x, y, self.xgmax, self.ygmax)
+
+        return signal.transpose() if self.reverse else signal

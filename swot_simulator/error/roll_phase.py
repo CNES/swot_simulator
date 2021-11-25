@@ -7,11 +7,15 @@ Roll errors
 -----------
 """
 from typing import Dict, Optional, Tuple
+import logging
 import numpy as np
 
 from .. import random_signal
 from .. import settings
 from .. import VOLUMETRIC_MEAN_RADIUS, CELERITY, F_KA, BASELINE
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 class RollPhase:
@@ -29,19 +33,12 @@ class RollPhase:
     def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
                  gyro_psd: np.ndarray, phase_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
-        # Store the generation parameters of the random signal.
-        self.rng_theta = parameters.rng()
-        self.rng_theta_l = parameters.rng()
-        self.rng_theta_r = parameters.rng()
-        self.len_repeat = parameters.len_repeat
-        self.delta_al = parameters.delta_al
-
+        LOGGER.info("Initialize roll phase error")
+        delta_al = 2 * parameters.delta_al
         # Get baseline dilation power spectrum
-        self.roll_psd = roll_psd + gyro_psd
+        roll_psd = roll_psd + gyro_psd
         indexes = np.where(spatial_frequency <= 1 / 40000)[0]
-        self.roll_psd[indexes] = self.roll_psd[indexes][-1]
-        self.phase_psd = phase_psd
-        self.spatial_frequency = spatial_frequency
+        roll_psd[indexes] = roll_psd[indexes][-1]
 
         # TODO
         assert parameters.height is not None
@@ -52,31 +49,32 @@ class RollPhase:
         self.roll_conversion_factor = (
             (1 + height / VOLUMETRIC_MEAN_RADIUS) * np.pi / 180 / 3600) * 1e3
 
+        self.theta = random_signal.Signal1D(spatial_frequency,
+                                            roll_psd,
+                                            rng=parameters.rng(),
+                                            fmin=1 / parameters.len_repeat,
+                                            fmax=1 / delta_al,
+                                            alpha=10)
+        self.theta_l = random_signal.Signal1D(spatial_frequency,
+                                              phase_psd,
+                                              rng=parameters.rng(),
+                                              fmin=1 / parameters.len_repeat,
+                                              fmax=1 / delta_al,
+                                              alpha=10)
+        self.theta_r = random_signal.Signal1D(spatial_frequency,
+                                              phase_psd,
+                                              rng=parameters.rng(),
+                                              fmin=1 / parameters.len_repeat,
+                                              fmax=1 / delta_al,
+                                              alpha=10)
+
     def _generate_1d(self, x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
         # Compute roll angle using the power spectrum
         # Compute left and right phase angles the power spectrum
-        theta = random_signal.gen_signal_1d(self.spatial_frequency,
-                                            self.roll_psd,
-                                            x_al,
-                                            rng=self.rng_theta,
-                                            fmin=1 / self.len_repeat,
-                                            fmax=1 / (2 * self.delta_al),
-                                            alpha=10)
-        theta_l = random_signal.gen_signal_1d(self.spatial_frequency,
-                                              self.phase_psd,
-                                              x_al,
-                                              rng=self.rng_theta_l,
-                                              fmin=1 / self.len_repeat,
-                                              fmax=1 / (2 * self.delta_al),
-                                              alpha=10)
-        theta_r = random_signal.gen_signal_1d(self.spatial_frequency,
-                                              self.phase_psd,
-                                              x_al,
-                                              rng=self.rng_theta_r,
-                                              fmin=1 / self.len_repeat,
-                                              fmax=1 / (2 * self.delta_al),
-                                              alpha=10)
+        theta = self.theta(x_al)
+        theta_l = self.theta_l(x_al)
+        theta_r = self.theta_r(x_al)
         # Compute the associated roll  error on the swath in m
         roll = self.roll_conversion_factor * theta
         # Compute the associated phase error on the swath in m

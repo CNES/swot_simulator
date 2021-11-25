@@ -7,11 +7,16 @@ Baseling dilation errors
 ------------------------
 """
 from typing import Dict
+import logging
+
 import numpy as np
 
 from .. import random_signal
 from .. import settings
 from .. import VOLUMETRIC_MEAN_RADIUS, BASELINE
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 class BaselineDilation:
@@ -27,29 +32,23 @@ class BaselineDilation:
     def __init__(self, parameters: settings.Parameters,
                  dilation_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
-        # Store the generation parameters of the random signal.
-        self.rng = parameters.rng()
-        self.len_repeat = parameters.len_repeat
-        self.delta_al = parameters.delta_al
-
-        # Get baseline dilation power spectrum
-        self.psbd = dilation_psd
-        self.freq = spatial_frequency
-
-        # TODO
+        LOGGER.info("Initialize baseline dilation error")
+        delta_al = 2 * parameters.delta_al
+        assert parameters.height is not None
         height = parameters.height * 1e-3
         self.conversion_factor = -((1 + height / VOLUMETRIC_MEAN_RADIUS) /
                                    (height * BASELINE)) * 1e-3
 
+        self.signal = random_signal.Signal1D(spatial_frequency,
+                                             dilation_psd,
+                                             rng=parameters.rng(),
+                                             fmin=1 / parameters.len_repeat,
+                                             fmax=1 / delta_al,
+                                             alpha=10)
+
     def _generate_1d(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d baseline dilation using the power spectrum:
-        dil = random_signal.gen_signal_1d(self.freq,
-                                          self.psbd,
-                                          x_al,
-                                          rng=self.rng,
-                                          fmin=1 / self.len_repeat,
-                                          fmax=1 / (2 * self.delta_al),
-                                          alpha=10)
+        dil = self.signal(x_al)
 
         # Compute the associated baseline dilation error on the swath in m
         return self.conversion_factor * dil

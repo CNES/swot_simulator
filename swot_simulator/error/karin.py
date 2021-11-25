@@ -7,10 +7,15 @@ Karin noise
 -----------
 """
 from typing import Dict
+import logging
+
 import numpy as np
 
 from .. import random_signal
 from .. import settings
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 class Karin:
@@ -21,6 +26,8 @@ class Karin:
     """
     def __init__(self, parameters: settings.Parameters) -> None:
         assert parameters.karin_noise is not None
+
+        LOGGER.info("Initialize karin noise")
 
         # Store the generation parameters of the random signal.
         self.hsdt, self.x_ac, self.swh = random_signal.read_file_karin(

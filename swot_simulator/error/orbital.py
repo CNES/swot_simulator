@@ -7,6 +7,7 @@ Orbital error
 -------------
 """
 from typing import Dict, Tuple
+import logging
 
 #
 import dask.array as da
@@ -22,6 +23,9 @@ AMPLITUDE = 100
 
 #: Delta T of the spatial sampling in seconds
 DT = 60
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 def _orbital_error_spectrum(
@@ -62,6 +66,7 @@ class Orbital:
     """
     def __init__(self, parameters: settings.Parameters,
                  orbit_duration: np.timedelta64) -> None:
+        LOGGER.info("Initialize orbital error")
         yg, self.fmaxr = _orbital_error_spectrum(orbit_duration,
                                                  parameters.rng())
         self.yg = da.from_array(yg, name="orbital_error").persist()

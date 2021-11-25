@@ -7,6 +7,8 @@ Wet troposphere errors
 ----------------------
 """
 from typing import Dict, List, Tuple
+import logging
+
 import numba as nb
 import numba.typed
 import numpy as np
@@ -15,6 +17,9 @@ import scipy.ndimage.filters
 from .. import random_signal
 from .. import settings
 from .. import F_KA, VOLUMETRIC_MEAN_RADIUS, CELERITY, BASELINE
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 @nb.njit(cache=True, nogil=True)
@@ -100,16 +105,16 @@ class WetTroposphere:
     F_MAX = 0.05
 
     def __init__(self, parameters: settings.Parameters) -> None:
+        LOGGER.info("Initializing WetTroposphere")
         # Store the generation parameters of the random signal.
         self.beam_positions = parameters.beam_position
         self.delta_ac = parameters.delta_ac
         self.delta_al = parameters.delta_al
-        self.len_repeat = parameters.len_repeat
         self.nbeam = parameters.nbeam
-        self.rng = parameters.rng()
-        self.rng_radio_l = parameters.rng()
-        self.rng_radio_r = parameters.rng()
         self.sigma = parameters.sigma
+
+        assert parameters.height is not None, 'Height is not set'
+
         # TODO
         self.conversion_factor = (
             1 / (F_KA * 2 * np.pi / CELERITY * BASELINE) *
@@ -125,7 +130,7 @@ class WetTroposphere:
         pswt[mask] = 1.4875 * 1e-4 * freq[mask]**(-2.33)
         self.pswt = pswt
         self.freq = freq
-        self.fminx = 1 / self.len_repeat
+        self.fminx = 1 / parameters.len_repeat
         self.ps2d, self.f = random_signal.gen_ps2d(freq,
                                                    pswt,
                                                    fminx=self.fminx,
@@ -135,8 +140,6 @@ class WetTroposphere:
                                                    lf_extpl=True,
                                                    hf_extpl=True)
 
-    def _radiometer_error(self,
-                          x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         # Define radiometer error power spectrum for a beam
         # High frequencies are cut to filter the associated error:
         # during the reconstruction of the wet trop signal
@@ -145,33 +148,51 @@ class WetTroposphere:
         mask = (self.freq > 0.0023) & (self.freq <= 0.0683)
         psradio[mask] = 0.036 * self.freq[mask]**-0.814
         psradio[self.freq > 0.0683] = 0.32
+
+        self.radio_r = random_signal.Signal1D(self.freq,
+                                              psradio,
+                                              fmin=1 / parameters.len_repeat,
+                                              fmax=1 / (2 * self.delta_al),
+                                              alpha=10,
+                                              rng=parameters.rng(),
+                                              hf_extpl=True,
+                                              lf_extpl=True)
+        self.radio_l = random_signal.Signal1D(self.freq,
+                                              psradio,
+                                              fmin=1 / parameters.len_repeat,
+                                              fmax=1 / (2 * self.delta_al),
+                                              alpha=10,
+                                              rng=parameters.rng(),
+                                              hf_extpl=True,
+                                              lf_extpl=True)
+
+        self.wt = random_signal.Signal2D(self.ps2d,
+                                         self.f,
+                                         fminx=self.fminx,
+                                         fminy=1 / self.LC_MAX,
+                                         fmax=self.F_MAX,
+                                         alpha=self.ALPHA,
+                                         rng=parameters.rng())
+
+        self.wt_large = random_signal.Signal2D(self.ps2d,
+                                               self.f,
+                                               fminx=self.fminx,
+                                               fminy=1 / self.LC_MAX,
+                                               fmax=self.F_MAX,
+                                               alpha=self.ALPHA,
+                                               rng=parameters.rng())
+
+    def _radiometer_error(self,
+                          x_al: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         # Compute random coefficients (1D) for the radiometer error
         # power spectrum for right and left beams
-        hrad = random_signal.gen_signal_1d(self.freq,
-                                           psradio,
-                                           x_al,
-                                           fmin=1 / self.len_repeat,
-                                           fmax=1 / (2 * self.delta_al),
-                                           alpha=10,
-                                           rng=self.rng_radio_r,
-                                           hf_extpl=True,
-                                           lf_extpl=True)
-        radio_r = hrad * 1e-2
-        hrad = random_signal.gen_signal_1d(self.freq,
-                                           psradio,
-                                           x_al,
-                                           fmin=1 / self.len_repeat,
-                                           fmax=1 / (2 * self.delta_al),
-                                           alpha=10,
-                                           rng=self.rng_radio_l,
-                                           hf_extpl=True,
-                                           lf_extpl=True)
-        radio_l = hrad * 1e-2
+        radio_r = self.radio_r(x_al) * 1e-2
+        radio_l = self.radio_l(x_al) * 1e-2
 
         return radio_r, radio_l
 
-    def generate(self, x_al: np.array,
-                 x_ac: np.array) -> Dict[str, np.ndarray]:
+    def generate(self, x_al: np.ndarray,
+                 x_ac: np.ndarray) -> Dict[str, np.ndarray]:
         """
         Generate wet troposphere errors
 
@@ -197,25 +218,9 @@ class WetTroposphere:
         naclarge = np.shape(x_ac_large)[0]
         # Compute path delay error due to wet tropo and radiometer error
         # using random coefficient initialized with power spectrums
-        wt = random_signal.gen_signal_2d_rectangle(self.ps2d,
-                                                   self.f,
-                                                   x_al,
-                                                   x_ac,
-                                                   fminx=self.fminx,
-                                                   fminy=1 / self.LC_MAX,
-                                                   fmax=self.F_MAX,
-                                                   alpha=self.ALPHA,
-                                                   rng=self.rng)
+        wt = self.wt(x_al, x_ac)
         wt = wt.T * 1e-2
-        wt_large = random_signal.gen_signal_2d_rectangle(self.ps2d,
-                                                         self.f,
-                                                         x_al,
-                                                         x_ac_large,
-                                                         fminx=self.fminx,
-                                                         fminy=1 / self.LC_MAX,
-                                                         fmax=self.F_MAX,
-                                                         alpha=self.ALPHA,
-                                                         rng=self.rng)
+        wt_large = self.wt_large(x_al, x_ac_large)
         wt_large = wt_large.T * 1e-2
 
         # Compute Residual path delay error after a 1-beam radiometer

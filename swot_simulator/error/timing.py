@@ -7,11 +7,16 @@ Timing errors
 -------------
 """
 from typing import Dict
-import numpy as np
-from .. import random_signal
+import logging
 
+import numpy as np
+
+from .. import random_signal
 from .. import CELERITY
 from .. import settings
+
+#: Logger of this module
+LOGGER = logging.getLogger(__name__)
 
 
 class Timing:
@@ -27,32 +32,26 @@ class Timing:
 
     def __init__(self, parameters: settings.Parameters, timing_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:
+        LOGGER.info("Initialize timing error")
         # Store the generation parameters of the random signal.
-        self.rng_l = parameters.rng()
-        self.rng_r = parameters.rng()
-        self.len_repeat = parameters.len_repeat
-        self.delta_al = parameters.delta_al
-
-        # Get baseline dilation power spectrum
-        self.timing_psd = timing_psd
-        self.spatial_frequency = spatial_frequency
+        delta_al = 2 * parameters.delta_al
+        self.timing_l = random_signal.Signal1D(spatial_frequency,
+                                               timing_psd,
+                                               rng=parameters.rng(),
+                                               fmin=1 / parameters.len_repeat,
+                                               fmax=1 / delta_al,
+                                               alpha=10)
+        self.timing_r = random_signal.Signal1D(spatial_frequency,
+                                               timing_psd,
+                                               rng=parameters.rng(),
+                                               fmin=1 / parameters.len_repeat,
+                                               fmax=1 / delta_al,
+                                               alpha=10)
 
     def _generate_1d(self, x_al: np.ndarray) -> np.ndarray:
         # Generate 1d timing using the power spectrum:
-        timing_l = random_signal.gen_signal_1d(self.spatial_frequency,
-                                               self.timing_psd,
-                                               x_al,
-                                               rng=self.rng_l,
-                                               fmin=1 / self.len_repeat,
-                                               fmax=1 / (2 * self.delta_al),
-                                               alpha=10)
-        timing_r = random_signal.gen_signal_1d(self.spatial_frequency,
-                                               self.timing_psd,
-                                               x_al,
-                                               rng=self.rng_r,
-                                               fmin=1 / self.len_repeat,
-                                               fmax=1 / (2 * self.delta_al),
-                                               alpha=10)
+        timing_l = self.timing_l(x_al)
+        timing_r = self.timing_r(x_al)
         # Compute the corresponding timing error on the swath in m
         return np.array([
             self.CONVERSION_FACTOR * timing_l,

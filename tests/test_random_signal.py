@@ -15,8 +15,9 @@ def test_gen_signal_1d():
          _expected) = pickle.load(stream)
 
     rng = np.random.default_rng(seed=nseed)
-    result = random_signal.gen_signal_1d(fi, psi, x, rng, fmin, fmax, alpha,
-                                         lf_extpl, hf_extpl)
+    signal = random_signal.Signal1D(fi, psi, rng, fmin, fmax, alpha, lf_extpl,
+                                    hf_extpl)
+    result = signal(x)
     assert result.mean() < 1
 
 
@@ -29,8 +30,8 @@ def test_gen_signal_2d_rectangle():
     ps2d, f = random_signal.gen_ps2d(fi, psi, fminx, fminy, fmax, alpha,
                                      lf_extpl, hf_extpl)
     rng = np.random.default_rng(seed=nseed)
-    result = random_signal.gen_signal_2d_rectangle(ps2d, f, x, y, rng, fminx,
-                                                   fminy, fmax, alpha)
+    signal = random_signal.Signal2D(ps2d, f, rng, fminx, fminy, fmax, alpha)
+    result = signal(x, y)
     assert result.mean() < 1
 
 
