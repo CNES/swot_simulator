@@ -130,7 +130,8 @@ class WetTroposphere:
         pswt[mask] = 1.4875 * 1e-4 * freq[mask]**(-2.33)
         self.pswt = pswt
         self.freq = freq
-        self.fminx = 1 / parameters.len_repeat
+        len_repeat = 10000.0
+        self.fminx = 1 / len_repeat
         self.ps2d, self.f = random_signal.gen_ps2d(freq,
                                                    pswt,
                                                    fminx=self.fminx,
@@ -151,7 +152,7 @@ class WetTroposphere:
 
         self.radio_r = random_signal.Signal1D(self.freq,
                                               psradio,
-                                              fmin=1 / parameters.len_repeat,
+                                              fmin=1 / len_repeat,
                                               fmax=1 / (2 * self.delta_al),
                                               alpha=10,
                                               rng=parameters.rng(),
@@ -159,7 +160,7 @@ class WetTroposphere:
                                               lf_extpl=True)
         self.radio_l = random_signal.Signal1D(self.freq,
                                               psradio,
-                                              fmin=1 / parameters.len_repeat,
+                                              fmin=1 / len_repeat,
                                               fmax=1 / (2 * self.delta_al),
                                               alpha=10,
                                               rng=parameters.rng(),
