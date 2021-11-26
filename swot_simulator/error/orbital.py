@@ -10,7 +10,7 @@ from typing import Dict, Tuple
 import logging
 
 #
-import dask.array as da
+# import dask.array as da
 import numpy as np
 
 #
@@ -69,7 +69,7 @@ class Orbital:
         LOGGER.info("Initialize orbital error")
         yg, self.fmaxr = _orbital_error_spectrum(orbit_duration,
                                                  parameters.rng())
-        self.yg = da.from_array(yg, name="orbital_error").persist()
+        self.yg = yg
 
         assert parameters.height is not None
         height = parameters.height * 1e-3
@@ -92,7 +92,7 @@ class Orbital:
         xg = np.linspace(0, 0.5 / self.fmaxr * self.yg.shape[0],
                          self.yg.shape[0])
         error_orbital = np.interp(np.mod(time, xg.max()), xg,
-                                  self.yg.compute())
+                                  self.yg)
         return {
             "simulated_error_orbital":
             x_ac * error_orbital[:, np.newaxis] * self.conversion_factor,

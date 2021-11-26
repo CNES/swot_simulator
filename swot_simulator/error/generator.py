@@ -99,6 +99,7 @@ class Generator:
         futures = []
         with dask.distributed.worker_client() as client:
             for item in self.generators:
+                item = client.scatter(item)
                 if isinstance(item, Altimeter):
                     futures.append(client.submit(item.generate, x_al))
                 elif isinstance(item, BaselineDilation):

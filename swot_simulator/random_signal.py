@@ -8,7 +8,7 @@ Random signal generation utilities
 """
 from typing import Optional, Tuple
 import warnings
-import dask.array as da
+# import dask.array as da
 import numba as nb
 import numpy as np
 import scipy.interpolate
@@ -173,19 +173,19 @@ class Signal1D:
         self.xg_lf_max = xg_lf.max()
         self.xg_hf_max = xg_hf.max()
 
-        self.xg_lf = da.from_array(xg_lf).persist()
-        self.yg_lf = da.from_array(yg_lf).persist()
-        self.xg_hf = da.from_array(xg_hf).persist()
-        self.yg_hf = da.from_array(yg_hf).persist()
+        self.xg_lf = xg_lf
+        self.yg_lf = yg_lf
+        self.xg_hf = xg_hf
+        self.yg_hf = yg_hf
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         """
         Returns the 1D random signal at the specified x.
         """
-        lf = np.interp(np.mod(x, self.xg_lf_max), np.asarray(self.xg_lf),
-                       np.asarray(self.yg_lf))
-        hf = np.interp(np.mod(x, self.xg_hf_max), np.asarray(self.xg_hf),
-                       np.asarray(self.yg_hf))
+        lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf,
+                       self.yg_lf)
+        hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf,
+                       self.yg_hf)
         return lf + hf
 
 
@@ -321,9 +321,9 @@ class Signal2D:
         self.ygmax = yg.max()
         self.reverse = revert
 
-        self.xg = da.from_array(xg).persist()
-        self.yg = da.from_array(yg).persist()
-        self.sg = da.from_array(sg).persist()
+        self.xg = xg
+        self.yg = yg
+        self.sg = sg
 
     def __call__(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if self.reverse:
@@ -334,9 +334,9 @@ class Signal2D:
         xl = x - x[0]
         xl = xl[xl < self.xgmax]
         rectangle = np.ascontiguousarray(
-            scipy.interpolate.interp2d(np.asarray(self.xg),
-                                       np.asarray(self.yg),
-                                       np.asarray(self.sg))(xl, yl))
+            scipy.interpolate.interp2d(self.xg,
+                                       self.yg,
+                                       self.sg)(xl, yl))
         signal = _calculate_signal(rectangle, x, y, self.xgmax, self.ygmax)
 
         return signal.transpose() if self.reverse else signal

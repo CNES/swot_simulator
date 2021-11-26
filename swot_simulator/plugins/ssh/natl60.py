@@ -27,11 +27,17 @@ class NATL60(data_handler.IrregularGridHandler):
 
     class ZarrLoader(data_handler.DatasetLoader):
         def __init__(self, path: str):
-            with xr.open_zarr(path) as ds:
-                lon = ds.nav_lon
-                lat = ds.nav_lat
-                ssh = ds.sossheig
-                time = ds.time_counter.data.astype("datetime64[us]")
+            with xr.open_zarr(path, drop_variables=("time_centered",)) as ds:
+                ds = ds.rename({
+                    "sossheig": "ssh",
+                    "time_counter": "time",
+                    "nav_lon": "lon",
+                    "nav_lat": "lat"
+                })
+                lon = ds.lon
+                lat = ds.lat
+                ssh = ds.ssh
+                time = ds.time.data.astype("datetime64[us]")
 
             self.dataset = xr.Dataset(
                 dict(ssh=ssh),
@@ -45,6 +51,8 @@ class NATL60(data_handler.IrregularGridHandler):
                                           -1, self.time_delta)
             last_date = self._shift_date(last_date.astype("datetime64[ns]"), 1,
                                          self.time_delta)
+            LOGGER.debug("Loading dataset from %s to %s", first_date,
+                         last_date)
 
             if first_date < self.dataset.time[
                     0] or last_date > self.dataset.time[-1]:

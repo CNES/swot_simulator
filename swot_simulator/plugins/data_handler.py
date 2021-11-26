@@ -358,6 +358,7 @@ class IrregularGridHandler(Interface):
         lon_p = dataset.lon.data
         lat_p = dataset.lat.data
         ssh_p = dataset.ssh.data
+        assert ssh_p.shape[0] == len(dates_p)
 
         start_time = time.time()
         layers = []
@@ -370,7 +371,7 @@ class IrregularGridHandler(Interface):
 
         # Time interpolation of the SSH.
         return time_interp(
-            dates_p.astype("int64"),
+            dates_p.astype("datetime64[us]").astype("int64"),
             layers,
             dates.astype("datetime64[us]").astype("int64"),
         )
