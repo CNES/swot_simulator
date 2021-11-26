@@ -304,7 +304,8 @@ class NetcdfLoader(DatasetLoader):
         Returns:
             xarray.Dataset: the dataset loaded.
         """
-        LOGGER.debug("fetch data for %s, %s", first_date, last_date)
+        LOGGER.debug("fetch %s for %s, %s", self.__class__.__name__,
+                     first_date, last_date)
         selected = self.select_netcdf_files(first_date, last_date)
         dataset = xr.open_mfdataset(self.time_series["path"][selected],
                                     concat_dim=self.time_name,
@@ -317,8 +318,6 @@ class NetcdfLoader(DatasetLoader):
             dataset = dataset.assign_coords(
                 {self.time_name: self.time_series["dates"][selected]})
 
-        LOGGER.debug(
-            "Renaming dataset with canonical names lon, lat, time, ssh")
         return dataset.rename({
             self.lon_name: "lon",
             self.lat_name: "lat",

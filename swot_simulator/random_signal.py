@@ -8,6 +8,7 @@ Random signal generation utilities
 """
 from typing import Optional, Tuple
 import warnings
+import dask.array as da
 import numba as nb
 import numpy as np
 import scipy.interpolate
@@ -60,6 +61,8 @@ def _interpolate_file_karin(swh_in: np.ndarray, x_ac_in: np.ndarray,
         indice_ac = np.argmin(np.abs(cross_track - xacj))
         for ix in range(swh_in.shape[0]):
             threshold = swh_in[ix, jx]
+            if np.isnan(threshold):
+                threshold = 2.0
             indices = np.argmin(np.abs(swh - threshold))
             if swh[indices] > threshold:
                 indices -= 1
@@ -163,20 +166,26 @@ class Signal1D:
                  alpha: int = 10,
                  lf_extpl: bool = False,
                  hf_extpl: bool = False):
-        self.xg_lf, self.yg_lf = _gen_signal_1d(fi, psi, rng, 1 / 100000000,
-                                                1 / 1000000, alpha, True,
-                                                hf_extpl)
-        self.xg_hf, self.yg_hf = _gen_signal_1d(fi, psi, rng, fmin, fmax,
-                                                alpha, lf_extpl, hf_extpl)
-        self.xg_lf_max = self.xg_lf.max()
-        self.xg_hf_max = self.xg_hf.max()
+        xg_lf, yg_lf = _gen_signal_1d(fi, psi, rng, 1 / 100000000, 1 / 1000000,
+                                      alpha, True, hf_extpl)
+        xg_hf, yg_hf = _gen_signal_1d(fi, psi, rng, fmin, fmax, alpha,
+                                      lf_extpl, hf_extpl)
+        self.xg_lf_max = xg_lf.max()
+        self.xg_hf_max = xg_hf.max()
+
+        self.xg_lf = da.from_array(xg_lf).persist()
+        self.yg_lf = da.from_array(yg_lf).persist()
+        self.xg_hf = da.from_array(xg_hf).persist()
+        self.yg_hf = da.from_array(yg_hf).persist()
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         """
         Returns the 1D random signal at the specified x.
         """
-        lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf, self.yg_lf)
-        hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf, self.yg_hf)
+        lf = np.interp(np.mod(x, self.xg_lf_max), np.asarray(self.xg_lf),
+                       np.asarray(self.yg_lf))
+        hf = np.interp(np.mod(x, self.xg_hf_max), np.asarray(self.xg_hf),
+                       np.asarray(self.yg_hf))
         return lf + hf
 
 
@@ -190,12 +199,13 @@ def _calculate_ps2d(f: np.ndarray, f2: np.ndarray, ps1d: np.ndarray,
     view = result.ravel()
     dfx_2 = dfx * 0.5
     dfx_y = dfx * dfy
+    f2 = f2.ravel()
     for idx in range(-1, -f.size - 1, -1):
         item = f[idx]
         mask = (f2 >= (item - dfx_2)) & (f2 < (item + dfx_2))
         amount = np.sum(result[:, idx]) * dfx_y
         miss = ps1d[idx] * dfx - amount
-        view[mask.ravel()] = 0 if miss <= 0 else miss * 0.5 / dfx_y
+        view[mask] = 0 if miss <= 0 else miss * 0.5 / dfx_y
     return result
 
 
@@ -311,18 +321,22 @@ class Signal2D:
         self.ygmax = yg.max()
         self.reverse = revert
 
-        self.xg, self.yg, self.sg = xg, yg, sg
+        self.xg = da.from_array(xg).persist()
+        self.yg = da.from_array(yg).persist()
+        self.sg = da.from_array(sg).persist()
 
     def __call__(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if self.reverse:
             x, y = y, x
 
         yl = y - y[0]
-        yl = yl[yl < self.yg.max()]
+        yl = yl[yl < self.ygmax]
         xl = x - x[0]
-        xl = xl[xl < self.xg.max()]
+        xl = xl[xl < self.xgmax]
         rectangle = np.ascontiguousarray(
-            scipy.interpolate.interp2d(self.xg, self.yg, self.sg)(xl, yl))
+            scipy.interpolate.interp2d(np.asarray(self.xg),
+                                       np.asarray(self.yg),
+                                       np.asarray(self.sg))(xl, yl))
         signal = _calculate_signal(rectangle, x, y, self.xgmax, self.ygmax)
 
         return signal.transpose() if self.reverse else signal
