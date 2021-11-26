@@ -8,6 +8,7 @@ Plug-in to interpolate SSH
 """
 from .aviso import AVISO
 from .hycom import HYCOM
+from .natl60 import NATL60
 from .mitgcm import MITGCM
 from .mitgcm_ww3 import MITGCM_WW3
 from .nemo import NEMO
