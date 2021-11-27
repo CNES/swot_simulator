@@ -96,16 +96,20 @@ class Generator:
         if not self.generators or x_al.shape[0] == 0:
             return result
 
+        def wrapped(generator, *args):
+            """Wrapper to avoid parallelization issues."""
+            return generator.generate(*args)
+
         futures = []
         with dask.distributed.worker_client() as client:
             for item in self.generators:
-                item = client.scatter(item)
+                scatter = client.scatter(item)
                 if isinstance(item, Altimeter):
-                    futures.append(client.submit(item.generate, x_al))
+                    futures.append(client.submit(wrapped, scatter, x_al))
                 elif isinstance(item, BaselineDilation):
-                    futures.append(client.submit(item.generate, x_al, x_ac))
+                    futures.append(client.submit(wrapped, scatter, x_al, x_ac))
                 elif isinstance(item, CorrectedRollPhase):
-                    futures.append(client.submit(item.generate, time, x_ac))
+                    futures.append(client.submit(wrapped, scatter, time, x_ac))
                 elif isinstance(item, Karin):
                     if isinstance(swh, float):
                         swh = np.full((x_ac.size, ), swh)
@@ -114,13 +118,13 @@ class Generator:
                                       cycle_number * 10000 + pass_number, x_al,
                                       x_ac, swh))
                 elif isinstance(item, Orbital):
-                    futures.append(client.submit(item.generate, time, x_ac))
+                    futures.append(client.submit(wrapped, scatter, time, x_ac))
                 elif isinstance(item, RollPhase):
-                    futures.append(client.submit(item.generate, x_al, x_ac))
+                    futures.append(client.submit(wrapped, scatter, x_al, x_ac))
                 elif isinstance(item, Timing):
-                    futures.append(client.submit(item.generate, x_al, x_ac))
+                    futures.append(client.submit(wrapped, scatter, x_al, x_ac))
                 elif isinstance(item, WetTroposphere):
-                    futures.append(client.submit(item.generate, x_al, x_ac))
+                    futures.append(client.submit(wrapped, scatter, x_al, x_ac))
 
             for future in dask.distributed.as_completed(futures):
                 result.update(future.result())
