@@ -182,10 +182,8 @@ class Signal1D:
         """
         Returns the 1D random signal at the specified x.
         """
-        lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf,
-                       self.yg_lf)
-        hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf,
-                       self.yg_hf)
+        lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf, self.yg_lf)
+        hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf, self.yg_hf)
         return lf + hf
 
 
@@ -334,9 +332,7 @@ class Signal2D:
         xl = x - x[0]
         xl = xl[xl < self.xgmax]
         rectangle = np.ascontiguousarray(
-            scipy.interpolate.interp2d(self.xg,
-                                       self.yg,
-                                       self.sg)(xl, yl))
+            scipy.interpolate.interp2d(self.xg, self.yg, self.sg)(xl, yl))
         signal = _calculate_signal(rectangle, x, y, self.xgmax, self.ygmax)
 
         return signal.transpose() if self.reverse else signal
