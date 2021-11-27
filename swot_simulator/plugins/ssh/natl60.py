@@ -27,7 +27,7 @@ class NATL60(data_handler.IrregularGridHandler):
 
     class ZarrLoader(data_handler.DatasetLoader):
         def __init__(self, path: str):
-            with xr.open_zarr(path, drop_variables=("time_centered",)) as ds:
+            with xr.open_zarr(path, drop_variables=("time_centered", )) as ds:
                 ds = ds.rename({
                     "sossheig": "ssh",
                     "time_counter": "time",
@@ -39,10 +39,8 @@ class NATL60(data_handler.IrregularGridHandler):
                 ssh = ds.ssh
                 time = ds.time.data.astype("datetime64[us]")
 
-            self.dataset = xr.Dataset(
-                dict(ssh=ssh),
-                coords=dict(lon=lon, lat=lat, time=time)
-            )
+            self.dataset = xr.Dataset(dict(ssh=ssh),
+                                      coords=dict(lon=lon, lat=lat, time=time))
             self.time_delta = self._calculate_time_delta(self.dataset.time)
 
         def load_dataset(self, first_date: np.datetime64,
