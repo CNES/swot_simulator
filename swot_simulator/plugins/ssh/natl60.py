@@ -21,11 +21,21 @@ LOGGER = logging.getLogger(__name__)
 
 
 class NATL60(data_handler.IrregularGridHandler):
+    """Interpolate SSH from NATL60 model
+    
+    Args:
+        path (str): path to the NATL60 model stored in zarr format
+    """
     def __init__(self, path: str):
         loader = NATL60.ZarrLoader(path)
         super().__init__(loader)
 
     class ZarrLoader(data_handler.DatasetLoader):
+        """Load SSH from NATL60 model
+
+        Args:
+            path (str): path to the NATL60 model stored in zarr format
+        """
         def __init__(self, path: str):
             with xr.open_zarr(path, drop_variables=("time_centered", )) as ds:
                 ds = ds.rename({
@@ -44,7 +54,16 @@ class NATL60(data_handler.IrregularGridHandler):
             self.time_delta = self._calculate_time_delta(self.dataset.time)
 
         def load_dataset(self, first_date: np.datetime64,
-                         last_date: np.datetime64):
+                         last_date: np.datetime64) -> xr.Dataset:
+            """Load SSH from NATL60 model
+
+            Args:
+                first_date (np.datetime64): first date to load
+                last_date (np.datetime64): last date to load
+
+            Returns:
+                xr.Dataset: SSH dataset
+            """
             first_date = self._shift_date(first_date.astype("datetime64[ns]"),
                                           -1, self.time_delta)
             last_date = self._shift_date(last_date.astype("datetime64[ns]"), 1,
@@ -70,7 +89,19 @@ class NATL60(data_handler.IrregularGridHandler):
         y_model: da.Array,
         x_sat: np.ndarray,
         y_sat: np.ndarray,
-    ):
+    ) -> np.ndarray:
+        """Spatial interpolation of SSH from NATL60 model
+
+        Args:
+            z_model (da.Array): SSH model
+            x_model (da.Array): longitude model
+            y_model (da.Array): latitude model
+            x_sat (np.ndarray): longitude satellite
+            y_sat (np.ndarray): latitude satellite
+
+        Returns:
+            np.ndarray: SSH satellite
+        """
         mesh = pyinterp.RTree(dtype=np.dtype("float32"))
 
         start_time = time.time()
