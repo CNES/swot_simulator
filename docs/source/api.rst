@@ -3,6 +3,15 @@
 API Documentation
 #################
 
+Console Scripts
+===============
+
+.. autosummary::
+  :toctree: generated/
+
+  swot_simulator.cli.launcher.main
+
+
 Handle simulator runtime
 ========================
 

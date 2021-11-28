@@ -154,7 +154,7 @@ def main():
         ],
         entry_points='''
     [console_scripts]
-    swot_simulator=swot_simulator.launcher:main
+    swot_simulator=swot_simulator.cli.launcher:main
     ''',
         python_requires='>=3.6',
         install_requires=[

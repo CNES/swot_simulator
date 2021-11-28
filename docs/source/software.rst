@@ -10,6 +10,8 @@ The software is divided in 6 main modules:
 +-------------------------------------------+----------------------------------+
 | Python module                             | Description                      |
 +===========================================+==================================+
+|:mod:`swot_simulator.cli`                  | Command line interface           |
++-------------------------------------------+----------------------------------+
 |:mod:`swot_simulator.launcher`             | Entry point of the main program. |
 +-------------------------------------------+----------------------------------+
 |:mod:`swot_simulator.orbit_propagator`     | Generates the SWOT swath.        |

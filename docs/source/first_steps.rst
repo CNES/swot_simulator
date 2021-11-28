@@ -11,8 +11,8 @@ Main program
 ------------
 
 The software is structured like a library. It is driven by a
-:py:func:`main program <swot_simulator.launcher.main>` that you can launch to
-generate your simulations. When this Python module is installed, the main
+:py:func:`main program <swot_simulator.cli.launcher.main>` that you can launch
+to generate your simulations. When this Python module is installed, the main
 program is called ``swot_simulator``. The program accepts options to alter its
 default behavior and a :ref:`configuration file <params-file>`. The ``--help``
 option allows to display the online help of the command:
