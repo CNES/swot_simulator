@@ -24,6 +24,7 @@ class Altimeter:
     Args:
         parameters (settings.Parameters): Simulation settings
     """
+
     def __init__(self, parameters: settings.Parameters) -> None:
         LOGGER.info("Initialize altimeter instrument error")
         # Store the generation parameters of the random signal.

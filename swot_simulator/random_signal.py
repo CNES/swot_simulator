@@ -157,6 +157,7 @@ def _gen_signal_1d(fi: np.ndarray,
 
 
 class Signal1D:
+
     def __init__(self,
                  fi: np.ndarray,
                  psi: np.ndarray,
@@ -278,6 +279,7 @@ def gen_ps2d(fi: np.ndarray,
 
 
 class Signal2D:
+
     def __init__(self,
                  ps2d: np.ndarray,
                  f: np.ndarray,

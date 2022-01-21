@@ -162,6 +162,7 @@ Point.__doc__ = """Defines a 2D Point"""
 class Box:
     """Defines a box made of two describing points.
     """
+
     def __init__(self,
                  min_corner: Optional[Point] = None,
                  max_corner: Optional[Point] = None):

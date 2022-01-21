@@ -26,6 +26,7 @@ class NATL60(data_handler.IrregularGridHandler):
     Args:
         path (str): path to the NATL60 model stored in zarr format
     """
+
     def __init__(self, path: str):
         loader = NATL60.ZarrLoader(path)
         super().__init__(loader)
@@ -36,6 +37,7 @@ class NATL60(data_handler.IrregularGridHandler):
         Args:
             path (str): path to the NATL60 model stored in zarr format
         """
+
         def __init__(self, path: str):
             with xr.open_zarr(path, drop_variables=("time_centered", )) as ds:
                 ds = ds.rename({

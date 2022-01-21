@@ -16,6 +16,7 @@ class SYMPHONIE(data_handler.IrregularGridHandler):
     Args:
         path (str): path to the folder containing the SYMPHONIE files.
     """
+
     def __init__(self, path: str):
         loader = data_handler.NetcdfLoader(
             path,

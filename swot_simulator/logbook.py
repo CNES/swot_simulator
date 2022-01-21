@@ -32,6 +32,7 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
         name (str, optional): Logger name.
         **kwargs: Base class keyword arguments.
     """
+
     def __init__(self, name: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.logname = name
@@ -89,6 +90,7 @@ class LogServer:
             to.
         port (int, optional): Specifies the port we want to listen to.
     """
+
     def __init__(
             self,
             hostname: Optional[str] = None,
@@ -126,6 +128,7 @@ class LogFormatter(tornado.log.LogFormatter):
         *args: Base class arguments.
         **kwarsg: Base class keyword arguments.
     """
+
     def __init__(self, *args, **kwargs):
         hostname = socket.gethostname()
         self._ip = socket.gethostbyname(hostname)

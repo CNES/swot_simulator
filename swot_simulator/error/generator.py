@@ -24,6 +24,7 @@ class Generator:
             measurement.
         orbit_duration (numpy.timedelta64, optional): Orbit duration.
     """
+
     def __init__(self, parameters: settings.Parameters,
                  first_date: np.datetime64, orbit_duration: np.timedelta64):
         #: The list of user-defined error generators

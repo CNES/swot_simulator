@@ -30,6 +30,7 @@ class RollPhase:
         phase_psd (numpy.ndarray): Power spectral density the error angle
         spatial_frequency (numpy.ndarray): Spatial frequency
     """
+
     def __init__(self, parameters: settings.Parameters, roll_psd: np.ndarray,
                  gyro_psd: np.ndarray, phase_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:

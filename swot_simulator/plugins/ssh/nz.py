@@ -26,6 +26,7 @@ class Base(Interface):
         path: Path to the time series.
         ssh: Name of the variable containing the SSH.
     """
+
     def __init__(self, path: str, ssh: Optional[str] = None):
         self.ssh = ssh or "ssh"
         # Delta time between two time steps.
@@ -96,6 +97,7 @@ class NZCartesian(Base):
     Args:
         path: Path to the time series.
     """
+
     def __init__(self, path: str):
         super().__init__(path, ssh="ssh")
 
@@ -118,6 +120,7 @@ class NZCartesian(Base):
 class NZMesh(Base):
     """Handle the interpolation on NZ mesh grids
     """
+
     def __init__(self, path: str):
         super().__init__(path, ssh="zeta")
 

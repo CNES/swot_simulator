@@ -20,6 +20,7 @@ class MITGCM_WW3(data_handler.CartesianGridHandler):
     """
     Interpolation of the SSH from MITGCM interpolated for WWW3.
     """
+
     def __init__(self, path: str):
         loader = MITGCM_WW3.OverriddenNetcdfLoader(
             path,
@@ -29,6 +30,7 @@ class MITGCM_WW3(data_handler.CartesianGridHandler):
         super().__init__(loader)
 
     class OverriddenNetcdfLoader(data_handler.NetcdfLoader):
+
         def load_dataset(self, first_date: np.datetime64,
                          last_date: np.datetime64):
             LOGGER.debug("fetch data for %s, %s", first_date, last_date)

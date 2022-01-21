@@ -19,6 +19,7 @@ class SCHISM(Interface):
     """
     Interpolation of the SSH NEMO
     """
+
     def __init__(self, path: str):
         # Delta time between two time steps.
         self._dt = np.timedelta64(3, "h")

@@ -16,6 +16,7 @@ class WW3(data_handler.CartesianGridHandler):
     """
     Interpolation of the SWH from WW3.
     """
+
     def __init__(self, path: str):
         loader = data_handler.NetcdfLoader(path,
                                            date_fmt="%Y%m%d",

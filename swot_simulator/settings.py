@@ -95,6 +95,7 @@ def error_keywords() -> Iterator[str]:
 def _template() -> Tuple[Dict[str, Any], Dict[str, str]]:
     """Get the code representing the default configuration template of the
     simulator."""
+
     def required_settings():
         """Get the path to the simulator data."""
         result = dict()
@@ -123,8 +124,10 @@ def _template_to_string(required: Dict[str, str],
                         parameters: Dict[str, Any]) -> str:
     """Get the string representing the default configuration template of the
     simulator."""
+
     def wrap(s: str) -> Iterator[str]:
         """Cuts the line into several lines of 80 characters maximum"""
+
         def line(items):
             """Returns the line built"""
             return "# " + " ".join(items)
@@ -195,6 +198,7 @@ def template(python: bool = False) -> Union[str, Dict[str, Any]]:
 
 class NumberOfBeams(int):
     """Handle the number of beams"""
+
     def __new__(cls, value, *args, **kwargs):
         if value not in [1, 2]:
             raise ValueError("nbeam must be in [1, 2]")
@@ -203,12 +207,14 @@ class NumberOfBeams(int):
 
 class TimeDelta(int):
     """Handle a time delta in seconds in the configuration file."""
+
     def __call__(self, value):
         return np.timedelta64(value, "s")
 
 
 class Seed:
     """Handle the seed for the random state"""
+
     def __init__(self, seed: int):
         self.seed = seed - 1
 

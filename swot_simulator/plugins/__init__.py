@@ -11,6 +11,7 @@ import numpy as np
 
 class Interface:
     """Interface of a plugin"""
+
     @classmethod
     def interpolate(cls, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
@@ -20,6 +21,7 @@ class Interface:
 
 class Puppet(Interface):
     """Interpolation routine used for testing."""
+
     def interpolate(self, lon, _lat, _time):
         """Returns an array filled with zeros"""
         return np.full_like(lon, 0)
@@ -27,6 +29,7 @@ class Puppet(Interface):
 
 class Plugin:
     """Plug-in to interpolate a geophysical field"""
+
     def __init__(self):
         self.plugin = Interface()
 

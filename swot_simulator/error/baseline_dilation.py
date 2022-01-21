@@ -29,6 +29,7 @@ class BaselineDilation:
             dilation.
         spatial_frequency (numpy.ndarray): Spatial frequency
     """
+
     def __init__(self, parameters: settings.Parameters,
                  dilation_psd: np.ndarray,
                  spatial_frequency: np.ndarray) -> None:

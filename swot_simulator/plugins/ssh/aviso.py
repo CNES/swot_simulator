@@ -16,6 +16,7 @@ class AVISO(data_handler.CartesianGridHandler):
     """
     Interpolation of the SSH AVISO (CMEMS L4 products).
     """
+
     def __init__(self, path: str):
         loader = data_handler.NetcdfLoader(
             path,

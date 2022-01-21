@@ -325,6 +325,7 @@ class Nadir:
     Args:
         track (orbit_propagator.Pass): Properties of the half-orbit to write
     """
+
     def __init__(self,
                  track: orbit_propagator.Pass,
                  product_type: Optional[str] = None):
@@ -517,6 +518,7 @@ class Swath(Nadir):
         central_pixel (bool): Inserts or not in the swath, a central pixel
             divided in two by the reference ground track.
     """
+
     def __init__(self,
                  track: orbit_propagator.Pass,
                  central_pixel: bool = False,

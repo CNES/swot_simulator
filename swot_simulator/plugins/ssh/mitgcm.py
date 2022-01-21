@@ -21,11 +21,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MITGCM(data_handler.IrregularGridHandler):
+
     def __init__(self, grid_path: str, eta_path: str):
         loader = MITGCM.ZarrLoader(grid_path, eta_path)
         super().__init__(loader)
 
     class ZarrLoader(data_handler.DatasetLoader):
+
         def __init__(self, grid_path: str, eta_path: str):
             dataset = xr.merge(
                 [xr.open_zarr(grid_path),

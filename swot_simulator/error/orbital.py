@@ -64,6 +64,7 @@ class Orbital:
         parameters (Parameters): Simulation parameters.
         orbit_duration (np.timedelta64): Orbit duration.
     """
+
     def __init__(self, parameters: settings.Parameters,
                  orbit_duration: np.timedelta64) -> None:
         LOGGER.info("Initialize orbital error")

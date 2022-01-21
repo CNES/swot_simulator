@@ -22,6 +22,7 @@ class CorrectedRollPhase:
         first_date (numpy.datetime64): Date of the first simulated
             measurement.
     """
+
     def __init__(self, parameters: settings.Parameters,
                  first_date: np.datetime64) -> None:
         with xr.open_dataset(parameters.corrected_roll_phase_dataset) as ds:

@@ -40,6 +40,7 @@ class DatasetLoader:
     * Loads the model data set needed to perform the interpolation.
     * Transforms it to have canonical variable names.
     """
+
     @abc.abstractmethod
     def load_dataset(self, first_date: np.datetime64,
                      last_date: np.datetime64) -> xr.Dataset:
@@ -180,6 +181,7 @@ class NetcdfLoader(DatasetLoader):
     period is needed, only the files that cover the time period are loaded in
     the dataset.
     """
+
     def __init__(self,
                  path: str,
                  date_fmt: str,
@@ -335,6 +337,7 @@ class IrregularGridHandler(Interface):
     Args:
         dataset_loader (DataLoader): Data loader
     """
+
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 
@@ -416,6 +419,7 @@ class CartesianGridHandler(Interface):
     Args:
         dataset_loader (DatasetLoader): DatasetLoader object
     """
+
     def __init__(self, dataset_loader: DatasetLoader):
         self.dataset_loader = dataset_loader
 

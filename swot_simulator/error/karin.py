@@ -24,6 +24,7 @@ class Karin:
     Args:
         parameters (settings.Parameters): Simulation settings
     """
+
     def __init__(self, parameters: settings.Parameters) -> None:
         assert parameters.karin_noise is not None
 
