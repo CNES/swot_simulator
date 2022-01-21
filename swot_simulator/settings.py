@@ -373,7 +373,7 @@ class Parameters:
                 raise ValueError("temporal_overlap must be positive")
             if getattr(self, "nadir"):
                 raise ValueError("temporal_overlap cannot be used with nadir")
-        
+
         noise = getattr(self, "noise")
         if noise is not None:
             if "corrected_roll_phase" in noise:
