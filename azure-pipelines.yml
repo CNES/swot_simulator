@@ -12,8 +12,8 @@ jobs:
         python.version: '3.7'
       Python38:
         python.version: '3.8'
-      # Python39:
-      #   python.version: '3.9'
+      Python39:
+        python.version: '3.9'
   steps:
   - checkout: self
     fetchDepth: 1
@@ -44,17 +44,17 @@ jobs:
   #     summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
   #     reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job:
-  displayName: macOS-10.14
+  displayName: macOS-10.15
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
   strategy:
     matrix:
       Python37:
         python.version: '3.7'
       Python38:
         python.version: '3.8'
-      # Python39:
-      #   python.version: '3.9'
+      Python39:
+        python.version: '3.9'
   steps:
   - checkout: self
     fetchDepth: 1
@@ -86,8 +86,8 @@ jobs:
         python.version: '3.7'
       Python38:
         python.version: '3.8'
-      # Python39:
-      #   python.version: '3.9'
+      Python39:
+        python.version: '3.9'
   steps:
   - checkout: self
     fetchDepth: 1
