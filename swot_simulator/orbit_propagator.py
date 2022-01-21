@@ -99,7 +99,7 @@ def rearrange_orbit(
         tuple: lon, lat, and time rearranged.
     """
     dy = np.roll(lat, 1) - lat
-    indexes = np.where((dy < 0) & (np.roll(dy, 1) >= 0))[0]
+    indexes = np.where((dy < 0) & (np.roll(dy, 1) >= 0))[0]  # type: ignore
 
     # Shift coordinates, so that the first point of the orbit is the beginning
     # of pass 1
@@ -125,9 +125,9 @@ def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
         numpy.ndarray: Start date of half-orbits.
     """
     dy = np.roll(lat, 1) - lat
-    indexes = np.where(((dy < 0) & (np.roll(dy, 1) >= 0))
-                       | ((dy > 0)
-                          & (np.roll(dy, 1) <= 0)))[0]
+    indexes = np.where(((dy < 0) & (np.roll(dy, 1) >= 0))  # type: ignore
+                       | ((dy > 0)  # type: ignore
+                          & (np.roll(dy, 1) <= 0)))[0]  # type: ignore
     # The duration of the first pass is zero.
     indexes[0] = 0
     return time[indexes]
@@ -165,11 +165,16 @@ class Orbit:
         curvilinear_distance (float): Distance covered by the satellite during
             a complete cycle.
         shift_time (float): Time shift to be applied.
+        temporal_overlap (float, optional): Simulate products overlapping by
+            this amount of time, in seconds, with the previous and next
+            products.
     """
+
     def __init__(self, height: float, lat: np.ndarray, lon: np.ndarray,
                  pass_time: np.ndarray, time: np.ndarray, x_al: np.ndarray,
                  curvilinear_distance: float,
-                 shift_time: Optional[np.timedelta64]):
+                 shift_time: Optional[np.timedelta64],
+                 temporal_overlap: Optional[float]):
         self.height = height
         self.lat = lat
         self.lon = lon
@@ -178,6 +183,27 @@ class Orbit:
         self.time = time
         self.x_al = x_al
         self.curvilinear_distance = curvilinear_distance
+        self.temporal_overlap = Orbit._temporal_overlap(time, temporal_overlap)
+
+    @staticmethod
+    def _temporal_overlap(time: np.ndarray,
+                          temporal_overlap: Optional[float]) -> int:
+        """Converts the temporal overlap to an integer number of samples
+
+        Args:
+            time (numpy.ndarray): Date of the positions (in seconds).
+            temporal_overlap (float, optional): Simulate products overlapping
+                by this amount of time, in seconds, with the previous and next
+                products.
+        
+        Returns:
+            int: temporal overlap in number of samples
+        """
+        if temporal_overlap is not None:
+            dt = np.mean(
+                np.diff(time)).astype("timedelta64[ms]").view("int64") * 1e-3
+            return round(temporal_overlap / dt)
+        return 0
 
     def cycle_duration(self) -> np.timedelta64:
         """Get the cycle duration"""
@@ -327,9 +353,13 @@ class Pass:
         x_al (np.ndarray): Along track distance.
         equator_coordinate (EquatorCoordinates): Coordinates of the satellite at
             the equator.
+        offset (int): number of measurements to be skipped at the beginning and
+            at the end of the pass to ignore the temporal overlap between
+            consecutive passes.
         requirement_bounds: Limits of swath requirements. Measurements outside
             the span will be set to NaN.
     """
+
     def __init__(self,
                  lat_nadir: np.ndarray,
                  lat: np.ndarray,
@@ -339,14 +369,16 @@ class Pass:
                  x_ac: np.ndarray,
                  x_al: np.ndarray,
                  equator_coordinates: EquatorCoordinates,
+                 offset: int = 0,
                  requirement_bounds: Optional[Tuple[float, float]] = None):
-        self.lat_nadir = lat_nadir
+        self._date = None
         self.lat = lat
-        self.lon_nadir = lon_nadir
+        self.lat_nadir = lat_nadir
         self.lon = lon
+        self.lon_nadir = lon_nadir
+        self.offset = offset
         self.requirement_bounds = requirement_bounds
         self.timedelta = time
-        self._date = None
         self.x_ac = x_ac
         self.x_al = x_al
         self._equator_coordinates = equator_coordinates
@@ -355,19 +387,33 @@ class Pass:
     def time(self):
         """Time of positions"""
         assert self._date is not None
-        return self._date + (self.timedelta - self.timedelta[0])
+        return self._date + (self.timedelta - self.timedelta[self.offset])
 
     @property
     def time_eq(self):
         """Time at the equator"""
         assert self._date is not None
         return self._date + (self._equator_coordinates.time -
-                             self.timedelta[0])
+                             self.timedelta[self.offset])
 
     @property
     def lon_eq(self):
         """Equator longitude"""
         return self._equator_coordinates.longitude
+
+    def remove_temporal_overlap(self) -> None:
+        """Remove temporal overlap between two passes.
+        """
+        offset = self.offset
+        if offset > 0:
+            self.lat_nadir = self.lat_nadir[offset:-offset]
+            self.lat = self.lat[offset:-offset]
+            self.lon_nadir = self.lon_nadir[offset:-offset]
+            self.lon = self.lon[offset:-offset]
+            self.timedelta = self.timedelta[offset:-offset]
+            self.x_ac = self.x_ac[offset:-offset]
+            self.x_al = self.x_al[offset:-offset]
+            self.offset = 0
 
     def set_simulated_date(self, date: np.datetime64) -> None:
         """Set time of positions"""
@@ -477,8 +523,9 @@ def calculate_orbit(parameters: settings.Parameters,
     lon, lat = math.cart2spher(x, y, z)
 
     return Orbit(parameters.height, lat, lon,
-                 np.sort(calculate_pass_time(lat, time)), time, x_al,
-                 distance[-1], parameters.shift_time)
+                 np.sort(calculate_pass_time(lat,
+                                             time)), time, x_al, distance[-1],
+                 parameters.shift_time, parameters.temporal_overlap)
 
 
 def equator_properties(lon_nadir: np.ndarray, lat_nadir: np.ndarray,
@@ -543,6 +590,16 @@ def calculate_pass(pass_number: int, orbit: Orbit,
         indexes = np.where((orbit.time >= orbit.pass_time[index])
                            & (orbit.time < orbit.pass_time[index + 1]))[0]
 
+    if orbit.temporal_overlap:
+        before = np.arange(indexes[0] - orbit.temporal_overlap,
+                           indexes[0],
+                           dtype=np.int64)
+        after = np.arange(indexes[-1] + 1,
+                          indexes[-1] + orbit.temporal_overlap + 1,
+                          dtype=np.int64)
+        after %= len(orbit.time)
+        indexes = np.hstack([before, indexes, after])
+
     if len(indexes) < 5:
         return None
 
@@ -550,6 +607,17 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     lat_nadir = orbit.lat[indexes]
     time = orbit.time[indexes]
     x_al = orbit.x_al[indexes]
+
+    if orbit.temporal_overlap:
+        import pdb
+        # The orbit may not be ordered because of the overlap between the
+        # passes.
+        if indexes[0] < 0:
+            time[:orbit.temporal_overlap] -= orbit.time[-1] + (orbit.time[1] -
+                                                               orbit.time[0])
+        elif indexes[-1] < indexes[0]:
+            time[-orbit.temporal_overlap:] += orbit.time[-1] + (
+                orbit.time[-1] - orbit.time[-2])
 
     equator_coordinates = equator_properties(lon_nadir, lat_nadir, time)
 
@@ -584,4 +652,5 @@ def calculate_pass(pass_number: int, orbit: Orbit,
                 x_ac,
                 x_al,
                 equator_coordinates,
+                offset=orbit.temporal_overlap,
                 requirement_bounds=parameters.requirement_bounds)

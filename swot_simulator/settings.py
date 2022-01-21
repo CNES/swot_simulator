@@ -325,6 +325,10 @@ class Parameters:
             "output"),
         swath=(True, bool, "True to generate swath products"),
         swh=(2.0, float, "SWH for the region"),
+        temporal_overlap=(None, float,
+                          "Simulate products overlapping by this amount of "
+                          "time, in seconds, with the previous and next "
+                          "products"),
         working_directory=(DEFAULT_WORKING_DIRECTORY, str,
                            ("The working directory. By default, files are "
                             "generated in the user's root directory")))

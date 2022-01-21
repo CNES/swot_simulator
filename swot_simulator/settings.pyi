@@ -42,6 +42,7 @@ class Parameters:
     swh_plugin: Optional[plugins.Interface]
     swath: bool
     swh: float
+    temporal_overlap: Optional[float]
     hierarchical_groups: bool
     working_directory: str
 

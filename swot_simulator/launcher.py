@@ -206,6 +206,9 @@ def simulate(args: Tuple[int, int, np.datetime64],
 
     # Create the nadir dataset
     if nadir_path:
+        if orbit.temporal_overlap:
+            # The nadir products doesn't have temporal overlap
+            track.remove_temporal_overlap()
         LOGGER.info("generate nadir %d/%d [%s, %s]", cycle_number, pass_number,
                     track.time[0], track.time[-1])
 

@@ -19,6 +19,7 @@ def test_launcher():
         parameters.noise = [
             'Altimeter', 'BaselineDilation', 'Karin', 'RollPhase', 'Timing'
         ]
+        parameters.temporal_overlap = 1.5
         cluster = dask.distributed.LocalCluster()
         client = dask.distributed.Client(cluster)
         client.wait_for_workers(1)
