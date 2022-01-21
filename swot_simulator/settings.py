@@ -367,6 +367,13 @@ class Parameters:
                 raise RuntimeError("The unsmoothed product doesn't support a "
                                    "center pixel.")
 
+        temporal_overlap = getattr(self, "temporal_overlap")
+        if temporal_overlap is not None:
+            if temporal_overlap < 0:
+                raise ValueError("temporal_overlap must be positive")
+            if getattr(self, "nadir"):
+                raise ValueError("temporal_overlap cannot be used with nadir")
+        
         noise = getattr(self, "noise")
         if noise is not None:
             if "corrected_roll_phase" in noise:

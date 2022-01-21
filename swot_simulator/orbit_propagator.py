@@ -401,20 +401,6 @@ class Pass:
         """Equator longitude"""
         return self._equator_coordinates.longitude
 
-    def remove_temporal_overlap(self) -> None:
-        """Remove temporal overlap between two passes.
-        """
-        offset = self.offset
-        if offset > 0:
-            self.lat_nadir = self.lat_nadir[offset:-offset]
-            self.lat = self.lat[offset:-offset]
-            self.lon_nadir = self.lon_nadir[offset:-offset]
-            self.lon = self.lon[offset:-offset]
-            self.timedelta = self.timedelta[offset:-offset]
-            self.x_ac = self.x_ac[offset:-offset]
-            self.x_al = self.x_al[offset:-offset]
-            self.offset = 0
-
     def set_simulated_date(self, date: np.datetime64) -> None:
         """Set time of positions"""
         assert self._date is None
