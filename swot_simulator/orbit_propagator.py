@@ -195,7 +195,7 @@ class Orbit:
             temporal_overlap (float, optional): Simulate products overlapping
                 by this amount of time, in seconds, with the previous and next
                 products.
-        
+
         Returns:
             int: temporal overlap in number of samples
         """

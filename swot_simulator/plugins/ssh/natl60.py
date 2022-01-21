@@ -22,7 +22,7 @@ LOGGER = logging.getLogger(__name__)
 
 class NATL60(data_handler.IrregularGridHandler):
     """Interpolate SSH from NATL60 model
-    
+
     Args:
         path (str): path to the NATL60 model stored in zarr format
     """
