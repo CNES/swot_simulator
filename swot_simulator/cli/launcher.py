@@ -147,18 +147,19 @@ The template has been written in the file: {namespace.template.name!r}.
 def software_dependencies() -> List[Tuple[str, str]]:
     """Returns the software dependencies of this release"""
     deps = [
-        ("conda", lambda moduleule: moduleule.__version__),
+        ("conda", lambda module: module.__version__),
         ("dask", lambda module: module.__version__),
         ("distributed", lambda module: module.__version__),
         ("netCDF4", lambda module: module.__version__),
         ("numba", lambda module: module.__version__),
         ("numpy", lambda module: module.__version__),
-        ("pip", lambda module: module.__version__),
         ("pyinterp", lambda module: module.__version__),
         ("scipy", lambda module: module.__version__),
-        ("setuptools", lambda module: module.__version__),
         ("xarray", lambda module: module.__version__),
         ("swot_simulator", lambda module: module.__version__),
+        # Setup
+        ("setuptools", lambda module: module.__version__),
+        ("pip", lambda module: module.__version__),
     ]
     result: List[Tuple[str, str]] = [("python", platform.python_version())]
     for module_name, version_getter in deps:
