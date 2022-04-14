@@ -27,4 +27,3 @@ shows the “observed” SSH when simulated noise is added to the interpolated S
    errors/instrumental
    errors/geophysical
    errors/total
-

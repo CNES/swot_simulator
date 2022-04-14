@@ -9,7 +9,7 @@ Handle the simulation of the SWOT L2 product
 This module defines the main :func:`function <launch>` handling the simulation
 of SWOT products as well as the entry point of the main program.
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, TextIO, Tuple
 import datetime
 import logging
 import os
@@ -17,8 +17,7 @@ import os
 import dask.distributed
 import numpy as np
 
-from . import (dispatch, logbook, netcdf, orbit_propagator, settings, __date__,
-               __version__)
+from . import dispatch, logbook, netcdf, orbit_propagator, settings
 from .error import generator
 
 #: Logger of this module
@@ -81,7 +80,7 @@ def file_path(first_date: np.datetime64,
 
 
 def sum_error(errors: Dict[str, np.ndarray], swath: bool = True) -> np.ndarray:
-    """Calculate the sum of errors
+    """Calculate the sum of errors.
 
     Args:
         errors (dict): Simulated errors.

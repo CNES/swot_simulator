@@ -9,10 +9,10 @@ Orbit Propagator
 from typing import Dict, Iterator, NamedTuple, Optional, TextIO, Tuple
 import logging
 import warnings
+
 import numpy as np
-from . import math
-from . import settings
-from . import VOLUMETRIC_MEAN_RADIUS
+
+from . import VOLUMETRIC_MEAN_RADIUS, math, settings
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ def interpolate(lon: np.ndarray, lat: np.ndarray, time: np.ndarray) -> Tuple:
 def rearrange_orbit(
         cycle_duration: float, lon: np.ndarray, lat: np.ndarray,
         time: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Rearrange orbit starting from pass 1
+    """Rearrange orbit starting from pass 1.
 
     Detect the beginning of pass 1 in the ephemeris. By definition, it is
     the first passage at southernmost latitude.
@@ -115,7 +115,7 @@ def rearrange_orbit(
 
 
 def calculate_pass_time(lat: np.ndarray, time: np.ndarray) -> np.ndarray:
-    """Compute the initial time of each pass
+    """Compute the initial time of each pass.
 
     Args:
         lat (numpy.ndarray): Latitudes (in degrees)
@@ -153,7 +153,7 @@ def select_box(
 
 
 class Orbit:
-    """Properties of one orbit
+    """Properties of one orbit.
 
     Args:
         height (float): Satellite height (in m)
@@ -188,7 +188,7 @@ class Orbit:
     @staticmethod
     def _temporal_overlap(time: np.ndarray,
                           temporal_overlap: Optional[float]) -> int:
-        """Converts the temporal overlap to an integer number of samples
+        """Converts the temporal overlap to an integer number of samples.
 
         Args:
             time (numpy.ndarray): Date of the positions (in seconds).
@@ -206,19 +206,18 @@ class Orbit:
         return 0
 
     def cycle_duration(self) -> np.timedelta64:
-        """Get the cycle duration"""
+        """Get the cycle duration."""
         return self.time[-1]
 
     def orbit_duration(self) -> np.timedelta64:
-        """Get the orbit duration
-        """
+        """Get the orbit duration."""
         duration = self.cycle_duration().astype(
             "timedelta64[us]") / np.timedelta64(
                 int(self.passes_per_cycle() // 2), 'us')
         return np.timedelta64(int(duration), "us")
 
     def passes_per_cycle(self) -> int:
-        """Get the number of passes per cycle"""
+        """Get the number of passes per cycle."""
         return len(self.pass_time)
 
     def pass_shift(self, number: int) -> np.timedelta64:
@@ -341,7 +340,7 @@ class EquatorCoordinates(NamedTuple):
 
 
 class Pass:
-    """Handle one pass
+    """Handle one pass.
 
     Args:
         lat_nadir (np.ndarray): Latitudes at nadir
@@ -385,30 +384,29 @@ class Pass:
 
     @property
     def time(self):
-        """Time of positions"""
+        """Time of positions."""
         assert self._date is not None
         return self._date + (self.timedelta - self.timedelta[self.offset])
 
     @property
     def time_eq(self):
-        """Time at the equator"""
+        """Time at the equator."""
         assert self._date is not None
         return self._date + (self._equator_coordinates.time -
                              self.timedelta[self.offset])
 
     @property
     def lon_eq(self):
-        """Equator longitude"""
+        """Equator longitude."""
         return self._equator_coordinates.longitude
 
     def set_simulated_date(self, date: np.datetime64) -> None:
-        """Set time of positions"""
+        """Set time of positions."""
         assert self._date is None
         self._date = date
 
     def mask(self) -> np.ndarray:
-        """Obtain a mask to set NaN values outside the mission
-        requirements."""
+        """Obtain a mask to set NaN values outside the mission requirements."""
         if self.requirement_bounds is not None:
             valid = np.full_like(self.x_ac, np.nan)
             valid[(np.abs(self.x_ac) >= self.requirement_bounds[0])
@@ -516,7 +514,7 @@ def calculate_orbit(parameters: settings.Parameters,
 
 def equator_properties(lon_nadir: np.ndarray, lat_nadir: np.ndarray,
                        time: np.ndarray) -> EquatorCoordinates:
-    """Calculate the position of the satellite at the equator"""
+    """Calculate the position of the satellite at the equator."""
     # Search the nearest point to the equator
     i1 = (np.abs(lat_nadir)).argmin()
     i0 = i1 - 1
@@ -550,14 +548,14 @@ def equator_properties(lon_nadir: np.ndarray, lat_nadir: np.ndarray,
     x_eq = x_al[1]
     x_al = np.delete(x_al, 1)
 
-    # Finally interpolate the time ot the equator
+    # Finally interpolate the time of the equator
     time_eq = np.interp(x_eq, x_al, time.astype("int64")).astype(time.dtype)
     return EquatorCoordinates(lon_eq[0], time_eq)
 
 
 def calculate_pass(pass_number: int, orbit: Orbit,
                    parameters: settings.Parameters) -> Optional[Pass]:
-    """Get the properties of an half-orbit
+    """Get the properties of an half-orbit.
 
     Args:
         pass_number (int): Pass number
@@ -595,7 +593,6 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     x_al = orbit.x_al[indexes]
 
     if orbit.temporal_overlap:
-        import pdb
         # The orbit may not be ordered because of the overlap between the
         # passes.
         if indexes[0] < 0:
@@ -616,7 +613,7 @@ def calculate_pass(pass_number: int, orbit: Orbit,
     time = time[mask]
     x_al = x_al[mask]
 
-    # Compute accross track distances from nadir
+    # Compute across track distances from nadir
     # Number of points in half of the swath
     half_swath = int((parameters.half_swath - parameters.half_gap) /
                      parameters.delta_ac) + 1

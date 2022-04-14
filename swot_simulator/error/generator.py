@@ -7,12 +7,21 @@ Generate instrumental errors
 ----------------------------
 """
 from typing import Dict, Union
+
 import dask.distributed
 import numpy as np
-from . import (Altimeter, BaselineDilation, CorrectedRollPhase, Karin, Orbital,
-               RollPhase, Timing, WetTroposphere)
-from .. import random_signal
-from .. import settings
+
+from . import (
+    Altimeter,
+    BaselineDilation,
+    CorrectedRollPhase,
+    Karin,
+    Orbital,
+    RollPhase,
+    Timing,
+    WetTroposphere,
+)
+from .. import random_signal, settings
 
 
 class Generator:
@@ -70,7 +79,7 @@ class Generator:
                  curvilinear_distance: float, time: np.ndarray,
                  x_al: np.ndarray, x_ac: np.ndarray,
                  swh: Union[np.ndarray, float]) -> Dict[str, np.ndarray]:
-        """Generate errors
+        """Generate errors.
 
         Args:
             cycle_number (int): Cycle number.

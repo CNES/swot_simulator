@@ -8,8 +8,9 @@ Mathematical routines
 """
 from typing import Optional, Tuple
 import collections
-import numpy as np
+
 import numba as nb
+import numpy as np
 
 
 @nb.njit(cache=True, nogil=True)
@@ -24,7 +25,7 @@ def normalize_longitude(lon: np.ndarray,
          nogil=True)
 def spher2cart(lon: np.ndarray,
                lat: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Convert spherical coordinates to cartesian coordinates"""
+    """Convert spherical coordinates to cartesian coordinates."""
     rlon = np.radians(lon)
     rlat = np.radians(lat)
     x = np.cos(rlon) * np.cos(rlat)
@@ -38,7 +39,7 @@ def spher2cart(lon: np.ndarray,
          nogil=True)
 def cart2spher(x: np.ndarray, y: np.ndarray,
                z: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Convert cartesian coordinates to spherical coordinates"""
+    """Convert cartesian coordinates to spherical coordinates."""
     indexes = np.where((x == 0) & (y == 0))[0]
     if indexes.size:
         x[indexes] = np.nan
@@ -55,9 +56,10 @@ def cart2spher(x: np.ndarray, y: np.ndarray,
 def rotation_3d_matrix(theta: float, axis: np.ndarray) -> np.ndarray:
     """Creates a rotation matrix: Slow method.
 
-    Inputs are rotation angle theta and rotation axis axis.
-    The rotation matrix correspond to a rotation of angle theta
-    with respect to axis axis."""
+    Inputs are rotation angle theta and rotation axis axis. The rotation
+    matrix correspond to a rotation of angle theta with respect to axis
+    axis.
+    """
     axis = axis / np.sqrt(np.dot(axis, axis))
     a = np.cos(theta * 0.5)
     b, c, d = -axis * np.sin(theta * 0.5)
@@ -93,7 +95,7 @@ def curvilinear_distance(lon: np.ndarray, lat: np.ndarray,
 
 @nb.njit('float64[:, :](float64[:, :])', cache=True, nogil=True)
 def satellite_direction(location: np.ndarray) -> np.ndarray:
-    """Calculate satellite direction"""
+    """Calculate satellite direction."""
     direction = np.empty_like(location)
 
     denominator = np.sqrt(location[1:-1, 0]**2 + location[1:-1, 1]**2 +
@@ -117,7 +119,10 @@ def satellite_direction(location: np.ndarray) -> np.ndarray:
          nogil=True)
 def __cartesian2spherical(x: float, y: float, z: float) -> Tuple[float, float]:
     """Convert cartesian coordinates to spherical coordinates for scalar
-    values. This function is for internal use only"""
+    values.
+
+    This function is for internal use only
+    """
     if x == 0 and y == 0:
         return 0, np.degrees(np.pi * 0.5 * np.sign(z))
     lat = np.arctan2(z, np.sqrt(x * x + y * y))
@@ -132,7 +137,7 @@ def __cartesian2spherical(x: float, y: float, z: float) -> Tuple[float, float]:
 def calculate_swath(delta_ac: float, half_gap: float, half_swath: int,
                     radius: float, location: np.ndarray,
                     direction: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Calculation of swath geometry"""
+    """Calculation of swath geometry."""
     lon = np.empty((location.shape[0], 2 * half_swath), dtype=np.float64)
     lat = np.empty((location.shape[0], 2 * half_swath), dtype=np.float64)
 
@@ -160,8 +165,7 @@ Point.__doc__ = """Defines a 2D Point"""
 
 
 class Box:
-    """Defines a box made of two describing points.
-    """
+    """Defines a box made of two describing points."""
 
     def __init__(self,
                  min_corner: Optional[Point] = None,

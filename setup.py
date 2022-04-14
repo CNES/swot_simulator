@@ -6,13 +6,14 @@ import datetime
 import os
 import pathlib
 import re
-import setuptools
 import subprocess
+
+import setuptools
 
 
 def execute(cmd):
     """Executes a command and returns the lines displayed on the standard
-    output"""
+    output."""
     process = subprocess.Popen(cmd,
                                shell=True,
                                stdout=subprocess.PIPE,
@@ -36,7 +37,7 @@ def update_meta(path, version):
 
 
 def update_sphinx_conf(conf, version, year):
-    """Update the Sphinx configuration file"""
+    """Update the Sphinx configuration file."""
     with open(conf, "r") as stream:
         lines = stream.readlines()
     pattern = re.compile(r'(\w+)\s+=\s+(.*)')
@@ -56,7 +57,7 @@ def update_sphinx_conf(conf, version, year):
 
 
 def read_version():
-    """Returns the software version"""
+    """Returns the software version."""
     module = pathlib.Path('swot_simulator', 'version.py')
 
     # If the ".git" directory exists, this function is executed in the
@@ -128,7 +129,7 @@ def date() -> str:
 
 
 def main():
-    """Main function"""
+    """Main function."""
     here = pathlib.Path(__file__).parent.absolute()
     os.chdir(here)
 

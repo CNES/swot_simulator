@@ -1,12 +1,12 @@
 import hashlib
-import urllib.request
 import os
 import tempfile
+import urllib.request
 import zipfile
 
 
 class DownloadData:
-    """Utility class for downloading test data to the website"""
+    """Utility class for downloading test data to the website."""
     FILES = {
         "errors.bin":
         "47a1ef9cb699113ff34f74ac761561ba19f2cb97bfab1896fd28a4c0adce3716",
@@ -42,7 +42,7 @@ class DownloadData:
                 stream.write(zip_file.read(info))
 
     def check(self):
-        """Verify data integrity"""
+        """Verify data integrity."""
         for item in self.FILES:
             path = os.path.join(self.prefix, item)
             if not os.path.exists(path) or \
@@ -52,7 +52,7 @@ class DownloadData:
 
     @classmethod
     def download(cls, stream):
-        """Download data from bitbucket"""
+        """Download data from bitbucket."""
         response = urllib.request.urlopen(cls.URL)
 
         while True:
@@ -63,9 +63,7 @@ class DownloadData:
 
     @staticmethod
     def sha256sum(path):
-        """
-        Computes the SHA256 hash for a file
-        """
+        """Computes the SHA256 hash for a file."""
         sha256 = hashlib.sha256()
         with open(path, 'rb') as stream:
             for block in iter(lambda: stream.read(65536), b''):

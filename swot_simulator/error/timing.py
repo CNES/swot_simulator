@@ -11,17 +11,14 @@ import logging
 
 import numpy as np
 
-from .. import random_signal
-from .. import CELERITY
-from .. import settings
+from .. import CELERITY, random_signal, settings
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
 
 
 class Timing:
-    """
-    Timing errors
+    """Timing errors.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -60,7 +57,7 @@ class Timing:
 
     def generate(self, x_al: np.ndarray,
                  x_ac: np.ndarray) -> Dict[str, np.ndarray]:
-        """Generate timing errors
+        """Generate timing errors.
 
         Args:
             x_al (numpy.ndarray): Along track distance

@@ -3,9 +3,10 @@ Simulation settings
 -------------------
 """
 import os
+
 import swot_simulator
 import swot_simulator.plugins.ssh
-#import swot_simulator.plugins.swh
+import swot_simulator.plugins.swh
 
 #: Geographical area to simulate defined by the minimum and maximum corner
 #: point :lon_min, lat_min, lon_max, lat_max
@@ -66,7 +67,7 @@ nadir = False
 swath = True
 
 #: Type of SWOT product to be generated. Possible products are "basic",
-#: "expert", "unsmoothed" and "wind_wave". Defaul to expert
+#: "expert", "unsmoothed" and "wind_wave". Default to expert
 product_type = "expert"
 
 #: The plug-in handling the SSH interpolation under the satellite swath.

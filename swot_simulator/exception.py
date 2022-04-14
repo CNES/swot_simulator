@@ -13,8 +13,7 @@ import traceback
 
 def structured_traceback(exc: Exception,
                          call_stack: traceback.StackSummary) -> str:
-    """Return a nice text describing the call stack which threw an
-    exception.
+    """Return a nice text describing the call stack which threw an exception.
 
     Args:
         exc (Exception): Exception raised.

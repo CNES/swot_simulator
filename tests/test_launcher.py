@@ -1,10 +1,12 @@
 import os
 import tempfile
+
 import dask.distributed
+
 import swot_simulator
+import swot_simulator.error
 import swot_simulator.launcher
 import swot_simulator.settings
-import swot_simulator.error
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 

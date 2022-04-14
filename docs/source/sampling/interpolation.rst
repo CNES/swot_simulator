@@ -38,4 +38,3 @@ interpolated SSH on a 400 km long segment of the SWOT grid crossing the domain.
 .. |br| raw:: html
 
    <br />
-

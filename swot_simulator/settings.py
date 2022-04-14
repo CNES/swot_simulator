@@ -12,15 +12,25 @@ import copy
 import importlib
 import logging
 import os
-import re
 import pathlib
+import re
 import traceback
 import types
+
 import numpy as np
-from . import BASIC, DATA, EXPERT, PRODUCT_TYPE, UNSMOOTHED, WIND_WAVE
-from . import math
-from . import plugins
+
 import swot_simulator
+
+from . import (
+    BASIC,
+    DATA,
+    EXPERT,
+    PRODUCT_TYPE,
+    UNSMOOTHED,
+    WIND_WAVE,
+    math,
+    plugins,
+)
 
 #: Default working directory
 DEFAULT_WORKING_DIRECTORY = os.path.join(os.path.expanduser('~'),
@@ -31,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def execfile_(filepath: str, _globals: Any) -> None:
-    """Executes a Python code defined in a file"""
+    """Executes a Python code defined in a file."""
     with open(filepath, 'rb') as stream:
         source = stream.read()
 
@@ -41,7 +51,7 @@ def execfile_(filepath: str, _globals: Any) -> None:
 
 @contextlib.contextmanager
 def cd(target_dir: str) -> Iterator[None]:
-    """Moves to a directory and returns to the working directory"""
+    """Moves to a directory and returns to the working directory."""
     cwd = os.getcwd()
     try:
         os.chdir(target_dir)
@@ -86,7 +96,7 @@ def error_classes() -> Iterator[str]:
 
 
 def error_keywords() -> Iterator[str]:
-    """Get the list of the error keywords"""
+    """Get the list of the error keywords."""
     for item in error_classes():
         item = item[:1].lower() + item[1:]
         yield re.sub(r'([A-Z])', r'_\1', item).lower()
@@ -126,10 +136,10 @@ def _template_to_string(required: Dict[str, str],
     simulator."""
 
     def wrap(s: str) -> Iterator[str]:
-        """Cuts the line into several lines of 80 characters maximum"""
+        """Cuts the line into several lines of 80 characters maximum."""
 
         def line(items):
-            """Returns the line built"""
+            """Returns the line built."""
             return "# " + " ".join(items)
 
         words = []
@@ -180,7 +190,7 @@ def pretty_print(value: Any) -> str:
 
 def template(python: bool = False) -> Union[str, Dict[str, Any]]:
     """Get the template representing the default configuration of the
-    simulator
+    simulator.
 
     Args:
         python (bool): True, returns the dictionary that represents the default
@@ -197,7 +207,7 @@ def template(python: bool = False) -> Union[str, Dict[str, Any]]:
 
 
 class NumberOfBeams(int):
-    """Handle the number of beams"""
+    """Handle the number of beams."""
 
     def __new__(cls, value, *args, **kwargs):
         if value not in [1, 2]:
@@ -213,7 +223,7 @@ class TimeDelta(int):
 
 
 class Seed:
-    """Handle the seed for the random state"""
+    """Handle the seed for the random state."""
 
     def __init__(self, seed: int):
         self.seed = seed - 1
@@ -224,8 +234,7 @@ class Seed:
 
 
 class Parameters:
-    """
-    Simulator parameter management.
+    """Simulator parameter management.
 
     The simulator parameters are defined in a Python file. The expected
     parameters are described in the code below.
@@ -399,7 +408,7 @@ class Parameters:
 
     @staticmethod
     def load_default() -> 'Parameters':
-        """Load the default configuration
+        """Load the default configuration.
 
         Returns:
             Parameters: the default settings
@@ -460,5 +469,5 @@ class Parameters:
         return math.Box(math.Point(*area[:2]), math.Point(*area[-2:]))
 
     def rng(self) -> np.random.Generator:
-        """Get a random state generator"""
+        """Get a random state generator."""
         return self._rng()

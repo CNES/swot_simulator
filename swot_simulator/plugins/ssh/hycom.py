@@ -12,9 +12,7 @@ from .. import data_handler
 
 
 class HYCOM(data_handler.CartesianGridHandler):
-    """
-    Interpolation of the SSH HYCOM
-    """
+    """Interpolation of the SSH HYCOM."""
 
     def __init__(self, path: str):
         #: Decode the product date encoded from the file name.

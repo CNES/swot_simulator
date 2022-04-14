@@ -11,17 +11,14 @@ import logging
 
 import numpy as np
 
-from .. import random_signal
-from .. import settings
-from .. import VOLUMETRIC_MEAN_RADIUS, BASELINE
+from .. import BASELINE, VOLUMETRIC_MEAN_RADIUS, random_signal, settings
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
 
 
 class BaselineDilation:
-    """
-    Baseline dilation errors
+    """Baseline dilation errors.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -56,7 +53,7 @@ class BaselineDilation:
 
     def generate(self, x_al: np.ndarray,
                  x_ac: np.ndarray) -> Dict[str, np.ndarray]:
-        """Generate the baseline dilation error
+        """Generate the baseline dilation error.
 
         Args:
             x_al (numpy.ndarray): Along track distance

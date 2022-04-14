@@ -14,9 +14,7 @@ import logging
 import numpy as np
 
 #
-from .. import random_signal
-from .. import settings
-from .. import VOLUMETRIC_MEAN_RADIUS
+from .. import VOLUMETRIC_MEAN_RADIUS, random_signal, settings
 
 #: Signal amplitude of the orbital error in micro-radians
 AMPLITUDE = 100
@@ -31,7 +29,7 @@ LOGGER = logging.getLogger(__name__)
 def _orbital_error_spectrum(
         orbit_duration: np.timedelta64,
         rng: np.random.Generator) -> Tuple[np.ndarray, float]:
-    """Calculate orbital error spectrum
+    """Calculate orbital error spectrum.
 
     Args:
         orbit_duration (float): Orbit duration in fractional days
@@ -57,8 +55,7 @@ def _orbital_error_spectrum(
 
 
 class Orbital:
-    """
-    Simulate the error orbital
+    """Simulate the error orbital.
 
     Args:
         parameters (Parameters): Simulation parameters.
@@ -81,7 +78,7 @@ class Orbital:
         time: np.ndarray,
         x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
-        """Generate orbital error
+        """Generate orbital error.
 
         Args:
             time (np.ndarray): time vector

@@ -3,7 +3,7 @@ Sampled SSH and error fields
 
 At each pass, for each cycle, an output netCDF file containing the SSH
 interpolated from the model (if :py:const:`ssh_plugin <settings.ssh_plugin>` is
-not set to `None`), and the different errors. The naming and the file format are
+not set to ``None``), and the different errors. The naming and the file format are
 compliant with SWOT's PDD (Product Description Document), set
 :py:const:`complete_product <settings.complete_product>` key to ``True`` to
 store all the variables and ``False`` to store only the one compute by the

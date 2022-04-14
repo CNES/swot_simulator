@@ -8,17 +8,16 @@ Interpolation of the SSH NEMO
 """
 import pathlib
 import re
+
 import numpy as np
 import pyinterp
 import xarray as xr
-from .. import data_handler
-from .. import Interface
+
+from .. import Interface, data_handler
 
 
 class SCHISM(Interface):
-    """
-    Interpolation of the SSH NEMO
-    """
+    """Interpolation of the SSH NEMO."""
 
     def __init__(self, path: str):
         # Delta time between two time steps.
@@ -30,7 +29,7 @@ class SCHISM(Interface):
             raise ValueError(f"No files found in {path}")
 
     def _load_time_series(self, path: str) -> np.ndarray:
-        """Load the time series of the SSH"""
+        """Load the time series of the SSH."""
         items = []
         pattern = re.compile(r"schism_(?P<date>\d{8}T\d{6})_\d{8}T\d{6}.nc")
         for item in pathlib.Path(path).iterdir():
@@ -55,7 +54,7 @@ class SCHISM(Interface):
 
     def _select_ds(self, first_date: np.datetime64,
                    last_date: np.datetime64) -> np.ndarray:
-        """Select the time series to process"""
+        """Select the time series to process."""
         first_date -= self._dt
         last_date += self._dt
         ts = self._ts["date"]
@@ -68,7 +67,7 @@ class SCHISM(Interface):
 
     @staticmethod
     def _rtree(ds: xr.Dataset, index: np.uint64) -> pyinterp.RTree:
-        """Constructs the interpolator"""
+        """Constructs the interpolator."""
         ssh = ds.variables["elev"].isel(dict(time=index)).values
 
         # Filter out NaN values.
@@ -85,7 +84,7 @@ class SCHISM(Interface):
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SSH to the required coordinates."""
         selected = self._select_ds(
             dates.min(),  # type: ignore
             dates.max())  # type: ignore
@@ -96,8 +95,8 @@ class SCHISM(Interface):
         for ix in range(len(selected)):
             index = selected[ix]["index"]
             ds = xr.open_dataset(selected[ix]["path"])
-            # Checks thats the time delta between two time steps is the expected
-            # one.
+            # Checks that's the time delta between two time steps is the
+            # expected one.
             assert np.all(np.diff(ds.time.values) == self._dt)
             xp.append(np.asarray(ds.time[index]).astype("datetime64[us]"))
             mesh = self._rtree(ds, index)

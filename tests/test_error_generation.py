@@ -1,6 +1,8 @@
 import os
 import pickle
+
 import numpy as np
+
 import swot_simulator
 import swot_simulator.error.altimeter
 import swot_simulator.error.baseline_dilation

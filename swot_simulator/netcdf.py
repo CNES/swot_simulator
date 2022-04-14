@@ -20,10 +20,7 @@ import numpy as np
 import xarray as xr
 
 #
-from . import __version__
-from . import math
-from . import orbit_propagator
-from . import product_specification
+from . import __version__, math, orbit_propagator, product_specification
 
 #: Logger for this module
 LOGGER = logging.getLogger(__name__)
@@ -50,7 +47,7 @@ def global_attributes(attributes: Dict[str, Dict[str, Any]], cycle_number: int,
                       pass_number: int, date: np.ndarray, lng: np.ndarray,
                       lat: np.ndarray, lon_eq: float,
                       time_eq: np.datetime64) -> Dict[str, Any]:
-    """Calculates the global attributes of the pass"""
+    """Calculates the global attributes of the pass."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ : Creation")
 
     ellipsoid_semi_major_axis = product_specification.cast_to_dtype(
@@ -116,8 +113,7 @@ def _create_variable_args(
         encoding: Dict[Hashable, Dict], name: Hashable,
         variable: xr.DataArray) -> Tuple[Hashable, Dict[str, Any]]:
     """Initiation of netCDF4.Dataset.createVariable method parameters from
-    user-defined encoding information.
-    """
+    user-defined encoding information."""
     kwargs = dict()
     keywords = encoding[name] if name in encoding else dict()
     if "_FillValue" in keywords:
@@ -149,7 +145,7 @@ def _create_variable(xr_dataset: xr.Dataset, nc_dataset: netCDF4.Dataset,
                      encoding: Dict[str, Dict[str, Dict[str, Any]]],
                      name: Hashable, unlimited_dims: Optional[List[str]],
                      variable: xr.DataArray) -> None:
-    """Creation and writing of the NetCDF variable"""
+    """Creation and writing of the NetCDF variable."""
     unlimited_dims = unlimited_dims or list()
 
     variable.attrs.pop("_FillValue", None)
@@ -209,7 +205,7 @@ def to_netcdf(dataset: xr.Dataset,
               encoding: Optional[Dict[str, Dict]] = None,
               unlimited_dims: Optional[List[str]] = None,
               **kwargs):
-    """Write dataset contents to a netCDF file"""
+    """Write dataset contents to a netCDF file."""
     encoding = encoding or dict()
 
     if isinstance(path, str):
@@ -482,9 +478,9 @@ class Nadir:
                       complete_product: bool) -> None:
         """Writes the Nadir dataset to a netCDF file.
 
-        This method must be specialized to write Nadir and Karin products.
-        Indeed, these two products have different structures and cannot be
-        processed in the same way.
+        This method must be specialized to write Nadir and Karin
+        products. Indeed, these two products have different structures
+        and cannot be processed in the same way.
         """
         dataset = self.to_xarray(cycle_number, pass_number, False)
         _write_nadir_product(dataset, path, complete_product)
@@ -504,7 +500,7 @@ class Nadir:
         try:
             self._write_netcdf(path, cycle_number, pass_number,
                                complete_product)
-        except:
+        except:  # noqa: E722
             if os.path.exists(path):
                 os.unlink(path)
             raise

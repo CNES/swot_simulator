@@ -9,7 +9,7 @@ Main program
 This module defines the main :func:`function <launch>` handling the simulation
 of SWOT products as well as the entry point of the main program.
 """
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 import argparse
 import datetime
 import importlib
@@ -26,7 +26,7 @@ from .. import exception, launcher, logbook, settings
 
 
 def datetime_type(value: str) -> np.datetime64:
-    """The option should define a datetime
+    """The option should define a datetime.
 
     Args:
         value (str): Value to parse
@@ -129,7 +129,7 @@ def usage() -> argparse.Namespace:
                 raise RuntimeError(
                     f"--{item}: not allowed with argument --scheduler-file")
 
-    # Write the template configurayion file and ends the programm
+    # Write the template configuration file and ends the program
     if "template" in namespace:
         namespace.template.write(settings.template())
         sys.stdout.write(f"""
@@ -145,7 +145,7 @@ The template has been written in the file: {namespace.template.name!r}.
 
 
 def software_dependencies() -> List[Tuple[str, str]]:
-    """Returns the software dependencies of this release"""
+    """Returns the software dependencies of this release."""
     deps = [
         ("conda", lambda module: module.__version__),
         ("dask", lambda module: module.__version__),
@@ -208,7 +208,7 @@ def copy_parameters(parameters: settings.Parameters,
 
 
 def main():
-    """main function"""
+    """main function."""
     args = usage()
 
     # Setup log
@@ -229,7 +229,7 @@ def main():
         parameters = settings.Parameters(
             settings.eval_config_file(args.settings.name))
 
-        # Keep track of the overriden parameters
+        # Keep track of the overridden parameters
         copy_parameters(parameters, pathlib.Path(args.settings.name))
         launcher.launch(client, parameters, logging_server, args.first_date,
                         args.last_date)

@@ -11,8 +11,7 @@ import logging
 
 import numpy as np
 
-from .. import random_signal
-from .. import settings
+from .. import random_signal, settings
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)

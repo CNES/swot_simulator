@@ -14,9 +14,14 @@ import numba.typed
 import numpy as np
 import scipy.ndimage.filters
 
-from .. import random_signal
-from .. import settings
-from .. import F_KA, VOLUMETRIC_MEAN_RADIUS, CELERITY, BASELINE
+from .. import (
+    BASELINE,
+    CELERITY,
+    F_KA,
+    VOLUMETRIC_MEAN_RADIUS,
+    random_signal,
+    settings,
+)
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
@@ -95,7 +100,7 @@ def _calculate_path_delay(sigma: float, radio: np.ndarray, x_al: np.ndarray,
 
 
 class WetTroposphere:
-    """Wet troposphere errors
+    """Wet troposphere errors.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -194,8 +199,7 @@ class WetTroposphere:
 
     def generate(self, x_al: np.ndarray,
                  x_ac: np.ndarray) -> Dict[str, np.ndarray]:
-        """
-        Generate wet troposphere errors
+        """Generate wet troposphere errors.
 
         Args:
             x_al (numpy.ndarray): Along track distance

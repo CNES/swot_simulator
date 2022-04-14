@@ -8,6 +8,7 @@ Dispatch task on free workers
 """
 from typing import Any, Callable, Iterator, List, Set
 import time
+
 import dask.distributed
 
 
@@ -32,8 +33,8 @@ def _available_workers(client: dask.distributed.Client) -> Set[str]:
 
 def compute(client: dask.distributed.Client, func: Callable, seq: Iterator,
             *args, **kwargs) -> List[Any]:
-    """Distribute the execution of functions to free workers, i.e. those who
-    do not perform any tasks.
+    """Distribute the execution of functions to free workers, i.e. those who do
+    not perform any tasks.
 
     Args:
         client (dask.distributed.Client): Client connected to the Dask

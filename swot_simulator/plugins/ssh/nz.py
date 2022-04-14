@@ -38,7 +38,7 @@ class Base(Interface):
             raise ValueError(f"No files found in {path}")
 
     def _load_time_series(self, path: str) -> np.ndarray:
-        """Load time series from a directory"""
+        """Load time series from a directory."""
         items = []
         previous = None
         for item in sorted(pathlib.Path(path).glob("*.nc")):
@@ -46,7 +46,7 @@ class Base(Interface):
                 current = ds.ocean_time.values[0].astype("datetime64[M]")
                 if (previous is not None
                         and (current - previous != np.timedelta64(1, "M"))):
-                    raise ValueError(f"Time series not continuous")
+                    raise ValueError("Time series not continuous")
                 items.append((current, str(item)))
                 previous = current
         length = max(len(item[1]) for item in items)
@@ -60,14 +60,14 @@ class Base(Interface):
 
     @staticmethod
     def _floor_to_dt(value: np.datetime64) -> np.datetime64:
-        """Floor a datetime64 to the nearest dt"""
+        """Floor a datetime64 to the nearest dt."""
         integral = int(value.astype("<M8[h]").astype("int64") /
                        3)  # type: ignore
         return np.datetime64(integral * 3, "h")
 
     def _select_ds(self, first_date: np.datetime64,
                    last_date: np.datetime64) -> xr.Dataset:
-        """Select the time series to process"""
+        """Select the time series to process."""
         first_ts = self._floor_to_dt(first_date)
         last_ts = self._floor_to_dt(last_date) + self._dt
         first_month = first_ts.astype("M8[M]")
@@ -92,7 +92,7 @@ class Base(Interface):
 
 
 class NZCartesian(Base):
-    """Handle the interpolation on NZ cartesian grids
+    """Handle the interpolation on NZ cartesian grids.
 
     Args:
         path: Path to the time series.
@@ -103,7 +103,7 @@ class NZCartesian(Base):
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SSH to the required coordinates."""
         ds = self._select_ds(
             dates.min(),  # type: ignore
             dates.max())  # type: ignore
@@ -118,15 +118,14 @@ class NZCartesian(Base):
 
 
 class NZMesh(Base):
-    """Handle the interpolation on NZ mesh grids
-    """
+    """Handle the interpolation on NZ mesh grids."""
 
     def __init__(self, path: str):
         super().__init__(path, ssh="zeta")
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SSH to the required coordinates."""
         ds = self._select_ds(
             dates.min(),  # type: ignore
             dates.max())  # type: ignore

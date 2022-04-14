@@ -10,12 +10,12 @@ import numpy as np
 
 
 class Interface:
-    """Interface of a plugin"""
+    """Interface of a plugin."""
 
     @classmethod
     def interpolate(cls, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the geophysical field for the given coordinates"""
+        """Interpolate the geophysical field for the given coordinates."""
         raise RuntimeError("You must register a plugin")
 
 
@@ -23,12 +23,12 @@ class Puppet(Interface):
     """Interpolation routine used for testing."""
 
     def interpolate(self, lon, _lat, _time):
-        """Returns an array filled with zeros"""
+        """Returns an array filled with zeros."""
         return np.full_like(lon, 0)
 
 
 class Plugin:
-    """Plug-in to interpolate a geophysical field"""
+    """Plug-in to interpolate a geophysical field."""
 
     def __init__(self):
         self.plugin = Interface()
@@ -40,7 +40,7 @@ class Plugin:
 
     @classmethod
     def register(cls, plugin):
-        """Register the user plugin"""
+        """Register the user plugin."""
         if not isinstance(plugin, Interface):
             raise TypeError("plugin must be a sub-class of "
                             f"{Interface.__class__.__name__}")  # type: ignore

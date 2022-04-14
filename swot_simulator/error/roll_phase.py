@@ -6,21 +6,26 @@
 Roll errors
 -----------
 """
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 import logging
+
 import numpy as np
 
-from .. import random_signal
-from .. import settings
-from .. import VOLUMETRIC_MEAN_RADIUS, CELERITY, F_KA, BASELINE
+from .. import (
+    BASELINE,
+    CELERITY,
+    F_KA,
+    VOLUMETRIC_MEAN_RADIUS,
+    random_signal,
+    settings,
+)
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
 
 
 class RollPhase:
-    """
-    Roll errors
+    """Roll errors.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -90,7 +95,7 @@ class RollPhase:
         x_al: np.ndarray,
         x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
-        """Generate roll and phase errors
+        """Generate roll and phase errors.
 
         Args:
             x_al (numpy.ndarray): Along track distance

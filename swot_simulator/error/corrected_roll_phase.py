@@ -7,6 +7,7 @@ Estimated roll errors
 ---------------------
 """
 from typing import Dict, Tuple
+
 import numpy as np
 import xarray as xr
 
@@ -14,8 +15,7 @@ from .. import settings
 
 
 class CorrectedRollPhase:
-    """
-    Corrected roll errors
+    """Corrected roll errors.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -62,7 +62,7 @@ class CorrectedRollPhase:
         time: np.ndarray,
         x_ac: np.ndarray,
     ) -> Dict[str, np.ndarray]:
-        """Interpolate roll and phase and errors
+        """Interpolate roll and phase and errors.
 
         Args:
             time (numpy.ndarray): Date of measurements.

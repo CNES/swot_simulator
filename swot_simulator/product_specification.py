@@ -18,8 +18,7 @@ import numpy.typing as npt
 import xarray as xr
 
 #
-from . import EXPERT, PRODUCT_TYPE, UNSMOOTHED
-from . import math
+from . import EXPERT, PRODUCT_TYPE, UNSMOOTHED, math
 
 
 class Side(enum.Enum):
@@ -29,7 +28,7 @@ class Side(enum.Enum):
 
 
 def _find(element: xt.Element, tag: str) -> xt.Element:
-    """Find a tag in the xml format specifcation file"""
+    """Find a tag in the xml format specification file."""
     result = element.find(tag)
     if result is None:
         raise RuntimeError("The XML tag '" + tag + "' doesn't exist")
@@ -37,7 +36,7 @@ def _find(element: xt.Element, tag: str) -> xt.Element:
 
 
 def _parse_type(dtype, width, signed) -> Union[npt.DTypeLike, np.generic]:
-    """Parse type from xml format specification file. """
+    """Parse type from xml format specification file."""
     if dtype == "real":
         return getattr(np, "float" + width)
     if dtype == "integer":
@@ -50,12 +49,12 @@ def _parse_type(dtype, width, signed) -> Union[npt.DTypeLike, np.generic]:
 
 
 def cast_to_dtype(attr_value: Union[int, float], properties: Dict[str, str]):
-    """Cast the attribute value to the numpy data type required"""
+    """Cast the attribute value to the numpy data type required."""
     return getattr(np, properties["dtype"])(attr_value)
 
 
 def _strtobool(value: str) -> bool:
-    """Return the boolean value encoded in the string"""
+    """Return the boolean value encoded in the string."""
     value = value.lower()
     if value == "true":
         return True
@@ -73,7 +72,7 @@ def _strip_shape(name: str) -> str:
 
 def _parser(tree: xt.ElementTree):
     """Parse variables, attributes and shapes from xml format specification
-    file"""
+    file."""
     variables = dict()
     attributes = dict()
     shapes = dict()
@@ -109,12 +108,12 @@ def _parser(tree: xt.ElementTree):
 
 
 def parse_specification_file(path: str) -> Tuple:
-    """Parse the XML specification file"""
+    """Parse the XML specification file."""
     return _parser(xt.parse(path))
 
 
 def encode_fill_value(properties: Dict[str, Any]) -> np.ndarray:
-    """Returns the fill value encoded with the data type specified"""
+    """Returns the fill value encoded with the data type specified."""
     dtype = properties["dtype"]
     attrs = properties["attrs"]
     fill_value = attrs["_FillValue"] if "_FillValue" in attrs else 0
@@ -125,7 +124,7 @@ def encode_fill_value(properties: Dict[str, Any]) -> np.ndarray:
 
 def build_array(name: str, variables: Dict[str, Dict[str, Any]],
                 data: np.ndarray):
-    """Builds the array from the data and the variables"""
+    """Builds the array from the data and the variables."""
     properties = variables[name]
     attrs = copy.deepcopy(properties["attrs"])
 
@@ -165,7 +164,7 @@ def build_array(name: str, variables: Dict[str, Dict[str, Any]],
 
 
 class ProductSpecification:
-    """Parse and load into memory the product specification"""
+    """Parse and load into memory the product specification."""
     SPECIFICATION = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "l2b-ssh.xml")
 
@@ -193,7 +192,7 @@ class ProductSpecification:
                               unsmoothed else name]
 
     def _shape(self, swath: bool = True):
-        """Get the shape of the variable"""
+        """Get the shape of the variable."""
         if swath:
             return self._variable("longitude")["shape"]
         return self._variable("time")["shape"]
@@ -243,18 +242,18 @@ class ProductSpecification:
         return result if result[1] else None
 
     def time(self, time: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
-        """Gets the time axis"""
+        """Gets the time axis."""
         return self._data_array("time", time)  # type: ignore
 
     def x_ac(self,
              x_ac: np.ndarray) -> Optional[Tuple[Dict, List[xr.DataArray]]]:
         """Returns the properties of the variable describing the cross track
-        distance"""
+        distance."""
         return self._data_array("cross_track_distance", x_ac * 1000)  # km -> m
 
     def lon(self, lon: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the longitudes of
-        the swath"""
+        the swath."""
         # Longitude must be in [0, 360.0[
         result = self._data_array("longitude",
                                   math.normalize_longitude(lon, 0))
@@ -265,14 +264,14 @@ class ProductSpecification:
             self, lon_nadir: np.ndarray
     ) -> Optional[Tuple[Dict, List[xr.DataArray]]]:
         """Returns the properties of the variable describing the longitudes of
-        the reference ground track"""
+        the reference ground track."""
         # Longitude must be in [0, 360.0[
         return self._data_array("longitude_nadir",
                                 math.normalize_longitude(lon_nadir, 0))
 
     def lat(self, lat: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the latitudes of
-        the swath"""
+        the swath."""
         result = self._data_array("latitude", lat)
         assert result is not None
         return result
@@ -281,12 +280,12 @@ class ProductSpecification:
             self, lat_nadir: np.ndarray
     ) -> Optional[Tuple[Dict, List[xr.DataArray]]]:
         """Returns the properties of the variable describing the latitudes of
-        the reference ground track"""
+        the reference ground track."""
         return self._data_array("latitude_nadir", lat_nadir)
 
     def ssh_karin(self, ssh: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the SSH measured
-        by KaRIn"""
+        by KaRIn."""
         result = self._data_array(self.ssh_karin_name(), ssh)
         assert result is not None
         return result
@@ -296,17 +295,19 @@ class ProductSpecification:
         nadir."""
         name = "ssh_nadir"
         for item in self._names(name, split=False):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                coordinates='longitude latitude',
-                long_name='sea surface height',
-                scale_factor=0.0001,
-                standard_name='seaurface height above reference ellipsoid',
-                units='m',
-                valid_min=np.int32(-15000000),
-                valid_max=np.int32(150000000)),
-                                        dtype='int32',
-                                        shape=self._shape(swath=False))
+            self.variables[item] = dict(
+                attrs=dict(
+                    _FillValue=2147483647,
+                    coordinates='longitude latitude',
+                    long_name='sea surface height',
+                    scale_factor=0.0001,
+                    standard_name='seaurface height above reference ellipsoid',
+                    units='m',
+                    valid_min=np.int32(-15000000),
+                    valid_max=np.int32(150000000)),
+                dtype='int32',
+                shape=self._shape(swath=False),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_true_ssh_nadir(
@@ -315,24 +316,27 @@ class ProductSpecification:
         free of measurement errors."""
         name = "simulated_true_ssh_nadir"
         for item in self._names(name, split=False):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                coordinates='time',
-                long_name='sea surface height',
-                scale_factor=0.0001,
-                standard_name='sea surface height above reference ellipsoid',
-                units='m',
-                valid_min=np.int32(-15000000),
-                valid_max=np.int32(150000000),
-                comment='Height of the sea surface free of measurement errors.'
-            ),
-                                        dtype='int32',
-                                        shape=self._shape(swath=False))
+            self.variables[item] = dict(
+                attrs=dict(
+                    _FillValue=2147483647,
+                    coordinates='time',
+                    long_name='sea surface height',
+                    scale_factor=0.0001,
+                    standard_name='sea surface height above reference '
+                    'ellipsoid',
+                    units='m',
+                    valid_min=np.int32(-15000000),
+                    valid_max=np.int32(150000000),
+                    comment='Height of the sea surface free of measurement '
+                    'errors.'),
+                dtype='int32',
+                shape=self._shape(swath=False),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def swh_karin(self, swh: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the SWH measured
-        by KaRIn"""
+        by KaRIn."""
         result = self._data_array("swh_karin", swh)
         assert result is not None
         return result
@@ -342,18 +346,18 @@ class ProductSpecification:
         free of measurement errors."""
         name = "swh_nadir"
         for item in self._names(name, split=False):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                coordinates='time',
-                long_name='Significant Wave Height',
-                scale_factor=0.0001,
-                standard_name='Sigificant Wave Height',
-                units='m',
-                valid_min=np.int32(-15000000),
-                valid_max=np.int32(150000000),
-            ),
-                                        dtype='int32',
-                                        shape=self._shape(swath=False))
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           coordinates='time',
+                           long_name='Significant Wave Height',
+                           scale_factor=0.0001,
+                           standard_name='Sigificant Wave Height',
+                           units='m',
+                           valid_min=np.int32(-15000000),
+                           valid_max=np.int32(150000000)),
+                dtype='int32',
+                shape=self._shape(swath=False),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_true_ssh_karin(
@@ -362,67 +366,73 @@ class ProductSpecification:
         of measurement errors."""
         name = "simulated_true_ssh_karin"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                coordinates='longitude latitude',
-                long_name='sea surface height',
-                scale_factor=0.0001,
-                standard_name='sea surface height above reference ellipsoid',
-                units='m',
-                valid_min=np.int32(-15000000),
-                valid_max=np.int32(150000000),
-                comment='Height of the sea surface free of measurement errors.'
-            ),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(
+                    _FillValue=2147483647,
+                    coordinates='longitude latitude',
+                    long_name='sea surface height',
+                    scale_factor=0.0001,
+                    standard_name='sea surface height above reference '
+                    'ellipsoid',
+                    units='m',
+                    valid_min=np.int32(-15000000),
+                    valid_max=np.int32(150000000),
+                    comment='Height of the sea surface free of measurement '
+                    'errors.'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_baseline_dilation(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the error due to
-        baseline mast dilation"""
+        baseline mast dilation."""
         name = "simulated_error_baseline_dilation"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to baseline mast dilation',
-                scale_factor=0.0001,
-                units='m',
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to baseline mast dilation',
+                           scale_factor=0.0001,
+                           units='m',
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_roll(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the error due to
-        roll"""
+        roll."""
         name = "simulated_error_roll"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to roll',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to roll',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_phase(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the error due to
-        phase"""
+        phase."""
         name = "simulated_error_phase"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to phase',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to phase',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_orbital(
@@ -431,77 +441,83 @@ class ProductSpecification:
         orbital perturbations."""
         name = "simulated_error_orbital"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to orbital perturbations',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to orbital perturbations',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_roll_phase_estimate(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the roll phase
-        correction estimated"""
+        correction estimated."""
         name = "simulated_roll_phase_estimate"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error after estimation of roll phase',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error after estimation of roll phase',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_karin(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
-        """Returns the properties of the variable describing the KaRIn error"""
+        """Returns the properties of the variable describing the KaRIn
+        error."""
         name = "simulated_error_karin"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='KaRIn error',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='KaRIn error',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_timing(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the timing
-        error"""
+        error."""
         name = "simulated_error_timing"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Timing error',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Timing error',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_troposphere(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the error due to
-        wet troposphere path delay"""
+        wet troposphere path delay."""
         name = "simulated_error_troposphere"
         for item in self._names(name):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to wet troposphere path delay',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape())
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to wet troposphere path delay',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_troposphere_nadir(
@@ -510,31 +526,33 @@ class ProductSpecification:
         wet troposphere path delay to nadir."""
         name = "simulated_error_troposphere_nadir"
         for item in self._names(name, split=False):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Error due to wet troposphere path delay',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape(swath=False))
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Error due to wet troposphere path delay',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(swath=False),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def simulated_error_altimeter(
             self, array: np.ndarray) -> Tuple[Dict, List[xr.DataArray]]:
         """Returns the properties of the variable describing the altimeter
-        error"""
+        error."""
         name = "simulated_error_altimeter"
         for item in self._names(name, split=False):
-            self.variables[item] = dict(attrs=dict(
-                _FillValue=2147483647,
-                long_name='Altimeter error',
-                standard_name='',
-                units='m',
-                scale_factor=0.0001,
-                coordinates='longitude latitude'),
-                                        dtype='int32',
-                                        shape=self._shape(swath=False))
+            self.variables[item] = dict(
+                attrs=dict(_FillValue=2147483647,
+                           long_name='Altimeter error',
+                           standard_name='',
+                           units='m',
+                           scale_factor=0.0001,
+                           coordinates='longitude latitude'),
+                dtype='int32',
+                shape=self._shape(swath=False),
+            )
         return self._data_array(name, array)  # type: ignore
 
     def fill_variables(self, variables,

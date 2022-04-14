@@ -1,13 +1,42 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
     hooks:
-      - id: check-ast
-      - id: check-xml
-      - id: check-yaml
-        exclude: conda/meta.yaml
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-json
+      - id: debug-statements
+      - id: end-of-file-fixer
       - id: trailing-whitespace
--   repo: https://github.com/pre-commit/mirrors-yapf
+        exclude: conda/meta.yaml
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        exclude: tests
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: "v1.9.0"
+    hooks:
+    - id: python-check-blanket-noqa
+    - id: python-no-log-warn
+    - id: rst-backticks
+    - id: rst-directive-colons
+    - id: rst-inline-touching-normal
+  - repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.32.0
     hooks:
       - id: yapf
+        additional_dependencies:
+          - toml
+  - repo: https://github.com/myint/docformatter
+    rev: "v1.4"
+    hooks:
+    - id: docformatter
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.1.0"
+    hooks:
+    - id: codespell

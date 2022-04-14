@@ -11,15 +11,14 @@ import logging
 
 import numpy as np
 
-from .. import random_signal
-from .. import settings
+from .. import random_signal, settings
 
 #: Logger of this module
 LOGGER = logging.getLogger(__name__)
 
 
 class Karin:
-    """Karin instrumental error computed from random realization
+    """Karin instrumental error computed from random realization.
 
     Args:
         parameters (settings.Parameters): Simulation settings
@@ -42,7 +41,7 @@ class Karin:
 
     def generate(self, seed: int, x_al: np.ndarray, x_ac: np.ndarray,
                  swh: np.ndarray) -> Dict[str, np.ndarray]:
-        """Generate the karin noise
+        """Generate the karin noise.
 
         Args:
             seed (int): Random seed used to initialize the pseudo-random

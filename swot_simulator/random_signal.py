@@ -8,11 +8,13 @@ Random signal generation utilities
 """
 from typing import Optional, Tuple
 import warnings
+
 # import dask.array as da
 import numba as nb
 import numpy as np
 import scipy.interpolate
 import xarray as xr
+
 try:
     import mkl_fft
     IFFT = mkl_fft.ifft
@@ -23,8 +25,7 @@ except ImportError:
 
 
 def read_file_instr(file_instr: str, delta_al: float) -> xr.Dataset:
-    """Retrieve power spectrum from instrumental noise file provided by
-    """
+    """Retrieve power spectrum from instrumental noise file provided by."""
     dataset = xr.load_dataset(file_instr)
 
     # Set spatial frequency to spatial coordinate
@@ -38,8 +39,7 @@ def read_file_instr(file_instr: str, delta_al: float) -> xr.Dataset:
 
 
 def read_file_karin(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Retrieve power spectrum from instrumental noise file provided by
-    """
+    """Retrieve power spectrum from instrumental noise file provided by."""
     with xr.open_dataset(path) as dataset:
         height_sdt = dataset['height_sdt'].data
         cross_track = dataset['cross_track'].data
@@ -101,7 +101,7 @@ def gen_psd_1d(fi: np.ndarray,
                alpha: int = 10,
                lf_extpl: bool = False,
                hf_extpl: bool = False) -> Tuple[np.ndarray, float]:
-    """Generate 1d random signal using Fourier coefficient"""
+    """Generate 1d random signal using Fourier coefficient."""
     # Make sure fi, PSi does not contain the zero frequency:
     psi = psi[fi > 0]
     fi = fi[fi > 0]
@@ -150,7 +150,7 @@ def _gen_signal_1d(fi: np.ndarray,
                    alpha: int = 10,
                    lf_extpl: bool = False,
                    hf_extpl: bool = False) -> Tuple[np.ndarray, np.ndarray]:
-    """Generate 1d random signal using Fourier coefficient"""
+    """Generate 1d random signal using Fourier coefficient."""
     yg, fmaxr = gen_psd_1d(fi, psi, rng, fmin, fmax, alpha, lf_extpl, hf_extpl)
     xg = np.linspace(0, 0.5 / fmaxr * yg.shape[0], yg.shape[0])
     return xg, yg
@@ -180,9 +180,7 @@ class Signal1D:
         self.yg_hf = yg_hf
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """
-        Returns the 1D random signal at the specified x.
-        """
+        """Returns the 1D random signal at the specified x."""
         lf = np.interp(np.mod(x, self.xg_lf_max), self.xg_lf, self.yg_lf)
         hf = np.interp(np.mod(x, self.xg_hf_max), self.xg_hf, self.yg_hf)
         return lf + hf

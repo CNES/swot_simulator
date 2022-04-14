@@ -13,9 +13,7 @@ from .. import data_handler
 
 
 class NEMO(data_handler.CartesianGridHandler):
-    """
-    Interpolation of the SSH NEMO.
-    """
+    """Interpolation of the SSH NEMO."""
 
     def __init__(self, path: str):
         loader = data_handler.NetcdfLoader(
@@ -28,7 +26,7 @@ class NEMO(data_handler.CartesianGridHandler):
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates"""
+        """Interpolate the SSH to the required coordinates."""
         dataset = self.dataset_loader.load_dataset(
             dates.min(),  # type: ignore
             dates.max())  # type: ignore

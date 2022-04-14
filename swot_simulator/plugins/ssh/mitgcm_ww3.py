@@ -17,9 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MITGCM_WW3(data_handler.CartesianGridHandler):
-    """
-    Interpolation of the SSH from MITGCM interpolated for WWW3.
-    """
+    """Interpolation of the SSH from MITGCM interpolated for WWW3."""
 
     def __init__(self, path: str):
         loader = MITGCM_WW3.OverriddenNetcdfLoader(

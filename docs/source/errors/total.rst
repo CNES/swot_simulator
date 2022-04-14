@@ -23,5 +23,5 @@ down to 2 :math:`cm2/(km/cy)` (thick dark pink curve).
 
    FIG. 18: Error budget in the spectral domain, computed from a random
    realization of the simulator. The spectral densities have been averaged
-   across-swath between 10~km and 60~km off nadir, consistenly with the
+   across-swath between 10~km and 60~km off nadir, consistently with the
    definition of the requirements.

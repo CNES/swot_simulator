@@ -232,14 +232,14 @@ Orbital errors
 
 .. figure:: ../images/orbital_error.png
    :align: left
-   :alt: Random realization of the orbital error (df=fo/1000)
+   :alt: Random realization of the orbital error (df=f0/1000)
    :figclass: align-left
 
    Random realization of the orbital error (in micro-radians).
 
 .. figure:: ../images/orbital_error_zoom.png
    :align: left
-   :alt: Random realization of the orbital error (df=fo/1000)
+   :alt: Random realization of the orbital error (df=f0/1000)
    :figclass: align-left
 
    Zoom of the Random realization of the orbital error on the first day.

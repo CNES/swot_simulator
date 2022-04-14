@@ -6,7 +6,7 @@
 Logging handlers
 ----------------
 """
-from typing import Awaitable, IO, Optional, Tuple, Union
+from typing import IO, Awaitable, Optional, Tuple, Union
 import logging
 import logging.handlers
 import pathlib
@@ -15,6 +15,7 @@ import socket
 import struct
 import sys
 import threading
+
 import tornado.ioloop
 import tornado.iostream
 import tornado.log
@@ -25,8 +26,7 @@ LOCK = threading.RLock()
 
 
 class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
-    """
-    Simple TCP socket-based logging receiver.
+    """Simple TCP socket-based logging receiver.
 
     Args:
         name (str, optional): Logger name.
@@ -62,7 +62,7 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
             self.handle_log_record(record)
 
     def handle_log_record(self, record: logging.LogRecord) -> None:
-        """Handle an incoming logging reccord
+        """Handle an incoming logging reccord.
 
         Args:
             record (logging.LogRecord): The event being logged.
@@ -83,7 +83,7 @@ class LogRecordSocketReceiver(tornado.tcpserver.TCPServer):
 
 
 class LogServer:
-    """Handle the log server
+    """Handle the log server.
 
     Args:
         hostname (str, optional): Specifies the IP address we want to listen
@@ -106,7 +106,7 @@ class LogServer:
         self.thread = threading.Thread(target=ioloop.start)
 
     def start(self, daemon: bool = False) -> None:
-        """Start the server
+        """Start the server.
 
         Args:
             daemon (bool, optional): Indicates whether this thread is a daemon
@@ -150,7 +150,7 @@ class LogFormatter(tornado.log.LogFormatter):
 
 def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
                    name: str) -> logging.Logger:
-    """Configures logbook handler"""
+    """Configures logbook handler."""
     logger = logging.getLogger(name)
     logger.propagate = True
     formatter = LogFormatter(
@@ -168,7 +168,7 @@ def _config_logger(stream: Union[IO[str], logging.Handler], level: int,
 
 def setup(stream: IO[str],
           debug: bool) -> Tuple[logging.Logger, Tuple[str, int, int]]:
-    """Setup the logging system
+    """Setup the logging system.
 
     Args:
         stream (io): Flux used to write in the log.
@@ -193,7 +193,7 @@ def setup(stream: IO[str],
 
 
 def setup_worker_logging(logging_server: Tuple[str, int, int]):
-    """Setup the logging server to log worker calculations
+    """Setup the logging server to log worker calculations.
 
     Args:
         logging_server (tuple): Log server connection settings.

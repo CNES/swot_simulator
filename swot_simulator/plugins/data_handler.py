@@ -31,10 +31,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DatasetLoader:
-    """
-    Interface that specializes in loading data for the plugin. This is helpful
-    to separate the data loading and interpolator definition.
-    The data loader has only one task:
+    """Interface that specializes in loading data for the plugin. This is
+    helpful to separate the data loading and interpolator definition. The data
+    loader has only one task:
 
     * Given a time range for interpolation.
     * Loads the model data set needed to perform the interpolation.
@@ -44,10 +43,11 @@ class DatasetLoader:
     @abc.abstractmethod
     def load_dataset(self, first_date: np.datetime64,
                      last_date: np.datetime64) -> xr.Dataset:
-        """
-        Loads the data under the form of a xr.Dataset. The loaded dataset should
-        contain values that allow interpolating first_date and last_date. This
-        means its time interval is a little large than [first_date, last_date].
+        """Loads the data under the form of a xr.Dataset. The loaded dataset
+        should contain values that allow interpolating first_date and
+        last_date. This means its time interval is a little large than.
+
+        [first_date, last_date].
 
         Moreover, the dataset should refer to the longitude, latitude, time and
         sea surface height using canonical names: lon, lat, time, ssh
@@ -70,8 +70,7 @@ class DatasetLoader:
     @staticmethod
     def _shift_date(date: np.datetime64, shift: int,
                     time_delta: np.timedelta64) -> np.datetime64:
-        """
-        Shift the input date using the time_delta of original data. This is
+        """Shift the input date using the time_delta of original data. This is
         useful to generate a time interval for which we need an original value.
 
         Args:
@@ -91,7 +90,8 @@ class DatasetLoader:
             be possible. If this condition is not satisfied, interpolation
             becomes extrapolation.
         """
-        # Before comparing the date and timedelta, ensure they have the same unit
+        # Before comparing the date and timedelta, ensure they have the same
+        # unit
         date_same_unit = date + time_delta - time_delta
         time_delta_same_unit = date + time_delta - date
 
@@ -127,7 +127,7 @@ class DatasetLoader:
          nogil=True)  # type:ignore
 def time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
     """Time interpolation for the different spatial grids interpolated on the
-    SWOT data
+    SWOT data.
 
     Args:
         xp (numpy.ndarray): The x-coordinates of the SWOT grid.
@@ -170,16 +170,16 @@ def time_interp(xp: np.ndarray, yp: np.ndarray, xi: np.ndarray) -> np.ndarray:
 
 
 class NetcdfLoader(DatasetLoader):
-    """
-    Plugin that implements a netcdf reader. The netcdf reader works on files
-    whose names have the date in it. A pattern (ex. P(?<date>.*).nc), associated
-    with a date formatter (ex. %Y%m%d) is used to get build the time series.
+    """Plugin that implements a netcdf reader. The netcdf reader works on files
+    whose names have the date in it. A pattern (ex. P(?<date>.*).nc),
+    associated with a date formatter (ex. %Y%m%d) is used to get build the time
+    series.
 
-    Netcdf files can be expensive to concatenate if there are a lot of files.
-    This loader avoid loading too much files by building a dictionary matching
-    file paths to their time. During the interpolation, where only a given time
-    period is needed, only the files that cover the time period are loaded in
-    the dataset.
+    Netcdf files can be expensive to concatenate if there are a lot of
+    files. This loader avoid loading too much files by building a
+    dictionary matching file paths to their time. During the
+    interpolation, where only a given time period is needed, only the
+    files that cover the time period are loaded in the dataset.
     """
 
     def __init__(self,
@@ -190,8 +190,7 @@ class NetcdfLoader(DatasetLoader):
                  ssh_name: str = "ssh",
                  time_name: str = "time",
                  pattern: str = ".nc"):
-        """
-        Initialization of the netcdf loader.
+        """Initialization of the netcdf loader.
 
         Args:
             path (str): Folder containing the netcdf files
@@ -269,8 +268,7 @@ class NetcdfLoader(DatasetLoader):
 
     def select_netcdf_files(self, first_date: np.datetime64,
                             last_date: np.datetime64) -> np.ndarray:
-        """
-        Selects the netcdf files that cover the time period.
+        """Selects the netcdf files that cover the time period.
 
         Args:
             first_date (numpy.datetime64): first date of the time period
@@ -329,10 +327,9 @@ class NetcdfLoader(DatasetLoader):
 
 
 class IrregularGridHandler(Interface):
-    """
-    Default interpolator for an irregular grid. First, uses an RTree to do the
-    spatial interpolation of all model grid, then do the time interpolation with
-    a simple weighting of two grid.
+    """Default interpolator for an irregular grid. First, uses an RTree to do
+    the spatial interpolation of all model grid, then do the time interpolation
+    with a simple weighting of two grid.
 
     Args:
         dataset_loader (DataLoader): Data loader
@@ -343,7 +340,7 @@ class IrregularGridHandler(Interface):
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH for the given coordinates
+        """Interpolate the SSH for the given coordinates.
 
         Args:
             lon (numpy.ndarray): longitude coordinates
@@ -383,8 +380,7 @@ class IrregularGridHandler(Interface):
     def _spatial_interp(z_model: da.Array, x_model: da.Array,
                         y_model: da.Array, x_sat: np.ndarray,
                         y_sat: np.ndarray) -> np.ndarray:
-        """
-        Spatial interpolation of the SSH on the selected maps.
+        """Spatial interpolation of the SSH on the selected maps.
 
         Args:
             z_model (numpy.ndarray): model SSH
@@ -412,9 +408,8 @@ class IrregularGridHandler(Interface):
 
 
 class CartesianGridHandler(Interface):
-    """
-    Default interpolator for regular grid.
-    Uses pyinterp.backends.xarray.Grid3D.trivariate interpolator
+    """Default interpolator for regular grid. Uses
+    pyinterp.backends.xarray.Grid3D.trivariate interpolator.
 
     Args:
         dataset_loader (DatasetLoader): DatasetLoader object
@@ -425,7 +420,7 @@ class CartesianGridHandler(Interface):
 
     def interpolate(self, lon: np.ndarray, lat: np.ndarray,
                     dates: np.ndarray) -> np.ndarray:
-        """Interpolate the SSH to the required coordinates
+        """Interpolate the SSH to the required coordinates.
 
         Args:
             lon (numpy.ndarray): longitude coordinates

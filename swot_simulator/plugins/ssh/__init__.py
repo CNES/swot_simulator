@@ -8,10 +8,23 @@ Plug-in to interpolate SSH
 """
 from .aviso import AVISO
 from .hycom import HYCOM
-from .natl60 import NATL60
 from .mitgcm import MITGCM
 from .mitgcm_ww3 import MITGCM_WW3
+from .natl60 import NATL60
 from .nemo import NEMO
 from .nz import NZCartesian, NZMesh
 from .schism import SCHISM
 from .symphonie import SYMPHONIE
+
+__all__ = [
+    'AVISO',
+    'HYCOM',
+    'MITGCM',
+    'MITGCM_WW3',
+    'NATL60',
+    'NEMO',
+    'NZCartesian',
+    'NZMesh',
+    'SCHISM',
+    'SYMPHONIE',
+]

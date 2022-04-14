@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class NATL60(data_handler.IrregularGridHandler):
-    """Interpolate SSH from NATL60 model
+    """Interpolate SSH from NATL60 model.
 
     Args:
         path (str): path to the NATL60 model stored in zarr format
@@ -32,7 +32,7 @@ class NATL60(data_handler.IrregularGridHandler):
         super().__init__(loader)
 
     class ZarrLoader(data_handler.DatasetLoader):
-        """Load SSH from NATL60 model
+        """Load SSH from NATL60 model.
 
         Args:
             path (str): path to the NATL60 model stored in zarr format
@@ -57,7 +57,7 @@ class NATL60(data_handler.IrregularGridHandler):
 
         def load_dataset(self, first_date: np.datetime64,
                          last_date: np.datetime64) -> xr.Dataset:
-            """Load SSH from NATL60 model
+            """Load SSH from NATL60 model.
 
             Args:
                 first_date (np.datetime64): first date to load
@@ -92,7 +92,7 @@ class NATL60(data_handler.IrregularGridHandler):
         x_sat: np.ndarray,
         y_sat: np.ndarray,
     ) -> np.ndarray:
-        """Spatial interpolation of SSH from NATL60 model
+        """Spatial interpolation of SSH from NATL60 model.
 
         Args:
             z_model (da.Array): SSH model
