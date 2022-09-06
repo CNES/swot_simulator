@@ -444,13 +444,12 @@ def calculate_orbit(parameters: settings.Parameters,
     # If orbit is at low resolution, interpolate the orbit provided
     if np.mean(np.diff(time)) > 0.5:
         time_hr = np.arange(time[0], time[-1], 0.5, dtype=time.dtype)
-        lon, lat = pyinterp.orbit.interpolate(
-            lon,
-            lat,
-            time,
-            time_hr,
-            wgs=wgs,
-            half_window_size=50)
+        lon, lat = pyinterp.orbit.interpolate(lon,
+                                              lat,
+                                              time,
+                                              time_hr,
+                                              wgs=wgs,
+                                              half_window_size=50)
         time = time_hr
 
     # Cut orbit if more than an orbit cycle is provided
@@ -489,11 +488,11 @@ def calculate_orbit(parameters: settings.Parameters,
             1e6).astype("timedelta64[us]")
 
     lon, lat = pyinterp.orbit.interpolate(lon,
-                                           lat,
-                                           distance,
-                                           x_al,
-                                           wgs=wgs,
-                                           half_window_size=10)
+                                          lat,
+                                          distance,
+                                          x_al,
+                                          wgs=wgs,
+                                          half_window_size=10)
 
     return Orbit(parameters.height, lat, lon,
                  np.sort(calculate_pass_time(lat,
