@@ -11,6 +11,7 @@ import logging
 import warnings
 
 import numpy as np
+import pyinterp
 
 from . import VOLUMETRIC_MEAN_RADIUS, math, settings
 
@@ -56,29 +57,6 @@ def load_ephemeris(
         return result
 
     return to_dict(comments), tuple(data[:, item] for item in cols)
-
-
-def interpolate(lon: np.ndarray, lat: np.ndarray, time: np.ndarray) -> Tuple:
-    """Interpolate the given orbit at high resolution (0.5 seconds)
-
-    Args:
-        lon (numpy.ndarray): Longitudes (in degrees)
-        lat (numpy.ndarray): Latitudes (in degrees)
-        time (np.ndarray): Date of the positions (in seconds).
-
-    Returns:
-        tuple: lon, lat, and time interpolated
-    """
-    x, y, z = math.spher2cart(lon, lat)
-    time_hr = np.arange(time[0], time[-1], 0.5, dtype=time.dtype)
-
-    x = np.interp(time_hr, time, x)
-    y = np.interp(time_hr, time, y)
-    z = np.interp(time_hr, time, z)
-
-    lon, lat = math.cart2spher(x, y, z)
-
-    return lon, lat, time_hr
 
 
 def rearrange_orbit(
@@ -461,9 +439,19 @@ def calculate_orbit(parameters: settings.Parameters,
             "The satellite altitude is not defined either in "
             "the ephemeris file or in the simulator parameters.")
 
+    wgs = pyinterp.geodetic.Coordinates()
+
     # If orbit is at low resolution, interpolate the orbit provided
     if np.mean(np.diff(time)) > 0.5:
-        lon, lat, time = interpolate(lon, lat, time)
+        time_hr = np.arange(time[0], time[-1], 0.5, dtype=time.dtype)
+        lon, lat = pyinterp.orbit.interpolate(
+            lon,
+            lat,
+            time,
+            time_hr,
+            wgs=wgs,
+            half_window_size=50)
+        time = time_hr
 
     # Cut orbit if more than an orbit cycle is provided
     indexes = np.where(time < parameters.cycle_duration * 86400)[0]
@@ -500,11 +488,12 @@ def calculate_orbit(parameters: settings.Parameters,
     time = (np.interp(x_al, distance[:-1], time[:-1]) *
             1e6).astype("timedelta64[us]")
 
-    x, y, z = math.spher2cart(lon, lat)
-    x = np.interp(x_al, distance[:-1], x[:-1])
-    y = np.interp(x_al, distance[:-1], y[:-1])
-    z = np.interp(x_al, distance[:-1], z[:-1])
-    lon, lat = math.cart2spher(x, y, z)
+    lon, lat = pyinterp.orbit.interpolate(lon,
+                                           lat,
+                                           distance,
+                                           x_al,
+                                           wgs=wgs,
+                                           half_window_size=10)
 
     return Orbit(parameters.height, lat, lon,
                  np.sort(calculate_pass_time(lat,
