@@ -44,9 +44,9 @@ jobs:
   #     summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
   #     reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job:
-  displayName: macOS-10.15
+  displayName: macOS-12
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-12'
   strategy:
     matrix:
       Python37:
