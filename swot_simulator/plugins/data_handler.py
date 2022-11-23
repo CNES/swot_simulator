@@ -393,6 +393,10 @@ class IrregularGridHandler(Interface):
             numpy.ndarray: interpolated SSH in space.
         """
         mesh = pyinterp.RTree()
+        z_model = z_model.ravel()
+        x_model = x_model.ravel()
+        y_model = y_model.ravel()
+
         mesh.packing(
             np.vstack((x_model.compute(), y_model.compute())).T,
             z_model.compute())

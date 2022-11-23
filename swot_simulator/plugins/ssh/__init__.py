@@ -12,6 +12,7 @@ from .mitgcm import MITGCM
 from .mitgcm_ww3 import MITGCM_WW3
 from .natl60 import NATL60
 from .nemo import NEMO
+from .nemo_irregular import NEMO_IRREGULAR
 from .nz import NZCartesian, NZMesh
 from .schism import SCHISM
 from .symphonie import SYMPHONIE
