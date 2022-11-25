@@ -21,10 +21,10 @@ class NEMO_IRREGULAR(data_handler.IrregularGridHandler):
         print(path)
         loader = data_handler.NetcdfLoader(
             path,
-            date_fmt="%Y%m%dT%H",
+            date_fmt="%Y%m%d",
             lon_name="nav_lon",
             lat_name="nav_lat",
             time_name="time_counter",
             ssh_name="sossheig",
-            pattern=r"ORCA36-T426a_1hAV_(?P<date>\d{8}T\d{2})-(?P<date2>\d{8})_SSH.nc")
+            pattern=r"ORCA36-T426a_1hAV_(?P<date>\d{8})-(?P<date2>\d{8})_gridT.nc")
         super().__init__(loader)
